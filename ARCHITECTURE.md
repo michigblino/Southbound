@@ -29,3 +29,6 @@ World-wide, user-configurable travel planning. South America is one example trip
 
 ## Explicit calendar foundation
 `trip-calendar.js` provides pure date-only scheduling. Each stage has `days`, optional `transferDays` and optional `confirmedHost:{from,to}` (end exclusive). The module reports arrival, waiting days, actual stage dates and conflicts. It does **not** price waiting nights or convert between time zones; callers must price and validate these before presenting a final budget.
+
+## Beta integration: fixed costs and waiting nights
+The feature-branch overview contains `sbBudgetIntegrityPanel` and `bindSbFixedCosts`. Four *remaining* cost fields are persisted in `m.fixedCosts` under the existing localStorage key; empty is unknown, 0 is a user-asserted zero. `wait-costs.js` multiplies calendar waiting days by normal (non-host) lodging, food and other daily costs, flagging missing inputs. These amounts currently appear only in the diagnostic, **not** the authoritative trip total or volunteer optimization.
