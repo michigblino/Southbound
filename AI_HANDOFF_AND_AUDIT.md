@@ -201,3 +201,10 @@ Decision: DOCUMENT ONLY, DO NOT IMPLEMENT YET.
 - Added `package.json`, `playwright.config.cjs`, `browser-tests/smoke.spec.cjs`, and a separate `browser` job in `.github/workflows/quality.yml` on feature branch pushes/PRs/manual workflow dispatch.
 - Chromium smoke scenarios: page title + JS runtime modules + page errors, localStorage survives reload, and 390x844 mobile viewport horizontal overflow check. Uses local Python HTTP server; no publishing to `main`.
 - GitHub-hosted Chromium is **not** a real Android device; 3D globe gesture and GPU rendering remain manual Android acceptance items. Browser CI status is not confirmed until actual GitHub Actions run reports success. Browser tests may expose genuine existing UI issues; fix based on logs rather than weakening assertions.
+
+## 2026-10-12 — Volunteering economics guardrail
+
+- `volunteer-economics.js`: confirmed net savings for a proposed volunteer stay longer than the planned stop are **unverified** until `extraDayDailyCost` is explicitly supplied (zero is accepted only when explicitly verified). This is the per-extra-day food/activities/other incremental cost; host accommodation is priced separately by `hostNightlyBed`. `extraCosts` remains the separate one-off cost input.
+- The original stop's gross lodging opportunity remains capped at `min(plannedDays, proposedDays) * nightlyBed`; never advertise it as verified net savings.
+- Added two unit regressions for unknown versus priced extra days. Full CI status must be checked; no claim of full test pass yet.
+- CI workflow now uses a readable Node spec reporter and publishes failure diagnostics in the job summary and artifact. Existing three failing tests from run #59 have not yet been individually identified.
