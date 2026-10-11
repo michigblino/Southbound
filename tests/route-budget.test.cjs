@@ -11,3 +11,8 @@ test('missing historical spending keeps budget status unverified',()=>{const r=s
 test('unknown waiting expenses keep goal status unverified',()=>{const r=snapshot({...base,waitingComplete:false});assert.equal(r.goalStatus,'unverified')});
 
 test('unverified travel dates cannot pass all-in completion',()=>{const r=snapshot({...base,timingFeasible:false});assert.equal(r.complete,false);assert.equal(r.goalStatus,'unverified');assert.ok(r.incompleteReasons.includes('unverified-route-dates'))});
+
+test('unknown lodging does not erase known transfer estimate',()=>{const r=snapshot({...base,items:[{i:0,stay:null,leg:45}]});assert.equal(r.totalEstimate,365);assert.equal(r.missingCount,1);assert.equal(r.complete,false);assert.ok(r.lines.some(x=>x.label==='Transfer 0'&&x.amount===45))});
+test('unknown transfer does not erase known lodging',()=>{const r=snapshot({...base,items:[{i:0,stay:200,leg:null}]});assert.equal(r.totalEstimate,520);assert.equal(r.missingCount,1);assert.ok(r.lines.some(x=>x.label==='Aufenthalt 0'&&x.amount===200))});
+test('prepayment beyond lodging offsets the remaining transfer once',()=>{const r=snapshot({...base,paidByStop:{0:210}});assert.equal(r.totalEstimate,330);assert.ok(r.lines.some(x=>x.label==='Transfer 0'&&x.amount===10))});
+test('prepayment with unknown lodging cannot be silently allocated',()=>{const r=snapshot({...base,items:[{i:0,stay:null,leg:45}],paidByStop:{0:20}});assert.equal(r.totalEstimate,365);assert.ok(r.incompleteReasons.includes('unallocated-prepayments'))});
