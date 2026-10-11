@@ -156,3 +156,13 @@
 - Added `route-timing.js` and three Node tests. Both current budget panel and hypothetical volunteer sparroute now call `SouthboundRouteTiming.evaluate` to calculate calendar conflicts and waiting-night cost estimates from the same inputs. Previously the scenario forced waiting cost to unknown.
 - Candidate route UI now warns on confirmed host date collisions. New module precached in service worker v54 and included in CI syntax checks.
 - **Limitations:** transfer durations still zero, waiting accommodation uses existing normal nightly quote or original stop fallback (not a verified booking), and no real host API. Main untouched; CI/browser results unverified. Do not implement social route-sharing or RealGuessr integration without explicit later request.
+
+## Product backlog — future collaborative travel (2026-10-12)
+Decision: DOCUMENT ONLY, DO NOT IMPLEMENT YET.
+- Private route sharing: owner can share only selected future stops or a date range via a revocable, expiring link. Never expose the full private itinerary by default.
+- Invite existing friends to co-plan a trip, with explicit roles (view/comment/edit) and owner approval.
+- Hostel acquaintances can request to join selected future legs without access to unrelated private plans; joining is not automatic. Support partial overlapping journeys and independent departure dates.
+- Privacy/security requirements before implementation: opt-in location visibility, no public live tracking by default, revocation, access controls, abuse reporting, and protection of personal spending/host details.
+- Suggested staged rollout: (1) read-only limited route sharing; (2) invitations and permissioned co-planning; (3) optional join-a-leg requests. Validate demand and data model before social discovery.
+- RealGuessr/BeGuessr integration: explicitly deferred; do not plan or implement for now.
+- Near-term priority remains unified all-in budget, realistic transfer/calendar constraints, honest volunteering net savings, automated tests and Android QA. Do not implement collaborative features without a later explicit user request.
