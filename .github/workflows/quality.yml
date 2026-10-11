@@ -17,6 +17,7 @@ jobs:
           node --check budget-engine.js
           node --check route-budget.js
           node --check trip-calendar.js
+          node --check route-timing.js
           node --check wait-costs.js
           node --check volunteer-matching.js
           node --check itinerary.js
