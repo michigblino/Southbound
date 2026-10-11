@@ -10,3 +10,5 @@
 - Added `trip-calendar.js` and six calendar regression tests for transfers and confirmed volunteering commitments. No production UI wiring yet.
 
 - Connected the new budget/calendar modules to a clearly marked beta diagnostic panel in the overview on the feature branch. No production deployment; costs and waiting nights remain incomplete.
+
+- Added `wait-costs.js`, waiting-cost tests, and beta overview inputs for remaining return/insurance/visa/equipment expenses. Waiting days now have a priced estimate where normal lodging is known; missing costs remain flagged.
