@@ -6,8 +6,6 @@ function compare({stops,order=[],excluded={},days={},quotes={},vol={},volunteerD
  if(ids.length<2)return [];
  const existing=new Set(stops.map(s=>String(s[0]).toLocaleLowerCase('de')));
  const available=candidates.filter(c=>!existing.has(c.name.toLocaleLowerCase('de')));
- const raw=order.length?order.slice():stops.map((_,i)=>i);
- const existingIds=new Set(ids);
  const models=[];
  function score(selected,after){
   const extraStops=selected.map(c=>[c.name,c.country,c.lat,c.lon,c.days,c.bed,c.food,c.activity,c.other,0,0,'Ungeprüft','',c.name]);
@@ -25,21 +23,25 @@ function compare({stops,order=[],excluded={},days={},quotes={},vol={},volunteerD
  }
  const base=score([],ids[0]);if(!base)return [];
  models.push(base);
- // Search the Buenos Aires segment and adjacent legs; the insertion must not change the original route order.
- const anchors=ids.filter((id,k)=>k<ids.length-1&&(/Buenos Aires/i.test(stops[id][0])||stops[id][1]==='Uruguay'));
- if(/Buenos Aires/i.test(stops[ids.at(-1)][0]))anchors.push(ids.at(-1));
- const unique=[...new Set(anchors)];
- for(const anchor of unique){
-  for(let mask=1;mask<(1<<available.length);mask++){
-   const subset=available.filter((_,k)=>mask&(1<<k));if(subset.length>3)continue;
-   const permutations=(xs)=>xs.length<2?[xs]:xs.flatMap((x,i)=>permutations(xs.filter((_,j)=>i!==j)).map(p=>[x,...p]));
-   for(const permutation of permutations(subset)){const m=score(permutation,anchor);if(m)models.push(m)}
+ // Candidate stops must lie near an existing travel leg, not at an arbitrary named country.
+ const rad=Math.PI/180,km=(x,y)=>{const dlat=(y[2]-x[2])*rad,dlon=(y[3]-x[3])*rad,v=Math.sin(dlat/2)**2+Math.cos(x[2]*rad)*Math.cos(y[2]*rad)*Math.sin(dlon/2)**2;return 12742*Math.asin(Math.min(1,Math.sqrt(v)))};
+ const anchors=ids.slice(0,-1).map((id,k)=>({id,next:ids[k+1]}));
+ for(const {id,next} of anchors){
+  const a=stops[id],b=stops[next],direct=km(a,b);if(!Number.isFinite(direct)||direct<35)continue;
+  const near=available.map(c=>({c,s:[c.name,c.country,c.lat,c.lon]})).filter(({s})=>{const extra=km(a,s)+km(s,b)-direct;return extra<=Math.max(55,Math.min(180,direct*.3))&&km(a,s)>12&&km(s,b)>12}).slice(0,5);
+  for(const {c} of near){const m=score([c],id);if(m)models.push(m)}
+  for(let i=0;i<near.length;i++)for(let j=i+1;j<near.length;j++){
+   for(const pair of [[near[i].c,near[j].c],[near[j].c,near[i].c]]){
+    const extra=km(a,[pair[0].name,pair[0].country,pair[0].lat,pair[0].lon])+km([pair[0].name,pair[0].country,pair[0].lat,pair[0].lon],[pair[1].name,pair[1].country,pair[1].lat,pair[1].lon])+km([pair[1].name,pair[1].country,pair[1].lat,pair[1].lon],b)-direct;
+    if(extra>Math.max(55,Math.min(180,direct*.3)))continue;
+    const m=score(pair,id);if(m)models.push(m);
+   }
   }
  }
  const nonzero=models.filter(x=>x.selected.length);
  const cheapest=nonzero.slice().sort((a,b)=>a.total-b.total||a.extraDays-b.extraDays)[0];
- const balanced=nonzero.filter(x=>x.selected.includes('Colonia del Sacramento')&&x.selected.includes('Montevideo')).sort((a,b)=>a.total-b.total)[0]||nonzero.filter(x=>x.selected.length>=2).sort((a,b)=>a.total-b.total)[0]||cheapest;
- const rich=nonzero.filter(x=>x.selected.length>=3).sort((a,b)=>a.total-b.total)[0]||nonzero.slice().sort((a,b)=>b.selected.length-a.selected.length||a.total-b.total)[0];
+ const balanced=nonzero.filter(x=>x.selected.length>=2).sort((a,b)=>a.total-b.total)[0]||cheapest;
+ const rich=nonzero.slice().sort((a,b)=>b.selected.length-a.selected.length||a.total-b.total)[0];
  const options=[{id:'budget',label:'Am günstigsten',description:'Deine bisherige Route ohne zusätzliche Stopps',...base},{id:'balanced',label:'Beste Preis-Leistung',description:'Mehr Erlebnisse mit überschaubarem Aufpreis',...(balanced||base)},{id:'experience',label:'Mehr entdecken',description:'Mehr Orte und Zeit zum Entdecken',...(rich||balanced||base)}];
  return options.map(x=>({...x,delta:Math.round(x.total-base.total),available:x.selected.length>0||x.id==='budget',baseTotal:base.total,estimated:true}));
 }
