@@ -122,3 +122,8 @@
 - Added `trip-calendar.js` with transfer-day reservation, waiting days, confirmed-host start/end constraints and explicit conflict results. Added `tests/trip-calendar.test.cjs` for transfer, wait, arrival conflict, host end, two-host propagation and invalid date.
 - **Not yet wired to visible UI**; waiting-night accommodation/food costs and cross-time-zone overnight transfers still need integration. Existing itinerary dates remain unchanged.
 - No end-to-end/browser verification; full test suite pending. Next: wire calendar and all-in budget into existing UI carefully, without duplicate charges or resetting `southbound-v3`.
+
+## 2026-10-11 integration update
+- Feature branch `index.html` now loads `budget-engine.js`, `trip-calendar.js`, `volunteer-matching.js` and renders `sbBudgetIntegrityPanel(p)` before the existing overview budget. This is a **diagnostic**, not a replacement of the production all-in budget.
+- Diagnostic shows paid + remaining estimated route costs + reserve, missing transport legs, confirmed-host date conflicts, and waiting-day count. Waiting-day food/lodging **not yet priced**; travel-day durations are currently passed as zero because no verified schedule is available. No all-in clearance is claimed.
+- Main branch remains unchanged. Browser E2E and Node suite still not run. Next: check syntax/tests and add missing fixed-cost input and priced wait nights before using this figure for volunteer optimization.
