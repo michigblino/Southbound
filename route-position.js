@@ -3,7 +3,7 @@
 function analyze({stops,order=[],excluded={},visited={},current=0,transport,minSaving=20}){
  const ids=(order.length?order:stops.map((_,i)=>i)).filter(i=>stops[i]&&!excluded[i]);
  if(ids.length<3||!transport?.estimate)return [];
- const leg=(a,b)=>transport.estimate(stops[a],stops[b]);
+ const cache=new Map(),leg=(a,b)=>{const key=a+':'+b;if(!cache.has(key))cache.set(key,transport.estimate(stops[a],stops[b]));return cache.get(key)};
  const cost=seq=>seq.slice(1).reduce((sum,id,k)=>sum+leg(seq[k],id).mid,0);
  const original=cost(ids),result=[];
  const firstLocked=ids.findIndex(i=>!visited[i]&&i>=current);
@@ -14,7 +14,7 @@ function analyze({stops,order=[],excluded={},visited={},current=0,transport,minS
   for(let to=movableStart;to<ids.length;to++){
    if(to===from)continue;
    const candidate=ids.slice();candidate.splice(from,1);candidate.splice(to,0,i);
-   const before=cost(ids),after=cost(candidate),saving=before-after;
+   const before=original,after=cost(candidate),saving=before-after;
    if(saving<minSaving)continue;
    const oldNeighbors=[ids[from-1],ids[from+1]].filter(x=>x!==undefined),newNeighbors=[candidate[to-1],candidate[to+1]].filter(x=>x!==undefined);
    const oldLegs=ids.slice(1).map((v,k)=>[ids[k],v]);
