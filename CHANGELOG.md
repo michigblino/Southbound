@@ -19,3 +19,5 @@
 - Added `route-budget.js` as the shared calculation path for beta overview and volunteering budget gaps, with six regression tests; offline cache v53 and CI syntax coverage.
 
 - Promoted shared provisional budget subtotal in beta overview; relabeled legacy risk headline; strengthened incomplete-budget flags and added two tests.
+
+- Shared current/candidate route timing and waiting-night calculation through `route-timing.js`, added three tests, host conflict warning and offline cache v54.
