@@ -12,3 +12,6 @@
 - Connected the new budget/calendar modules to a clearly marked beta diagnostic panel in the overview on the feature branch. No production deployment; costs and waiting nights remain incomplete.
 
 - Added `wait-costs.js`, waiting-cost tests, and beta overview inputs for remaining return/insurance/visa/equipment expenses. Waiting days now have a priced estimate where normal lodging is known; missing costs remain flagged.
+
+- Fixed phantom transfer placeholders in beta diagnostics and counted paid and known remaining fixed expenses in preliminary volunteering gap.
+- Updated offline cache to v52; added GitHub Actions syntax and Node test workflow. CI results not yet verified.
