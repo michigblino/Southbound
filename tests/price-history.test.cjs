@@ -1,0 +1,5 @@
+const test=require('node:test');const assert=require('node:assert/strict');require('../price-history.js');const {add,summary,byKey}=globalThis.SouthboundPriceHistory;const entry=(price,day)=>({key:'Bus A-B 2027-02-01 22:00',price,source:'https://example.org/tickets',checkedAt:'2026-10-'+day+'T12:00:00Z'});
+test('rejects empty price and absent source',()=>{assert.equal(add([],entry('', '01')).length,0);assert.equal(add([],{...entry(20,'01'),source:''}).length,0)});
+test('tracks min max and movement on matching service',()=>{let h=add([],entry(30,'01'));h=add(h,entry(40,'02'));h=add(h,entry(25,'03'));const r=summary(h,entry(1,'01').key);assert.equal(r.count,3);assert.equal(r.min,25);assert.equal(r.max,40);assert.equal(r.delta,-5)});
+test('different travel services do not mix',()=>{let h=add([],entry(30,'01'));h=add(h,{...entry(70,'02'),key:'Bus A-B different date'});assert.equal(byKey(h).length,2);assert.equal(summary(h,entry(1,'01').key).count,1)});
+test('observations sorted by timestamp',()=>{let h=add([],entry(50,'03'));h=add(h,entry(20,'01'));assert.equal(summary(h,entry(1,'01').key).first,20)});
