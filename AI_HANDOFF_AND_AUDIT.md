@@ -192,3 +192,7 @@ Decision: DOCUMENT ONLY, DO NOT IMPLEMENT YET.
 - Retrieved the six core module sources and all six corresponding `tests/*.test.cjs` sources directly from the feature branch. Evaluated all test callbacks in a V8 harness providing equivalents of Node's `node:test` and `node:assert/strict` (`equal`, `ok`, `deepEqual`) and module loading for those six files.
 - **33/33 existing calculation tests passed, 0 failed.** Covers budget engine, route budget, route timing, trip calendar, waiting costs and volunteering matching.
 - Scope is **isolated test harness**, not the official Node test runner. Does not execute filesystem-dependent `integration-assets.test.cjs`, browser UI, service worker, or Android E2E. GitHub Actions status not independently verified. Do not claim CI green.
+
+## 2026-10-12 volunteer economics + QA
+- Added `volunteer-economics.js`: theoretical gross lodging opportunity capped to existing planned nights, not proposed host duration. Added four Node regression tests, updated UI labels to distinguish gross opportunity from **unverified net savings**, and bumped offline cache v55. A longer volunteer placement can require extra meals, accommodation, fees, transport, and waiting nights; never claim the gross upper bound closes an all-in budget gap.
+- Isolated V8 smoke verification: 6/6 economics and asset checks passed; both inline scripts parsed successfully. GitHub Actions status and Android real-device testing still unverified. No source-backed live ticket quotes were added; `transport-estimate.js` remains low-confidence heuristic.
