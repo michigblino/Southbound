@@ -20,6 +20,8 @@ jobs:
           node --check route-timing.js
           node --check wait-costs.js
           node --check volunteer-matching.js
+          node --check volunteer-economics.js
+          node --check tests/volunteer-economics.test.cjs
           node --check itinerary.js
           node --check tests/budget-engine.test.cjs
           node --check tests/route-budget.test.cjs
