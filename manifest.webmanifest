@@ -1,0 +1,17 @@
+{
+  "name": "Southbound – Südamerika Reise-Cockpit",
+  "short_name": "Southbound",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#071c26",
+  "theme_color": "#071c26",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
