@@ -23,3 +23,5 @@
 - Shared current/candidate route timing and waiting-night calculation through `route-timing.js`, added three tests, host conflict warning and offline cache v54.
 
 - Added explicit unknown-transfer-duration tracking and date-verification warnings; two new route-timing regression tests. No fabricated transfer-day estimates.
+
+- Hardened GitHub Actions syntax checks, moved inline HTML JavaScript syntax validation into a dedicated script, and added integration tests for module loading, offline cache and saved data key.
