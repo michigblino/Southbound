@@ -208,3 +208,13 @@ Decision: DOCUMENT ONLY, DO NOT IMPLEMENT YET.
 - The original stop's gross lodging opportunity remains capped at `min(plannedDays, proposedDays) * nightlyBed`; never advertise it as verified net savings.
 - Added two unit regressions for unknown versus priced extra days. Full CI status must be checked; no claim of full test pass yet.
 - CI workflow now uses a readable Node spec reporter and publishes failure diagnostics in the job summary and artifact. Existing three failing tests from run #59 have not yet been individually identified.
+
+
+## Budget audit follow-up — 2026-10-12 (feature branch only)
+
+- Reviewed `budget-engine.js`, `route-budget.js`, `itinerary.js`, `route-timing.js`, and `volunteer-economics.js`.
+- **Fixed in `route-budget.js`:** separate accommodation/stay and inbound transfer liabilities per stop. Previously, if stay was unknown, a priced transfer disappeared from the numeric forecast; if a transfer was unknown, the known stay was folded into an opaque combined line. The snapshot now preserves both independent lines, counts missing values, and keeps the budget unverified.
+- **Prepayment allocation:** `paidByStop[i]` is deducted from future stay first and then inbound transfer, not twice. If stay is unknown, prepayment allocation cannot be validated and the snapshot emits `unallocated-prepayments` instead of guessing.
+- Added regression tests in `tests/route-budget.test.cjs` for independent missing stay/transfer amounts and prepayments.
+- **Known unresolved financial risks:** `paid` and `paidByStop` can overlap if the calling UI records expenses inconsistently; the engine cannot reconcile receipts without transaction-level identifiers. `reserve` must represent a cash buffer, not a second copy of return flight/insurance/visa costs. `fixedCosts` are manually supplied, not verified quotes. `itinerary.js` uses estimated daily costs and heuristic transport, not booking prices. Missing transfer durations prevent a fully verified calendar. `allInVerified` deliberately remains false.
+- **Verification status:** Changes pushed to `feat/global-trip-foundations`. New GitHub Actions test results must be checked; this entry does not claim the new regressions have passed. Do not merge into `main` without explicit user approval.
