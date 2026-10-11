@@ -140,3 +140,9 @@
 - Service worker cache bumped to v52 and new modules added to offline precache.
 - GitHub Actions quality workflow added for JavaScript syntax and Node regression tests; results NOT yet verified.
 - Main unchanged. Next: inspect CI, integrate one shared route-budget snapshot, price transfer days, test Android/mobile and storage persistence.
+
+## 2026-10-11 shared route budget integration
+- New `route-budget.js` exports `SouthboundRouteBudget.snapshot`. Both beta overview diagnostics and `sbVolunteerScenario` gap now call it. It reconciles paid spending, future stage costs minus per-stop paid amounts, reserve, remaining return/insurance/visa/equipment costs, and waiting costs when known. Missing transfers and missing fixed costs remain unknown. It never claims verified all-in completeness.
+- **Important limitation:** volunteer scenario passes waiting cost as unknown until its revised route calendar is reconciled. Thus the displayed gap is a **known-cost lower bound**, not a verified total. Legacy main headline budget still uses dynamic-risk calculation; do not claim complete unification yet.
+- Added six route-budget tests, offline precache update v53 and CI syntax check. Tests/CI outcomes not yet inspected; main remains unchanged.
+- Next: inspect actual CI status, replace legacy main headline after reconciling price bands and fixed categories; calculate waiting and transfer-day costs for hypothetical volunteer scenarios; test mobile and persistence.
