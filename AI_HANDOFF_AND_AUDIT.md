@@ -172,3 +172,8 @@ Decision: DOCUMENT ONLY, DO NOT IMPLEMENT YET.
 - Overview and hypothetical volunteer scenario pass `m.transferDaysByStop||{}` without migrating or clearing stored data. UI warns on unknown durations and does not present optimized itinerary as date-verified.
 - Added two route-timing tests for unknown duration and explicit 2-day downstream shift. No provider travel-time integration yet; durations are optional user/state input only, no invented metrics.
 - Workflow status not confirmed: commit workflow query returned no PR-triggered runs; that endpoint does not cover push-triggered runs. Do not report CI green. Main unchanged.
+
+## 2026-10-12 CI hardening
+- `.github/workflows/quality.yml` now syntax-checks new route-budget/route-timing/integration tests and runs a dedicated `scripts/check-inline-scripts.cjs` using `vm.Script` rather than fragile shell-escaped inline regex. All `tests/*.test.cjs` are still executed via Node test runner.
+- `tests/integration-assets.test.cjs` checks that budget/timing modules are present in HTML and PWA cache, cache version is present, and original localStorage key is preserved.
+- **Status:** commits are in feature branch only. GitHub Actions push-run success has NOT been independently confirmed, and Android browser/E2E remain untested. Next action: inspect Actions run, fix any failures, then verify mobile UI, persistence and volunteer budgets.
