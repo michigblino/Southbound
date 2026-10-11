@@ -6,3 +6,5 @@
 - Added source-neutral volunteer profile matching; max 30 h/week is the default, unknown data is flagged.
 - Added automated test fixtures and compact AI architecture/test documentation.
 - Existing production UI and browser data are unchanged. Integration, execution of tests and real-host sourcing are still pending.
+
+- Added `trip-calendar.js` and six calendar regression tests for transfers and confirmed volunteering commitments. No production UI wiring yet.
