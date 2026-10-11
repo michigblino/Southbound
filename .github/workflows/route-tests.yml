@@ -13,7 +13,7 @@ jobs:
           node-version: '22'
       - name: Syntax checks
         run: |
-          node --check route-engine.js
-          node --check tests/route-engine.test.cjs
+          for file in route-engine.js itinerary.js transport-estimate.js savings-advice.js route-position.js dynamic-risk.js uncertainty.js price-history.js; do node --check "$file"; done
+          for file in tests/*.test.cjs; do node --check "$file"; done
       - name: Unit tests
         run: node --test tests/*.test.cjs
