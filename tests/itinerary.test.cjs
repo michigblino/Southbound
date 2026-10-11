@@ -10,3 +10,6 @@ test('return-home stop has zero stay but unknown incoming fare remains unverifie
 
 test('confirmed host without a quoted nightly cost is not silently free',()=>{const p=plan({stops:s,vol:{0:true},volunteerDetails:{0:{confirmed:true}}});assert.equal(p.items[0].bed,15);assert.equal(p.items[0].daily,33)});
 test('confirmed host with explicit zero nightly cost can be free',()=>{const p=plan({stops:s,vol:{0:true},volunteerDetails:{0:{confirmed:true,night:0}}});assert.equal(p.items[0].bed,0);assert.equal(p.items[0].daily,18)});
+
+test('zero placeholder transport fares remain unknown on a normal consecutive leg',()=>{const p=plan({stops:s.map((row,i)=>i===1?[...row.slice(0,9),0,0,...row.slice(11)]:row)});assert.equal(p.items[1].leg,null);assert.equal(p.items[1].quality,'connection-unknown')});
+test('explicit positive transport range remains an estimate, not a free transfer',()=>{const p=plan({stops:s});assert.equal(p.items[1].leg,30);assert.equal(p.items[1].legMin,20);assert.equal(p.items[1].legMax,40)});
