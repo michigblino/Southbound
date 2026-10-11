@@ -105,3 +105,15 @@
 - Current calculation use: budget definition controls *volunteer scenario gap only*, pace changes heuristic minimum stay, must-visit names protect stops from auto-shortening, volunteer hours filter known hours, desired/max weeks affect scenario potential, buffer affects earliest search start, platform changes external search site.
 - **Not fully wired**: latest return date, travel days/week, full-budget treatment of exclusions, actual availability. Workaway/Worldpackers platform selection is external search only, not an API integration. Budget overview still displays reserve-inclusive totals; do not interpret budget-definition toggle as having rewritten the whole budget model.
 - Test real Android and inspect save/persist/reload. The patch was JS-syntax-validated but no end-to-end UI automation run.
+
+## 2026-10-11 global product direction and implementation branch
+
+- **Worldwide product**: Southbound must support arbitrary world regions, currencies and custom routes; South America is the initial test trip, not a fixed scope.
+- **Volunteer onboarding**: collect user-defined hard constraints (e.g. max 30 hours/week), stay length, activities, food, radius and date flexibility before recommending regions. The 30 h/week limit is a user-specific default, **not** a universal cap.
+- **MVP**: recommend route-compatible volunteering regions and provide honest external Worldpackers/Workaway search links. User confirms actual host acceptance and conditions manually. **No scraping, fabricated host counts or claims of live availability.** Later explore licensed APIs/partnerships.
+- **Feature branch**: `feat/global-trip-foundations`; leave `main` deployed and `southbound-v3` browser state untouched.
+- Added `budget-engine.js`, `volunteer-matching.js`, tests, `ARCHITECTURE.md`, `TEST_PLAN.md`, `CHANGELOG.md`. These are independent foundation modules **not yet wired to the UI**.
+- New budget engine distinguishes zero from unknown, paid from future and target from spending cap. Its `complete` flag only validates supplied line items: before claiming true all-in coverage, require all mandatory expense categories.
+- New volunteer engine returns `eligible` / `needs-verification` / `excluded`; unknown host hours and unconfirmed availability cannot be called eligible.
+- **Execution status**: files were committed through GitHub API. Full `node --test tests/*.test.cjs` and browser tests have **not** been run. No production UI change.
+- **Next task**: run tests in a checkout, inventory the existing budget display paths, wire the engine only after reconciliation, then host-date itinerary constraints and onboarding. Read this handoff, then only relevant files; record test evidence after each change.
