@@ -117,3 +117,8 @@
 - New volunteer engine returns `eligible` / `needs-verification` / `excluded`; unknown host hours and unconfirmed availability cannot be called eligible.
 - **Execution status**: files were committed through GitHub API. Full `node --test tests/*.test.cjs` and browser tests have **not** been run. No production UI change.
 - **Next task**: run tests in a checkout, inventory the existing budget display paths, wire the engine only after reconciliation, then host-date itinerary constraints and onboarding. Read this handoff, then only relevant files; record test evidence after each change.
+
+## 2026-10-11 continuation — explicit calendar foundation
+- Added `trip-calendar.js` with transfer-day reservation, waiting days, confirmed-host start/end constraints and explicit conflict results. Added `tests/trip-calendar.test.cjs` for transfer, wait, arrival conflict, host end, two-host propagation and invalid date.
+- **Not yet wired to visible UI**; waiting-night accommodation/food costs and cross-time-zone overnight transfers still need integration. Existing itinerary dates remain unchanged.
+- No end-to-end/browser verification; full test suite pending. Next: wire calendar and all-in budget into existing UI carefully, without duplicate charges or resetting `southbound-v3`.
