@@ -1,7 +1,7 @@
 /* Shared, conservative route budget snapshot for UI and volunteer scenarios. */
 (function(g){'use strict';
 const amount=v=>v===null||v===undefined||v===''?null:Number.isFinite(Number(v))&&Number(v)>=0?Number(v):null;
-function snapshot({items=[],paid=0,reserve=0,goal=0,cap=null,fixedCosts={},completed={},paidByStop={},waitingCost=0,waitingComplete=true,unrecorded=0}={}){
+function snapshot({items=[],paid=0,reserve=0,goal=0,cap=null,fixedCosts={},completed={},paidByStop={},waitingCost=0,waitingComplete=true,unrecorded=0,timingFeasible=true}={}){
  const engine=g.SouthboundBudgetEngine;if(!engine)throw Error('Budget engine unavailable');
  const lines=[],unknownTransfers=[];
  for(const item of items){
@@ -21,6 +21,7 @@ function snapshot({items=[],paid=0,reserve=0,goal=0,cap=null,fixedCosts={},compl
  if(categories.some(([key])=>amount(fixedCosts[key])===null))incompleteReasons.push('missing-fixed-costs');
  if(!waitingComplete)incompleteReasons.push('unknown-waiting-costs');
  if(unrecorded>0)incompleteReasons.push('unrecorded-completed-stops');
+ if(!timingFeasible)incompleteReasons.push('unverified-route-dates');
  if(budget.missingCount>0)incompleteReasons.push('missing-amounts');
  if(budget.errors.length)incompleteReasons.push('invalid-input');
  return {...budget,unknownTransfers,incompleteReasons,complete:budget.complete&&incompleteReasons.length===0,goalStatus:budget.complete&&incompleteReasons.length===0?budget.goalStatus:'unverified',allInVerified:false};
