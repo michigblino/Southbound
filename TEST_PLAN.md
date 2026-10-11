@@ -28,3 +28,5 @@
 - Verify shared beta subtotal vs legacy risk band labeling and `goalStatus=unverified` for missing historical expenses and waiting costs. Tests added, execution not confirmed.
 
 - Three new `route-timing` regression cases: priced waiting nights, unknown normal bed, host date collision. Check candidate sparroute warning and current overview manually. CI execution not yet confirmed.
+
+- Test missing transfer-day duration is flagged (never silently verified as zero) and explicit 2-day transfer shifts downstream arrival. Inspect GitHub Actions push run separately; PR-only run lookup returned none.
