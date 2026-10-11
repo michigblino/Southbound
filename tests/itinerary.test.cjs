@@ -3,3 +3,7 @@ test('recalculates dates when stop removed',()=>{const p=plan({stops:s,start:'20
 test('changing days shifts subsequent calendar dates',()=>{const p=plan({stops:s,days:{0:7}});assert.equal(p.items[1].start,'2027-01-04')});
 test('volunteering removes only lodging, not food or activities',()=>{const p=plan({stops:s,vol:{0:true}});assert.equal(p.items[0].daily,18)});
 test('inserting stop in custom order flags unpriced onward connection',()=>{const p=plan({stops:s,order:[0,2,1]});assert.equal(p.unknown,2)});
+
+test('unconfirmed volunteering location with zero legacy bed price still costs lodging',()=>{const v=[['Salvador','Brasilien',-12.97,-38.51,21,0,12,6,4,0,0]];const p=plan({stops:v,vol:{0:false}});assert.ok(p.items[0].bed>0);assert.ok(p.items[0].stay>21*(12+6+4))});
+test('only confirmed host reduces lodging and keeps meals and activities',()=>{const v=[['Salvador','Brasilien',-12.97,-38.51,21,0,12,6,4,0,0]];const p=plan({stops:v,vol:{0:true},volunteerDetails:{0:{confirmed:true,night:0}}});assert.equal(p.items[0].bed,0);assert.equal(p.items[0].daily,22)});
+test('return-home stop has zero stay but incoming transport remains',()=>{const v=[...s,['Home','Germany',1,2,30,50,20,10,4,0,0,'flight','','','return']];const p=plan({stops:v});assert.equal(p.items.at(-1).days,0);assert.equal(p.items.at(-1).stay,0);assert.ok(p.items.at(-1).leg>0)});
