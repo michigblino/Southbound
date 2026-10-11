@@ -177,3 +177,8 @@ Decision: DOCUMENT ONLY, DO NOT IMPLEMENT YET.
 - `.github/workflows/quality.yml` now syntax-checks new route-budget/route-timing/integration tests and runs a dedicated `scripts/check-inline-scripts.cjs` using `vm.Script` rather than fragile shell-escaped inline regex. All `tests/*.test.cjs` are still executed via Node test runner.
 - `tests/integration-assets.test.cjs` checks that budget/timing modules are present in HTML and PWA cache, cache version is present, and original localStorage key is preserved.
 - **Status:** commits are in feature branch only. GitHub Actions push-run success has NOT been independently confirmed, and Android browser/E2E remain untested. Next action: inspect Actions run, fix any failures, then verify mobile UI, persistence and volunteer budgets.
+
+## 2026-10-12 independent runtime smoke checks
+- Retrieved current `budget-engine.js`, `route-budget.js`, `trip-calendar.js`, `wait-costs.js`, `route-timing.js` and `volunteer-matching.js` directly from the feature branch and evaluated their browser-global modules in an isolated V8 runtime.
+- **9/9 smoke assertions passed**: missing transfer, blank fixed cost, paid offset, completed stop, unrecorded history, unknown waiting cost, priced host waiting, waiting-day count, and unknown transfer duration. Additional baseline checks passed for €540 total, explicit two-day transfer shifting arrival to 2027-01-05, and no missing duration with explicit value.
+- This does **not** execute Node's `node:test` suite or prove GitHub Actions green; it also does not test HTML rendering, offline service worker, persistence in a real browser, or Android. Do not label these verified until tested in their environments.
