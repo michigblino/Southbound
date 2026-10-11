@@ -24,3 +24,5 @@
 - Pending browser QA: save/refresh fixed costs; blank vs zero; ensure already-paid amounts are not double entered; verify budget beta diagnostic and host waits on mobile.
 
 - Added `tests/route-budget.test.cjs` for all-in reconciliation, unknown transfers, blank vs zero fixed costs, per-stop paid subtraction, completed stages and missing historical expenses. CI results still need verification.
+
+- Verify shared beta subtotal vs legacy risk band labeling and `goalStatus=unverified` for missing historical expenses and waiting costs. Tests added, execution not confirmed.
