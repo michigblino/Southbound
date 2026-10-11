@@ -96,3 +96,12 @@
 - User confirmed €8,000 **all-in**, balanced travel with recovery buffers, and **30 h/week** volunteer limit.
 - App persists these settings; known over-limit stage hours are excluded from volunteer candidates, unknown hours explicitly require checking.
 - This is **not** a complete offer-level filter or full all-in budget engine. Prioritize implementing those before declaring any plan budget-compliant.
+
+## 2026-10-11 follow-up: user-configurable profile
+
+- Overview now starts with collapsible **Reiseprofil & Volunteering-Einstellungen**. Persisted under `m.travelPreferences` in existing `southbound-v3` localStorage, with budget goal/cap/reserve still in `m.goal/m.cap/m.reserve`.
+- Fields: budget includes reserve/fixed costs, pace, maximum weekly volunteering hours, buffer days, desired/max volunteering weeks, weekly travel-day comfort, optional latest return, must-visit places, preferred volunteer platforms.
+- The previous hard-coded reset of `m.travelPreferences` on each page load was removed. Profile changes recalculate suggestions on save.
+- Current calculation use: budget definition controls *volunteer scenario gap only*, pace changes heuristic minimum stay, must-visit names protect stops from auto-shortening, volunteer hours filter known hours, desired/max weeks affect scenario potential, buffer affects earliest search start, platform changes external search site.
+- **Not fully wired**: latest return date, travel days/week, full-budget treatment of exclusions, actual availability. Workaway/Worldpackers platform selection is external search only, not an API integration. Budget overview still displays reserve-inclusive totals; do not interpret budget-definition toggle as having rewritten the whole budget model.
+- Test real Android and inspect save/persist/reload. The patch was JS-syntax-validated but no end-to-end UI automation run.
