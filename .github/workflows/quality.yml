@@ -1,0 +1,28 @@
+name: Southbound checks
+on:
+  push:
+    branches: [feat/global-trip-foundations]
+  pull_request:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check JavaScript syntax
+        run: |
+          node --check budget-engine.js
+          node --check trip-calendar.js
+          node --check wait-costs.js
+          node --check volunteer-matching.js
+          node --check itinerary.js
+          node --check tests/budget-engine.test.cjs
+          node --check tests/trip-calendar.test.cjs
+          node --check tests/wait-costs.test.cjs
+          node --check tests/volunteer-matching.test.cjs
+          node -e "const fs=require('fs'),s=fs.readFileSync('index.html','utf8');const matches=[...s.matchAll(/<script\\b[^>]*>([\\s\\S]*?)<\\/script>/gi)];for(const [i,m] of matches.entries()){if(m[1].trim())new Function(m[1]);}console.log('inline scripts checked:',matches.length)"
+      - name: Run all node tests
+        run: node --test tests/*.test.cjs
