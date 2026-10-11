@@ -26,3 +26,5 @@
 - Added `tests/route-budget.test.cjs` for all-in reconciliation, unknown transfers, blank vs zero fixed costs, per-stop paid subtraction, completed stages and missing historical expenses. CI results still need verification.
 
 - Verify shared beta subtotal vs legacy risk band labeling and `goalStatus=unverified` for missing historical expenses and waiting costs. Tests added, execution not confirmed.
+
+- Three new `route-timing` regression cases: priced waiting nights, unknown normal bed, host date collision. Check candidate sparroute warning and current overview manually. CI execution not yet confirmed.
