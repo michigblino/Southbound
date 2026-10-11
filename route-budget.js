@@ -21,8 +21,9 @@ function snapshot({items=[],paid=0,reserve=0,goal=0,cap=null,fixedCosts={},compl
  if(categories.some(([key])=>amount(fixedCosts[key])===null))incompleteReasons.push('missing-fixed-costs');
  if(!waitingComplete)incompleteReasons.push('unknown-waiting-costs');
  if(unrecorded>0)incompleteReasons.push('unrecorded-completed-stops');
+ if(budget.missingCount>0)incompleteReasons.push('missing-amounts');
  if(budget.errors.length)incompleteReasons.push('invalid-input');
- return {...budget,unknownTransfers,incompleteReasons,allInVerified:false};
+ return {...budget,unknownTransfers,incompleteReasons,complete:budget.complete&&incompleteReasons.length===0,goalStatus:budget.complete&&incompleteReasons.length===0?budget.goalStatus:'unverified',allInVerified:false};
 }
 g.SouthboundRouteBudget={snapshot};
 })(typeof window!=='undefined'?window:globalThis);
