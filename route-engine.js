@@ -2,8 +2,8 @@
 (function(g){
 'use strict';
 const MS=60000;
-const date=v=>{const n=Date.parse(v);return Number.isFinite(n)?n:null};
-const money=v=>Number.isFinite(Number(v))&&Number(v)>=0?Number(v):null;
+const date=v=>{if(typeof v!=='string'||!/T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})$/.test(v))return null;const n=Date.parse(v);return Number.isFinite(n)?n:null};
+const money=v=>v!==''&&v!==null&&v!==undefined&&Number.isFinite(Number(v))&&Number(v)>=0?Number(v):null;
 function validateOffer(o,now=Date.now()){
  if(!o||!Number.isInteger(o.from)||!Number.isInteger(o.to)||o.to<=o.from)return {ok:false,why:'Ungültige Etappe'};
  if(!['bus','flight','train','ferry','shuttle'].includes(o.mode))return {ok:false,why:'Verkehrsmittel fehlt'};
@@ -13,8 +13,11 @@ function validateOffer(o,now=Date.now()){
  if(depart===null||arrive===null||arrive<=depart)return {ok:false,why:'Ungültige Fahrzeiten'};
  if(!o.checkedAt||date(o.checkedAt)===null)return {ok:false,why:'Prüfdatum fehlt'};
  if(date(o.checkedAt)>now+MS*10)return {ok:false,why:'Prüfdatum liegt in der Zukunft'};
+ if(now-date(o.checkedAt)>7*86400000)return {ok:false,why:'Preisprüfung älter als sieben Tage'};
+ if(depart<now)return {ok:false,why:'Verbindung liegt in der Vergangenheit'};
  if(o.safety!=='reviewed')return {ok:false,why:'Sicherheitsprüfung offen'};
  if(o.bookable!==true)return {ok:false,why:'Buchbarkeit nicht bestätigt'};
+ if(o.verifiedBy!=='traveler')return {ok:false,why:'Angebot nicht vom Reisenden geprüft'};
  return {ok:true,depart,arrive,price:Number(o.price)+Number(o.fees||0)};
 }
 function optimize({stops,offers,departure,goal,baseline,reserve=0,minTransferMinutes=120,now=Date.now()}){
@@ -38,14 +41,13 @@ function optimize({stops,offers,departure,goal,baseline,reserve=0,minTransferMin
    if(e.departMs<minDepart)continue;
    const extraNights=Math.max(0,Math.floor((e.departMs-minDepart)/86400000));
    const waiting=extraNights*(Number(prev.dailyCost)||0);
-   const overnight=e.arriveMs-e.departMs>=6*3600000&&new Date(e.departMs).getHours()>=18;
+   const overnight=e.arriveMs-e.departMs>=6*3600000&&/(?:T(?:1[89]|2[0-3]):)/.test(e.depart);
    const avoidBed=overnight&&!prev.volunteering?Math.max(0,Number(prev.lodging)||0):0;
    const legCost=e.price+waiting-avoidBed;
    next.push({cost:s.cost+legCost,at:e.arriveMs,legs:s.legs.concat([{from:prev.name,to:route[i].name,operator:e.operator,mode:e.mode,depart:e.depart,arrive:e.arrive,price:e.price,extraNights,waiting,avoidBed,net:legCost,source:e.source}]),unverified:0});
   }
   // Keep cheapest states per arrival-day bucket; cap search width.
-  const best=new Map();for(const s of next){const k=Math.floor(s.at/86400000);if(!best.has(k)||s.cost<best.get(k).cost)best.set(k,s)}
-  states=[...best.values()].sort((a,b)=>a.cost-b.cost).slice(0,100);
+  states=next.sort((a,b)=>a.cost-b.cost||a.at-b.at).slice(0,500);
   if(!states.length)break;
  }
  const fixed=route.reduce((n,s)=>n+Math.max(0,Number(s.days)||0)*Math.max(0,Number(s.dailyCost)||0),0)+Number(reserve||0);
