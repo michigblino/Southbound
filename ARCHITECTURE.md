@@ -32,3 +32,6 @@ World-wide, user-configurable travel planning. South America is one example trip
 
 ## Beta integration: fixed costs and waiting nights
 The feature-branch overview contains `sbBudgetIntegrityPanel` and `bindSbFixedCosts`. Four *remaining* cost fields are persisted in `m.fixedCosts` under the existing localStorage key; empty is unknown, 0 is a user-asserted zero. `wait-costs.js` multiplies calendar waiting days by normal (non-host) lodging, food and other daily costs, flagging missing inputs. These amounts currently appear only in the diagnostic, **not** the authoritative trip total or volunteer optimization.
+
+## Shared route budget snapshot
+`route-budget.js` is the common adapter from itinerary `items` and browser state into `SouthboundBudgetEngine.calculate`. It is called by the beta overview and volunteer gap calculation. `snapshot` returns unknown-transfer IDs and incomplete reasons; `allInVerified` deliberately remains false pending full real-world validation. `waitingCost` is supplied by `wait-costs.js` for the current itinerary; volunteer scenarios currently flag waiting as unknown. Legacy risk-band headline is not migrated yet.
