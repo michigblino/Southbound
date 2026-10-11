@@ -26,3 +26,6 @@ World-wide, user-configurable travel planning. South America is one example trip
 
 ## Tests
 `node --test tests/*.test.cjs`. This branch was authored through GitHub API; full Node test execution and browser E2E still need to be performed in a checked-out repository.
+
+## Explicit calendar foundation
+`trip-calendar.js` provides pure date-only scheduling. Each stage has `days`, optional `transferDays` and optional `confirmedHost:{from,to}` (end exclusive). The module reports arrival, waiting days, actual stage dates and conflicts. It does **not** price waiting nights or convert between time zones; callers must price and validate these before presenting a final budget.
