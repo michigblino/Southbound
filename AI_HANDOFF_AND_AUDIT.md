@@ -151,3 +151,8 @@
 - Beta budget panel now displays the shared `SouthboundRouteBudget.snapshot` total as a prominent provisional all-in subtotal. The old dynamic-risk headline is relabeled **separate legacy risk corridor**, not the authoritative all-in total.
 - `route-budget.js` now marks `complete=false` and `goalStatus=unverified` when historical completed-stop expenses are unrecorded, waiting costs are unknown, or any required amounts are missing. Two additional regression tests added.
 - **Outstanding:** actual GitHub CI status and browser/E2E are not verified. A provisional subtotal is not a full all-in forecast. Hypothetical volunteering route still lacks waiting-day repricing and transfer-day schedule integration. Production main unchanged.
+
+## 2026-10-11 shared route timing
+- Added `route-timing.js` and three Node tests. Both current budget panel and hypothetical volunteer sparroute now call `SouthboundRouteTiming.evaluate` to calculate calendar conflicts and waiting-night cost estimates from the same inputs. Previously the scenario forced waiting cost to unknown.
+- Candidate route UI now warns on confirmed host date collisions. New module precached in service worker v54 and included in CI syntax checks.
+- **Limitations:** transfer durations still zero, waiting accommodation uses existing normal nightly quote or original stop fallback (not a verified booking), and no real host API. Main untouched; CI/browser results unverified. Do not implement social route-sharing or RealGuessr integration without explicit later request.
