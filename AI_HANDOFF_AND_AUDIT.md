@@ -196,3 +196,8 @@ Decision: DOCUMENT ONLY, DO NOT IMPLEMENT YET.
 ## 2026-10-12 volunteer economics + QA
 - Added `volunteer-economics.js`: theoretical gross lodging opportunity capped to existing planned nights, not proposed host duration. Added four Node regression tests, updated UI labels to distinguish gross opportunity from **unverified net savings**, and bumped offline cache v55. A longer volunteer placement can require extra meals, accommodation, fees, transport, and waiting nights; never claim the gross upper bound closes an all-in budget gap.
 - Isolated V8 smoke verification: 6/6 economics and asset checks passed; both inline scripts parsed successfully. GitHub Actions status and Android real-device testing still unverified. No source-backed live ticket quotes were added; `transport-estimate.js` remains low-confidence heuristic.
+
+## 2026-10-12 browser automation added
+- Added `package.json`, `playwright.config.cjs`, `browser-tests/smoke.spec.cjs`, and a separate `browser` job in `.github/workflows/quality.yml` on feature branch pushes/PRs/manual workflow dispatch.
+- Chromium smoke scenarios: page title + JS runtime modules + page errors, localStorage survives reload, and 390x844 mobile viewport horizontal overflow check. Uses local Python HTTP server; no publishing to `main`.
+- GitHub-hosted Chromium is **not** a real Android device; 3D globe gesture and GPU rendering remain manual Android acceptance items. Browser CI status is not confirmed until actual GitHub Actions run reports success. Browser tests may expose genuine existing UI issues; fix based on logs rather than weakening assertions.
