@@ -42,7 +42,7 @@ function optimize({stops,offers,departure,goal,baseline,reserve=0,minTransferMin
    const extraNights=Math.max(0,Math.floor((e.departMs-minDepart)/86400000));
    const waiting=extraNights*(Number(prev.dailyCost)||0);
    const overnight=e.arriveMs-e.departMs>=6*3600000&&/(?:T(?:1[89]|2[0-3]):)/.test(e.depart);
-   const avoidBed=overnight&&!prev.volunteering?Math.max(0,Number(prev.lodging)||0):0;
+   const avoidBed=0; // A night bus saves lodging only if actual stay dates/nights are reduced; never subtract automatically.
    const legCost=e.price+waiting-avoidBed;
    next.push({cost:s.cost+legCost,at:e.arriveMs,legs:s.legs.concat([{from:prev.name,to:route[i].name,operator:e.operator,mode:e.mode,depart:e.depart,arrive:e.arrive,price:e.price,extraNights,waiting,avoidBed,net:legCost,source:e.source}]),unverified:0});
   }
@@ -52,7 +52,7 @@ function optimize({stops,offers,departure,goal,baseline,reserve=0,minTransferMin
  }
  const fixed=route.reduce((n,s)=>n+Math.max(0,Number(s.days)||0)*Math.max(0,Number(s.dailyCost)||0),0)+Number(reserve||0);
  const variants=states.sort((a,b)=>a.cost-b.cost).slice(0,3).map(s=>({...s,total:fixed+s.cost,saving:Number(baseline)-(fixed+s.cost),gap:Math.max(0,fixed+s.cost-Number(goal)),complete:missing.length===0}));
- return {status:missing.length?'incomplete':variants.length?'ok':'no-feasible-connections',variants,missing,assumptions:['Nur bestätigte Angebote; keine automatische Live-Abfrage','Anschlusszeiten und zusätzliche Warteübernachtungen berücksichtigt','Ankunfts- und Abfahrtszeiten müssen Zeitzonen-Offsets enthalten','Sicherheit nur manuell geprüft, nicht garantiert']};
+ return {status:missing.length?'incomplete':variants.length?'ok':'no-feasible-connections',variants,missing,assumptions:['Nur bestätigte Angebote; keine automatische Live-Abfrage','Anschlusszeiten und zusätzliche Warteübernachtungen grob berücksichtigt; Nachtbus-Unterkunftsgutschrift erst nach konkreter Datumsprüfung','Ankunfts- und Abfahrtszeiten müssen Zeitzonen-Offsets enthalten','Sicherheit nur manuell geprüft, nicht garantiert']};
 }
 g.SouthboundRouteEngine={validateOffer,optimize};
 })(typeof window!=='undefined'?window:globalThis);
