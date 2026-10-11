@@ -14,12 +14,12 @@ function find({stops,order=[],excluded={},transport,limit=4,maxExtra=220}){
  for(const c of candidates){if(existing.has(c.name.toLocaleLowerCase('de')))continue;
  const s=[c.name,c.country,c.lat,c.lon,c.days,c.bed,c.food,c.activity,c.other,0,0,'Ungeprüft','',c.name];
  let best=null;
- for(let k=0;k<ids.length-1;k++){
-  const a=stops[ids[k]],b=stops[ids[k+1]];
-  if(!a||!b||!(['Argentinien','Uruguay'].includes(a[1])||['Argentinien','Uruguay'].includes(b[1])))continue;
-  const before=leg(a,b),first=leg(a,s),second=leg(s,b),delta=first.mid+second.mid-before.mid,stay=c.days*(c.bed+c.food+c.activity+c.other),extra=Math.round(delta+stay);
-  if(!Number.isFinite(extra)||extra>maxExtra||extra<0)continue;
-  const candidate={name:c.name,country:c.country,stop:s,after:ids[k],before:ids[k+1],extra,transportExtra:Math.round(delta),stay:Math.round(stay),days:c.days,why:c.why,tags:c.tags,confidence:'niedrig · modellierte Verbindungen, Unterkunft und Aktivitäten',warning:'Fährverbindungen und Busanschlüsse sowie tatsächliche Preise vor Buchung prüfen.'};
+ for(let k=0;k<ids.length;k++){
+  const a=stops[ids[k]],b=ids[k+1]===undefined?null:stops[ids[k+1]];
+  if(!a||!(['Argentinien','Uruguay'].includes(a[1])||(b&&['Argentinien','Uruguay'].includes(b[1]))))continue;
+  const before=b?leg(a,b).mid:0,first=leg(a,s),second=b?leg(s,b).mid:0,delta=first.mid+second-before,stay=c.days*(c.bed+c.food+c.activity+c.other),extra=Math.round(delta+stay);
+  if(!Number.isFinite(extra)||extra>maxExtra)continue;
+  const candidate={name:c.name,country:c.country,stop:s,after:ids[k],before:ids[k+1]??null,extra,transportExtra:Math.round(delta),stay:Math.round(stay),days:c.days,why:c.why,tags:c.tags,confidence:'niedrig · modellierte Verbindungen, Unterkunft und Aktivitäten',warning:'Fährverbindungen und Busanschlüsse sowie tatsächliche Preise vor Buchung prüfen.'};
   if(!best||candidate.extra<best.extra)best=candidate;
  }
  if(best)results.push(best);
