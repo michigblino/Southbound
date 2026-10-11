@@ -182,3 +182,8 @@ Decision: DOCUMENT ONLY, DO NOT IMPLEMENT YET.
 - Retrieved current `budget-engine.js`, `route-budget.js`, `trip-calendar.js`, `wait-costs.js`, `route-timing.js` and `volunteer-matching.js` directly from the feature branch and evaluated their browser-global modules in an isolated V8 runtime.
 - **9/9 smoke assertions passed**: missing transfer, blank fixed cost, paid offset, completed stop, unrecorded history, unknown waiting cost, priced host waiting, waiting-day count, and unknown transfer duration. Additional baseline checks passed for €540 total, explicit two-day transfer shifting arrival to 2027-01-05, and no missing duration with explicit value.
 - This does **not** execute Node's `node:test` suite or prove GitHub Actions green; it also does not test HTML rendering, offline service worker, persistence in a real browser, or Android. Do not label these verified until tested in their environments.
+
+## 2026-10-12 timing-budget integrity and syntax smoke check
+- `route-budget.js` accepts `timingFeasible`; a false value adds `unverified-route-dates` and prevents `complete=true` / verified goal status. Both overview and hypothetical volunteering pass the result of `SouthboundRouteTiming.evaluate().feasible`. Regression test added.
+- Current feature-branch HTML was fetched and its two inline JS scripts passed isolated V8 parse checks. Five isolated budget assertions also passed (7/7 checks in this session). This is NOT a full Node CI or browser E2E run.
+- Full GitHub Actions status and Android QA still require verification. Keep main unchanged until confirmed.
