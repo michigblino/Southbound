@@ -29,5 +29,9 @@ const data={
 'Torres del Paine':[['W-Trek','Mehrtägige Wanderung durch den Nationalpark','Torres del Paine National Park'],['Mirador Base Las Torres','Wanderung zu den Granittürmen','Torres del Paine National Park'],['Grey-Gletscher','Gletscher und Eislandschaft','Grey Glacier']]
 };
 function experiences(name){return data[name]||[]}
-g.SouthboundExperiences={experiences};
+const cache=new Map();
+async function discover(stop){const name=String(stop?.[0]||'').trim(),lat=Number(stop?.[2]),lon=Number(stop?.[3]);const curated=experiences(name);if(curated.length)return curated.map(e=>({title:e[0],description:e[1],wikiTitle:e[2],source:'kuratierte Auswahl'}));if(!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180)return [];
+const key=lat.toFixed(3)+','+lon.toFixed(3);if(cache.has(key))return cache.get(key);
+const promise=(async()=>{const endpoint='https://de.wikipedia.org/w/api.php?',params=new URLSearchParams({action:'query',generator:'geosearch',ggscoord:lat+'|'+lon,ggsradius:'10000',ggslimit:'25',prop:'pageimages|description|info',piprop:'thumbnail',pithumbsize:'480',inprop:'url',format:'json',origin:'*'});const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),9000);try{const response=await fetch(endpoint+params,{signal:controller.signal});if(!response.ok)throw Error('Wikipedia nicht erreichbar');const json=await response.json();const pages=Object.values(json.query?.pages||{}).filter(p=>p.title&&p.index>=0||p.title);const bad=/^(liste |kategorie:|datei:|vorlage:|benutzer:|diskussion:)/i;return pages.filter(p=>!bad.test(p.title)).sort((a,b)=>(a.index??99)-(b.index??99)).slice(0,6).map(p=>({title:p.title,description:p.description||'Sehenswürdigkeit oder Ort in der Umgebung – Relevanz selbst prüfen',wikiTitle:p.title,image:p.thumbnail?.source||'',url:p.fullurl||'https://de.wikipedia.org/wiki/'+encodeURIComponent(p.title.replaceAll(' ','_')),source:'Wikipedia-Umgebungssuche · nicht redaktionell geprüft'}))}finally{clearTimeout(timer)}})().catch(()=>[]);cache.set(key,promise);return promise}
+g.SouthboundExperiences={experiences,discover};
 })(typeof window!=='undefined'?window:globalThis);
