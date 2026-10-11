@@ -225,3 +225,9 @@ Decision: DOCUMENT ONLY, DO NOT IMPLEMENT YET.
 - Added integration regression guard in `tests/integration-assets.test.cjs`. CI results for this commit must still be checked.
 - The overview deliberately shows **two different numbers**: a unified provisional all-in subtotal (`sbBudgetIntegrityPanel`) and a separate heuristic price-risk corridor (`SouthboundDynamicRisk.total`). These are not interchangeable. The risk corridor uses placeholder fares for unknown transfers and does not automatically include fixed costs, so it must never be presented as the complete all-in forecast. A follow-up UI simplification should make the all-in subtotal the prominent primary figure and keep the risk corridor subordinate.
 - User reported GitHub Actions check #76 green for the preceding batch. This note does not imply later commits have passed.
+
+### 2026-10-12 — Single primary budget figure in overview
+
+- Promoted `sbBudgetIntegrityPanel`'s `SouthboundRouteBudget.snapshot().totalEstimate` to the labeled primary **provisional all-in subtotal** (`data-sb-all-in-total`). Show €8,000 goal, €12,000 cap, known missing amount count and verification reasons. Never interpret the subtotal as a final price when costs are missing.
+- Collapsed the separate `SouthboundDynamicRisk.total` projection into an optional `<details>` panel and removed its misleading goal-gap comparison. The risk simulation may substitute placeholder fares and omit fixed expenses; it must not compete with the primary all-in figure.
+- Added integration guard in `tests/integration-assets.test.cjs`. CI after these commits is pending; no claim of passing.
