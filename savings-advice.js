@@ -1,9 +1,9 @@
 (function(g){'use strict';
 const nature=/Chapada|Lençóis|Salento|Minca|Cusco|Uyuni|Atacama|Bariloche|Chaltén|Torres|Paraty|Huacachina/i;
 const priority=/Cusco|Uyuni|Chaltén|Torres|Chapada|Lençóis/i;
-function recommend({stops,order,excluded={},days={},vol={},quotes={},current=0,visited={},transport}){
+function recommend({stops,order,excluded={},days={},vol={},volunteerDetails={},quotes={},current=0,visited={},transport}){
 const ids=(order&&order.length?order:stops.map((_,i)=>i)).filter(i=>stops[i]&&!excluded[i]);
-const bed=i=>vol[i]?0:Number(quotes[i]?.night)>0?Number(quotes[i].night):Number(stops[i][5])>0?Number(stops[i][5]):Math.max(9,Math.round(Number(stops[i][6])*1.2));
+const bed=i=>vol[i]?Math.max(0,Number(volunteerDetails[i]?.night)||0):Number(quotes[i]?.night)>0?Number(quotes[i].night):Number(stops[i][5])>0?Number(stops[i][5]):Math.max(9,Math.round(Number(stops[i][6])*1.2));
 const daily=i=>bed(i)+stops[i][6]+stops[i][7]+stops[i][8];
 const stay=i=>Math.max(1,Number(days[i]??stops[i][4])||1);
 const candidates=[];
