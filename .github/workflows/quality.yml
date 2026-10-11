@@ -24,6 +24,8 @@ jobs:
           node --check tests/budget-engine.test.cjs
           node --check tests/route-budget.test.cjs
           node --check tests/route-timing.test.cjs
+          node --check tests/integration-assets.test.cjs
+          node --check scripts/check-inline-scripts.cjs
           node --check tests/trip-calendar.test.cjs
           node --check tests/wait-costs.test.cjs
           node --check tests/volunteer-matching.test.cjs
