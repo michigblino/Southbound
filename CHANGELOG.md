@@ -25,3 +25,5 @@
 - Added explicit unknown-transfer-duration tracking and date-verification warnings; two new route-timing regression tests. No fabricated transfer-day estimates.
 
 - Hardened GitHub Actions syntax checks, moved inline HTML JavaScript syntax validation into a dedicated script, and added integration tests for module loading, offline cache and saved data key.
+
+- Volunteer gross accommodation opportunity now capped by planned existing nights, not full hypothetical host duration; added economics module and four tests, updated explanatory labels, offline cache v55.
