@@ -1,0 +1,12 @@
+/* Deterministic, explainable itinerary recommendations. Estimated costs are not schedules. */
+(function(g){'use strict';
+const DAY=86400000;
+const iso=d=>new Date(d).toISOString().slice(0,10);
+function plan({stops,start='2026-12-28',fx=0,quotes={},vol={},excluded={},days={},order=[]}){
+const ids=order.length?order:stops.map((_,i)=>i),items=[];let cursor=Date.parse(start+'T12:00:00Z');if(!Number.isFinite(cursor))cursor=Date.parse('2026-12-28T12:00:00Z');
+for(const i of ids){const s=stops[i];if(!s||excluded[i])continue;const n=Math.max(1,Math.min(180,Number(days[i]??s[4])||1));const nature=/Chapada|Lençóis|Salento|Minca|Cusco|Uyuni|Atacama|Bariloche|Chaltén|Torres|Paraty|Huacachina/i.test(s[0]);const target=nature?5:3;const q=quotes[i],bed=vol[i]?0:Number(q?.night)>0?Number(q.night):s[5];const daily=bed+s[6]+s[7]+s[8];const prev=items.at(-1),changedConnection=prev&&prev.i!==i-1;const leg=prev?changedConnection?null:(s[9]+s[10])/2:0;const legMin=prev&&!changedConnection?s[9]:null,legMax=prev&&!changedConnection?s[10]:null;const volPotential=!vol[i]&&bed>=12&&n>=14;const recommendation=volPotential?'Volunteering prüfen: '+Math.round(n*bed)+' € Unterkunftspotenzial, nur bei bestätigtem Host.':n>target+2?'Auf '+target+' Tage kürzen: rechnerisch '+Math.round((n-target)*daily)+' € weniger, sofern Aktivitäten und Verbindungen passen.':nature?'Naturstopp behalten; '+n+' Tage als Ausgangspunkt.':'Kompakter Stadtaufenthalt; '+n+' Tage als Ausgangspunkt.';const nightCandidate=prev&&leg!==null&&legMax>=35&&bed>=12;items.push({i,name:s[0],country:s[1],start:iso(cursor),end:iso(cursor+n*DAY),days:n,daily,stay:n*daily,leg,legMin,legMax,transportNote:!prev?'Ankunft':changedConnection?'Neue Direktverbindung erforderlich: kein belastbarer Fahrpreis oder Fahrplan vorhanden.':nightCandidate?'Nachtbus gegen Tagesbus prüfen: mögliche Ersparnis maximal eine Hostel-Nacht ('+Math.round(bed)+' €), nur bei passender Abfahrt und sicherer Verbindung.':'Tagesverbindung bevorzugt, sofern sie verfügbar und nicht teurer ist; Fahrplan nicht bestätigt.',recommendation,quality:leg===null&&prev?'connection-unknown':'estimated',nature});cursor+=n*DAY}
+const known=items.reduce((v,x)=>v+x.stay+(x.leg||0),0),unknown=items.filter(x=>x.leg===null).length;
+return {items,known,unknown,start,finish:items.at(-1)?.end||start};
+}
+g.SouthboundItinerary={plan};
+})(typeof window!=='undefined'?window:globalThis);
