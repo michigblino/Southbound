@@ -187,3 +187,8 @@ Decision: DOCUMENT ONLY, DO NOT IMPLEMENT YET.
 - `route-budget.js` accepts `timingFeasible`; a false value adds `unverified-route-dates` and prevents `complete=true` / verified goal status. Both overview and hypothetical volunteering pass the result of `SouthboundRouteTiming.evaluate().feasible`. Regression test added.
 - Current feature-branch HTML was fetched and its two inline JS scripts passed isolated V8 parse checks. Five isolated budget assertions also passed (7/7 checks in this session). This is NOT a full Node CI or browser E2E run.
 - Full GitHub Actions status and Android QA still require verification. Keep main unchanged until confirmed.
+
+## 2026-10-12 full calculation-suite isolated execution
+- Retrieved the six core module sources and all six corresponding `tests/*.test.cjs` sources directly from the feature branch. Evaluated all test callbacks in a V8 harness providing equivalents of Node's `node:test` and `node:assert/strict` (`equal`, `ok`, `deepEqual`) and module loading for those six files.
+- **33/33 existing calculation tests passed, 0 failed.** Covers budget engine, route budget, route timing, trip calendar, waiting costs and volunteering matching.
+- Scope is **isolated test harness**, not the official Node test runner. Does not execute filesystem-dependent `integration-assets.test.cjs`, browser UI, service worker, or Android E2E. GitHub Actions status not independently verified. Do not claim CI green.
