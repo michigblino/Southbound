@@ -1,5 +1,5 @@
 const test=require('node:test');const assert=require('node:assert/strict');require('../route-engine.js');const {validateOffer,optimize}=globalThis.SouthboundRouteEngine;
-const offer=(from,to,depart,arrive,price)=>({from,to,mode:'bus',operator:'Example Bus',source:'https://example.com/booking',price,fees:0,depart,arrive,bookable:true,safety:'reviewed',checkedAt:'2026-10-10T12:00:00Z'});
+const offer=(from,to,depart,arrive,price)=>({from,to,mode:'bus',operator:'Example Bus',source:'https://example.com/booking',price,fees:0,depart,arrive,bookable:true,safety:'reviewed',verifiedBy:'traveler',checkedAt:'2026-10-10T12:00:00Z'});
 const now=Date.parse('2026-10-11T12:00:00Z');
 test('rejects missing verified source',()=>assert.equal(validateOffer({...offer(0,1,'2027-01-02T10:00:00Z','2027-01-02T15:00:00Z',20),source:''},now).ok,false));
 test('rejects unsafe unreviewed offers',()=>assert.equal(validateOffer({...offer(0,1,'2027-01-02T10:00:00Z','2027-01-02T15:00:00Z',20),safety:'unknown'},now).ok,false));
@@ -8,3 +8,8 @@ test('rejects arrival before departure',()=>assert.equal(validateOffer(offer(0,1
 test('finds cheapest feasible connection with two legs',()=>{const stops=[{id:0,name:'A',days:1,dailyCost:10},{id:1,name:'B',days:1,dailyCost:10},{id:2,name:'C',days:0,dailyCost:0}];const offers=[offer(0,1,'2027-01-02T12:00:00Z','2027-01-02T17:00:00Z',20),offer(0,1,'2027-01-02T13:00:00Z','2027-01-02T18:00:00Z',35),offer(1,2,'2027-01-03T20:00:00Z','2027-01-04T03:00:00Z',15)];const r=optimize({stops,offers,departure:'2027-01-01T12:00:00Z',goal:100,baseline:150,now});assert.equal(r.status,'ok');assert.equal(r.variants[0].legs.length,2);assert.equal(r.variants[0].legs[0].price,20)});
 test('missed connection cannot be chosen',()=>{const stops=[{id:0,name:'A',days:1,dailyCost:10},{id:1,name:'B',days:1,dailyCost:10},{id:2,name:'C',days:0,dailyCost:0}];const offers=[offer(0,1,'2027-01-02T12:00:00Z','2027-01-02T17:00:00Z',20),offer(1,2,'2027-01-02T18:00:00Z','2027-01-02T23:00:00Z',15)];const r=optimize({stops,offers,departure:'2027-01-01T12:00:00Z',goal:100,baseline:150,now});assert.equal(r.status,'no-feasible-connections')});
 test('reports missing route edges rather than inventing fares',()=>{const r=optimize({stops:[{id:0,name:'A',days:1},{id:1,name:'B',days:1}],offers:[],departure:'2027-01-01T12:00:00Z',goal:100,baseline:150,now});assert.equal(r.status,'incomplete');assert.equal(r.missing.length,1)});
+
+test('rejects stale price checks',()=>assert.equal(validateOffer({...offer(0,1,'2027-01-02T10:00:00Z','2027-01-02T15:00:00Z',20),checkedAt:'2026-09-01T12:00:00Z'},now).ok,false));
+test('rejects prices without timezone offsets',()=>assert.equal(validateOffer(offer(0,1,'2027-01-02T10:00','2027-01-02T15:00',20),now).ok,false));
+test('rejects blank price rather than treating it as free',()=>assert.equal(validateOffer(offer(0,1,'2027-01-02T10:00:00Z','2027-01-02T15:00:00Z',''),now).ok,false));
+test('rejects unverified provider claims',()=>assert.equal(validateOffer({...offer(0,1,'2027-01-02T10:00:00Z','2027-01-02T15:00:00Z',20),verifiedBy:'unknown'},now).ok,false));
