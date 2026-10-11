@@ -146,3 +146,8 @@
 - **Important limitation:** volunteer scenario passes waiting cost as unknown until its revised route calendar is reconciled. Thus the displayed gap is a **known-cost lower bound**, not a verified total. Legacy main headline budget still uses dynamic-risk calculation; do not claim complete unification yet.
 - Added six route-budget tests, offline precache update v53 and CI syntax check. Tests/CI outcomes not yet inspected; main remains unchanged.
 - Next: inspect actual CI status, replace legacy main headline after reconciling price bands and fixed categories; calculate waiting and transfer-day costs for hypothetical volunteer scenarios; test mobile and persistence.
+
+## 2026-10-11 follow-up: shared headline and completeness
+- Beta budget panel now displays the shared `SouthboundRouteBudget.snapshot` total as a prominent provisional all-in subtotal. The old dynamic-risk headline is relabeled **separate legacy risk corridor**, not the authoritative all-in total.
+- `route-budget.js` now marks `complete=false` and `goalStatus=unverified` when historical completed-stop expenses are unrecorded, waiting costs are unknown, or any required amounts are missing. Two additional regression tests added.
+- **Outstanding:** actual GitHub CI status and browser/E2E are not verified. A provisional subtotal is not a full all-in forecast. Hypothetical volunteering route still lacks waiting-day repricing and transfer-day schedule integration. Production main unchanged.
