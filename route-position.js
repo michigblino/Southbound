@@ -8,7 +8,7 @@ function analyze({stops,order=[],excluded={},visited={},current=0,transport,minS
  const original=cost(ids),result=[];const anchored=ids.filter(i=>vol[i]===true&&volunteerDetails[i]?.confirmed===true);const offsets=seq=>{let day=0;const map=new Map();for(const i of seq){map.set(i,day);day+=Math.max(1,Math.round(Number(days[i]??stops[i][4])||1))}return map};const originalOffsets=offsets(ids);
  const currentPos=ids.indexOf(current);const firstLocked=ids.findIndex((i,k)=>!visited[i]&&(currentPos<0||k>=currentPos));
  if(firstLocked<0)return [];
- const movableStart=Math.max(1,firstLocked);
+ const movableStart=Math.max(1,firstLocked,currentPos>=0?currentPos+1:1);
  for(let from=movableStart;from<ids.length;from++){
   const i=ids[from];if(visited[i])continue;
   for(let to=movableStart;to<ids.length;to++){
