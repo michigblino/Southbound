@@ -3,14 +3,20 @@
 const amount=v=>v===null||v===undefined||v===''?null:Number.isFinite(Number(v))&&Number(v)>=0?Number(v):null;
 function snapshot({items=[],paid=0,reserve=0,goal=0,cap=null,fixedCosts={},completed={},paidByStop={},waitingCost=0,waitingComplete=true,unrecorded=0,timingFeasible=true}={}){
  const engine=g.SouthboundBudgetEngine;if(!engine)throw Error('Budget engine unavailable');
- const lines=[],unknownTransfers=[];
+ const lines=[],unknownTransfers=[],unknownPrepayments=[];
  for(const item of items){
   const i=item.i,already=amount(paidByStop[i])||0;
   const isCompleted=!!completed[i],stay=amount(item.stay),leg=amount(item.leg);
   if(isCompleted){continue;}
-  const knownPart=(stay||0)+(leg||0);
-  lines.push({label:'Etappe '+i,amount:stay===null?null:Math.max(0,knownPart-already),status:'estimate'});
-  if(leg===null){unknownTransfers.push(i);lines.push({label:'Unbekannter Transfer '+i,amount:null,status:'unknown'});}
+  // Track the two independent liabilities separately: an unknown stay must not hide a priced transfer.
+  // Apply stop-level prepayments to lodging first, then to transport, without making a missing amount look known.
+  const stayRemainder=stay===null?null:Math.max(0,stay-already);
+  const remainingPrepayment=stay===null?0:Math.max(0,already-stay);
+  const transferRemainder=leg===null?null:Math.max(0,leg-remainingPrepayment);
+  lines.push({label:'Aufenthalt '+i,amount:stayRemainder,status:'estimate'});
+  lines.push({label:'Transfer '+i,amount:transferRemainder,status:leg===null?'unknown':'estimate'});
+  if(leg===null)unknownTransfers.push(i);
+  if(stay===null&&already>0)unknownPrepayments.push(i);
  }
  const categories=[['return','Rückreise'],['insurance','Versicherung'],['visas','Visa'],['equipment','Ausrüstung']];
  for(const [key,label] of categories)lines.push({label,amount:amount(fixedCosts[key]),status:'estimate'});
@@ -18,13 +24,14 @@ function snapshot({items=[],paid=0,reserve=0,goal=0,cap=null,fixedCosts={},compl
  const budget=engine.calculate({paid,reserve,goal,cap,items:[],fixedCosts:lines});
  const incompleteReasons=[];
  if(unknownTransfers.length)incompleteReasons.push('unknown-transfers');
+ if(unknownPrepayments.length)incompleteReasons.push('unallocated-prepayments');
  if(categories.some(([key])=>amount(fixedCosts[key])===null))incompleteReasons.push('missing-fixed-costs');
  if(!waitingComplete)incompleteReasons.push('unknown-waiting-costs');
  if(unrecorded>0)incompleteReasons.push('unrecorded-completed-stops');
  if(!timingFeasible)incompleteReasons.push('unverified-route-dates');
  if(budget.missingCount>0)incompleteReasons.push('missing-amounts');
  if(budget.errors.length)incompleteReasons.push('invalid-input');
- return {...budget,unknownTransfers,incompleteReasons,complete:budget.complete&&incompleteReasons.length===0,goalStatus:budget.complete&&incompleteReasons.length===0?budget.goalStatus:'unverified',allInVerified:false};
+ return {...budget,unknownTransfers,unknownPrepayments,incompleteReasons,complete:budget.complete&&incompleteReasons.length===0,goalStatus:budget.complete&&incompleteReasons.length===0?budget.goalStatus:'unverified',allInVerified:false};
 }
 g.SouthboundRouteBudget={snapshot};
 })(typeof window!=='undefined'?window:globalThis);
