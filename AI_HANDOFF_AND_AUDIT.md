@@ -12,6 +12,13 @@
 - PWA: bump `CACHE` version in `sw.js` after changes.
 - Tests: `node --test tests/*.test.cjs`. Run tests and mobile browser QA after every change. This audit did **not** execute full repo tests: GitHub clone was unavailable in the analysis environment; a small isolated itinerary runtime smoke test passed.
 
+## Confirmed traveler constraints (2026-10-11)
+
+- **Total target: €8,000 ALL-IN**: includes emergency reserve, return trip, insurance, visas, transport, lodging, food, activities, all remaining and already-paid trip expenses. The previously stated €12,000 is the upper spending cap, not the target.
+- **Pace: balanced**, budget-conscious with realistic rest/recovery and transfer buffers; do not blindly minimize stay days.
+- **Volunteering: maximum 30 hours/week.** Exclude known offers above 30 hours; unknown hours must be flagged for verification, not silently treated as compliant.
+- Persisted app-side in `m.travelPreferences` with `budgetIncludesAll:true`, `pace:'balanced'`, `maxVolunteerHours:30`. Currently the itinerary still needs a proper preference-driven pacing model and a unified all-in budget. These constraints are confirmed, not requests for more clarification.
+
 ## Product intent / acceptance criteria
 
 1. Route budget should **never count unconfirmed volunteer lodging as free**. Confirmed host nightly cost is used only if `m.vol[i] === true && m.volunteerDetails[i].confirmed === true`. The 2026-10-11 fix in `itinerary.js` and `savings-advice.js` corrects this for their calculations.
@@ -60,7 +67,7 @@
 
 ## Data needed from user (ask compactly)
 
-- Budget: is €8,000 target **including** €2,200 reserve, insurance, return flight, visas and pre-paid travel? Is €12,000 a hard cap? What has already been paid?
+- Budget semantics are settled: €8,000 all-in including reserve; €12,000 upper cap. Still request only the **actual amount already paid** and any unknown fixed costs when necessary.
 - Travel constraints: hard latest return date, must-visit places, minimum stay for highlights, comfortable number of travel days per week.
 - Volunteer preferences: acceptable work hours/week, minimum/maximum commitment, shared/private accommodation, food inclusion, languages, platforms and willingness to use an account/API/export.
 - Actual fare evidence: booked flight tickets and verified transport/hostel quotes, if available.
@@ -83,3 +90,9 @@
 - Added regression tests for unconfirmed host lodging, confirmed free lodging, and return-home stay.
 - Verified Worldpackers and Workaway public search/filter capabilities, but **not** live host counts, bookability, or ticket prices.
 - Remaining top blockers: true host data feed, full-budget gap reconciliation, confirmed host date alignment, real transport quote integration, mobile E2E.
+
+## 2026-10-11 preference update
+
+- User confirmed €8,000 **all-in**, balanced travel with recovery buffers, and **30 h/week** volunteer limit.
+- App persists these settings; known over-limit stage hours are excluded from volunteer candidates, unknown hours explicitly require checking.
+- This is **not** a complete offer-level filter or full all-in budget engine. Prioritize implementing those before declaring any plan budget-compliant.
