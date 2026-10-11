@@ -19,3 +19,6 @@
 - Calendar tests: travel-day shift, confirmed host waiting, late-arrival conflict, host-end conflict, chained host commitments and invalid dates. Added, not yet executed.
 
 - Pending UI verification: beta budget/host-date diagnostic renders without errors, never claims all-in verification, handles missing transfer and host wait days; verify real mobile viewport.
+
+- Added waiting-night regression tests: two paid waiting nights, unknown bed is not free, zero waiting nights.
+- Pending browser QA: save/refresh fixed costs; blank vs zero; ensure already-paid amounts are not double entered; verify budget beta diagnostic and host waits on mobile.
