@@ -6,3 +6,6 @@ test('blank fixed cost remains unknown, zero is valid',()=>{const r=snapshot({..
 test('paid per stop is subtracted only from future, not total paid',()=>{const r=snapshot({...base,paidByStop:{0:60}});assert.equal(r.totalEstimate,480)});
 test('completed stages are excluded from future forecast',()=>{const r=snapshot({...base,completed:{0:true}});assert.equal(r.totalEstimate,320)});
 test('unrecorded completed stages prevent completeness',()=>{const r=snapshot({...base,unrecorded:1});assert.ok(r.incompleteReasons.includes('unrecorded-completed-stops'))});
+
+test('missing historical spending keeps budget status unverified',()=>{const r=snapshot({...base,unrecorded:1});assert.equal(r.complete,false);assert.equal(r.goalStatus,'unverified')});
+test('unknown waiting expenses keep goal status unverified',()=>{const r=snapshot({...base,waitingComplete:false});assert.equal(r.goalStatus,'unverified')});
