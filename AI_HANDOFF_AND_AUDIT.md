@@ -133,3 +133,10 @@
 - Added `wait-costs.js` and `tests/wait-costs.test.cjs`: waiting days before confirmed host start are priced with non-host lodging, food and other daily cost. Missing lodging is **unknown**, not free. The diagnostic shows missing categories and conflicts.
 - **Critical limitations**: this remains a beta diagnostic; the existing overview and volunteer optimizer still use their legacy budget paths. Waiting days are not integrated into the main itinerary, transfer-day duration is still zero absent verified schedules, and fixed-cost coverage is user-entered (not independently verified). The beta budget engine's `complete` only means supplied inputs were populated; do not call this final all-in accuracy.
 - Main remains untouched. Node test suite, JS syntax validation and mobile E2E are still pending. Next: execute tests, reconcile fixed costs and waiting costs into a single authoritative model, then fix `sbVolunteerScenario` to use it.
+
+## 2026-10-11 budget fixes and automated checks
+- Fixed beta budget diagnostic phantom transfers: stage balances now use explicit cost lines, with separate unknown-transfer flags.
+- Volunteer scenario gap includes already-paid spending and known manually entered remaining fixed expenses. It still excludes unknown transfers and some waiting-night costs, so it is NOT an all-in verified target.
+- Service worker cache bumped to v52 and new modules added to offline precache.
+- GitHub Actions quality workflow added for JavaScript syntax and Node regression tests; results NOT yet verified.
+- Main unchanged. Next: inspect CI, integrate one shared route-budget snapshot, price transfer days, test Android/mobile and storage persistence.
