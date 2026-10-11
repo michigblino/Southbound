@@ -1,0 +1,4 @@
+const test=require('node:test');const assert=require('node:assert/strict');require('../transport-estimate.js');require('../savings-advice.js');const recommend=globalThis.SouthboundSavingsAdvice.recommend;const transport=globalThis.SouthboundTransportEstimate;const stops=[['São Paulo','Brasilien',-23,-46,3,15,12,5,4,0,0],['Paraty','Brasilien',-23,-44,4,16,12,7,4,15,30],['Rio de Janeiro','Brasilien',-22,-43,35,20,15,10,6,15,30]];
+test('suggests shortening long stay',()=>{const a=recommend({stops,transport});assert.ok(a.some(x=>x.kind==='short'&&x.i===2));assert.ok(a.every(x=>x.saving>0))});
+test('removing a stop recomputes the direct connection',()=>{const a=recommend({stops,transport});const skip=a.find(x=>x.kind==='skip'&&x.i===1);if(skip)assert.match(skip.detail,/São Paulo → Rio de Janeiro/)});
+test('already visited stages cannot be modified by recommendations',()=>{const a=recommend({stops,transport,visited:{2:true}});assert.ok(!a.some(x=>x.i===2))});
