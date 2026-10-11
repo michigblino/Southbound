@@ -9,3 +9,5 @@ test('unrecorded completed stages prevent completeness',()=>{const r=snapshot({.
 
 test('missing historical spending keeps budget status unverified',()=>{const r=snapshot({...base,unrecorded:1});assert.equal(r.complete,false);assert.equal(r.goalStatus,'unverified')});
 test('unknown waiting expenses keep goal status unverified',()=>{const r=snapshot({...base,waitingComplete:false});assert.equal(r.goalStatus,'unverified')});
+
+test('unverified travel dates cannot pass all-in completion',()=>{const r=snapshot({...base,timingFeasible:false});assert.equal(r.complete,false);assert.equal(r.goalStatus,'unverified');assert.ok(r.incompleteReasons.includes('unverified-route-dates'))});
