@@ -5,3 +5,5 @@ test('all budgeting and scheduling modules are referenced in HTML',()=>{for(cons
 test('offline cache includes all critical calculation modules',()=>{for(const name of modules)assert.ok(sw.includes(name),name+' missing from sw.js')});
 test('offline cache has a versioned cache identifier',()=>assert.match(sw,/southbound-v\d+/));
 test('legacy traveler storage key preserved',()=>assert.ok(html.includes('southbound-v3')));
+
+test('budget integrity panel passes keyed fixed costs to shared snapshot',()=>{assert.match(html,/const fixedCosts=Object\.fromEntries\(keys\.map/);assert.match(html,/fixedCosts:fixed,paidByStop:/);assert.doesNotMatch(html,/const fixedCosts=keys\.map\(\(\[k,label\]\)=>\(\{label,amount:/)});
