@@ -3,3 +3,6 @@ test('host duration cannot generate savings beyond existing paid nights',()=>{co
 test('unknown nightly bed is not zero savings or verified',()=>{const r=estimate({plannedDays:10,proposedDays:7,nightlyBed:null});assert.equal(r.grossUpperBound,null);assert.equal(r.netVerified,false)});
 test('confirmed host costs and extra expenses can eliminate savings',()=>{const r=estimate({plannedDays:7,proposedDays:7,nightlyBed:15,hostConfirmed:true,hostNightlyBed:5,extraCostsKnown:true,extraCosts:90});assert.equal(r.confirmedNet,-20)});
 test('gross opportunity does not imply confirmed net savings',()=>{const r=estimate({plannedDays:14,proposedDays:14,nightlyBed:20});assert.equal(r.grossUpperBound,280);assert.equal(r.confirmedNet,null)});
+
+test('extra volunteering days cannot be called verified savings without their daily costs',()=>{const r=estimate({plannedDays:4,proposedDays:10,nightlyBed:20,hostConfirmed:true,hostNightlyBed:0,extraCostsKnown:true,extraCosts:0});assert.equal(r.extraDays,6);assert.equal(r.confirmedNet,null);assert.equal(r.netVerified,false)});
+test('explicit incremental daily costs are deducted from extended volunteering',()=>{const r=estimate({plannedDays:4,proposedDays:10,nightlyBed:20,hostConfirmed:true,hostNightlyBed:0,extraCostsKnown:true,extraCosts:0,extraDayDailyCost:15});assert.equal(r.confirmedNet,-10);assert.equal(r.netVerified,true)});
