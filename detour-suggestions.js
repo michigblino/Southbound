@@ -2,6 +2,14 @@
    Estimated costs are heuristic; no ferry fare or hotel availability is guaranteed. */
 (function(g){'use strict';
 const candidates=[
+{"name":"Florianópolis","country":"Brasilien","lat":-27.5954,"lon":-48.548,"days":3,"bed":22,"food":17,"activity":10,"other":6,"why":"Strände und Natur auf der südbrasilianischen Küstenroute","tags":"Natur, Kultur"},
+{"name":"Curitiba","country":"Brasilien","lat":-25.4284,"lon":-49.2733,"days":2,"bed":18,"food":16,"activity":8,"other":5,"why":"Parks und Stadtstopp entlang der Südroute","tags":"Natur, Kultur"},
+{"name":"Punta del Diablo","country":"Uruguay","lat":-34.044,"lon":-53.54,"days":2,"bed":24,"food":19,"activity":10,"other":5,"why":"Küstenort mit Stränden","tags":"Natur, Kultur"},
+{"name":"Cabo Polonio","country":"Uruguay","lat":-34.402,"lon":-53.789,"days":2,"bed":26,"food":20,"activity":10,"other":6,"why":"Dünenlandschaft und Atlantikküste","tags":"Natur, Kultur"},
+{"name":"Salta","country":"Argentinien","lat":-24.7859,"lon":-65.4117,"days":3,"bed":18,"food":16,"activity":10,"other":5,"why":"Andenlandschaften und Kultur","tags":"Natur, Kultur"},
+{"name":"Jujuy","country":"Argentinien","lat":-24.1858,"lon":-65.2995,"days":2,"bed":17,"food":15,"activity":10,"other":5,"why":"Zugang zur Quebrada de Humahuaca","tags":"Natur, Kultur"},
+{"name":"Arequipa","country":"Peru","lat":-16.3989,"lon":-71.535,"days":3,"bed":17,"food":15,"activity":11,"other":5,"why":"Altstadt und Vulkanlandschaften","tags":"Natur, Kultur"},
+{"name":"Valparaíso","country":"Chile","lat":-33.0472,"lon":-71.6127,"days":2,"bed":24,"food":18,"activity":10,"other":6,"why":"Hafenstadt und Street Art","tags":"Natur, Kultur"},
 {name:'Colonia del Sacramento',country:'Uruguay',lat:-34.4714,lon:-57.8442,days:1,bed:22,food:19,activity:10,other:5,why:'UNESCO-Altstadt und kurzer Fährweg ab Buenos Aires; besonders sinnvoll als Tagesausflug oder kurze Etappe',tags:'Kultur, Altstadt, Fähre'},
 {name:'Montevideo',country:'Uruguay',lat:-34.9011,lon:-56.1645,days:3,bed:25,food:20,activity:10,other:6,why:'Rambla, Ciudad Vieja und uruguayische Hauptstadt; über Colonia per Bus/Fähre erreichbar',tags:'Stadt, Küste, Kultur'},
 {name:'Punta del Este',country:'Uruguay',lat:-34.9667,lon:-54.95,days:2,bed:29,food:23,activity:13,other:6,why:'Atlantikstrände; saisonal teurer und ein größerer Abstecher',tags:'Strand, Küste'}
