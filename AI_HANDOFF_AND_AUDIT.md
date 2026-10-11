@@ -166,3 +166,9 @@ Decision: DOCUMENT ONLY, DO NOT IMPLEMENT YET.
 - Suggested staged rollout: (1) read-only limited route sharing; (2) invitations and permissioned co-planning; (3) optional join-a-leg requests. Validate demand and data model before social discovery.
 - RealGuessr/BeGuessr integration: explicitly deferred; do not plan or implement for now.
 - Near-term priority remains unified all-in budget, realistic transfer/calendar constraints, honest volunteering net savings, automated tests and Android QA. Do not implement collaborative features without a later explicit user request.
+
+## 2026-10-12 transfer-duration integrity
+- `route-timing.js` now accepts optional `transferDaysByStop` (destination stop index -> integer travel days) and emits `unknownTransferDays`, `transferDaysVerified`. A missing duration is **not** a verified zero; schedule still uses provisional zero solely to render dates, and marks feasibility false.
+- Overview and hypothetical volunteer scenario pass `m.transferDaysByStop||{}` without migrating or clearing stored data. UI warns on unknown durations and does not present optimized itinerary as date-verified.
+- Added two route-timing tests for unknown duration and explicit 2-day downstream shift. No provider travel-time integration yet; durations are optional user/state input only, no invented metrics.
+- Workflow status not confirmed: commit workflow query returned no PR-triggered runs; that endpoint does not cover push-triggered runs. Do not report CI green. Main unchanged.
