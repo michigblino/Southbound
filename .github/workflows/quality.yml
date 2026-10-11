@@ -15,6 +15,7 @@ jobs:
       - name: Check JavaScript syntax
         run: |
           node --check budget-engine.js
+          node --check route-budget.js
           node --check trip-calendar.js
           node --check wait-costs.js
           node --check volunteer-matching.js
