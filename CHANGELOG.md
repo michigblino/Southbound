@@ -15,3 +15,5 @@
 
 - Fixed phantom transfer placeholders in beta diagnostics and counted paid and known remaining fixed expenses in preliminary volunteering gap.
 - Updated offline cache to v52; added GitHub Actions syntax and Node test workflow. CI results not yet verified.
+
+- Added `route-budget.js` as the shared calculation path for beta overview and volunteering budget gaps, with six regression tests; offline cache v53 and CI syntax coverage.
