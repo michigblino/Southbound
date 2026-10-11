@@ -15,3 +15,5 @@
 - Reconcile legacy UI and new UI totals against one engine.
 
 **Status:** Tests have been added but not yet executed in this environment. Do not mark as passing until executed.
+
+- Calendar tests: travel-day shift, confirmed host waiting, late-arrival conflict, host-end conflict, chained host commitments and invalid dates. Added, not yet executed.
