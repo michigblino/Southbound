@@ -231,3 +231,9 @@ Decision: DOCUMENT ONLY, DO NOT IMPLEMENT YET.
 - Promoted `sbBudgetIntegrityPanel`'s `SouthboundRouteBudget.snapshot().totalEstimate` to the labeled primary **provisional all-in subtotal** (`data-sb-all-in-total`). Show €8,000 goal, €12,000 cap, known missing amount count and verification reasons. Never interpret the subtotal as a final price when costs are missing.
 - Collapsed the separate `SouthboundDynamicRisk.total` projection into an optional `<details>` panel and removed its misleading goal-gap comparison. The risk simulation may substitute placeholder fares and omit fixed expenses; it must not compete with the primary all-in figure.
 - Added integration guard in `tests/integration-assets.test.cjs`. CI after these commits is pending; no claim of passing.
+
+### 2026-10-12 — Volunteer savings validation
+
+- Fixed `volunteer-economics.js`: a confirmed host with **no quoted nightly price** no longer silently defaults to €0 accommodation and produces a false verified net saving. Explicit `hostNightlyBed: 0` remains valid when supplied. Two regression tests added in `tests/volunteer-economics.test.cjs`.
+- This only verifies the standalone volunteer economics helper; it does **not** guarantee complete trip-level savings, host availability, date overlap, transport or waiting expenses. Audit integration before claiming total savings.
+- CI for these commits is pending. Changes are confined to `feat/global-trip-foundations`; public site untouched.
