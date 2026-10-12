@@ -260,3 +260,10 @@ Decision: DOCUMENT ONLY, DO NOT IMPLEMENT YET.
 - Added `tests/volunteer-scenario.test.cjs` for confirmed, unconfirmed, missing dates, missing fees, unknown transport, invalid duration and explicit host fees.
 - Follow-up before UI: integrate script loading into browser if needed, evaluate actual volunteer host overlap, meals/transport extra-day evidence and date conflicts; add browser integration tests. CI not yet confirmed.
 - Changes confined to `feat/global-trip-foundations`; public app untouched.
+
+### 2026-10-12 — CI #101–107 failure and logo-aligned themes
+
+- Run 38197991199: browser job succeeded; Node test job failed 6 of 143 tests. Root cause: `volunteer-scenario.js` assigned the `SouthboundRouteBudget` object to `snapshot` and invoked it as a function. Corrected to `.snapshot` in commit `001a359`.
+- Added an STH/BND-inspired ink/paper palette in `index.html`, with `data-sb-theme=light|dark`, a fixed top-right toggle, system preference as first-visit default, separate localStorage key `southbound-theme`, and matching browser theme-color. Existing trip data remains unchanged. Added theme regression assertions.
+- Design migration is incremental: existing hard-coded dark CSS, SVG and map colors need a later visual accessibility audit across all screens. Do not claim comprehensive light-mode parity before browser review.
+- New CI results not yet verified. Branch only; no main merge or deployment.
