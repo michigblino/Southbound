@@ -12,5 +12,5 @@ test('host dialog caps hours, validates explicit costs and permits revoking a co
 });
 test('manual ticket save includes route identity and date matching',()=>{
  assert.match(html,/fromId:previous\.i,toId:i/);
- assert.match(html,/departureDate!==current\.start/);
+ assert.match(html,/departureDate!==\(current\.arrival\|\|current\.start\)/);
 });
