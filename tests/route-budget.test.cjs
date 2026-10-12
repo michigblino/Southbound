@@ -19,3 +19,28 @@ test('prepayment with unknown lodging cannot be silently allocated',()=>{const r
 
 test('invalid negative stop prepayment is not silently accepted as verified',()=>{const r=snapshot({...base,paidByStop:{0:-20}});assert.equal(r.complete,false);assert.ok(r.incompleteReasons.includes('invalid-stop-prepayments'));assert.deepEqual(r.invalidPrepayments,[0])});
 test('non-numeric stop prepayment is explicitly flagged',()=>{const r=snapshot({...base,paidByStop:{0:'unknown'}});assert.equal(r.goalStatus,'unverified');assert.ok(r.incompleteReasons.includes('invalid-stop-prepayments'))});
+
+
+test('incomplete budget cannot claim to be under goal even with positive headroom',()=>{
+ const r=snapshot({...base,items:[{i:0,stay:200,leg:null}]});
+ assert.equal(r.complete,false);
+ assert.equal(r.budgetVerdict,'incomplete');
+ assert.equal(r.minimumKnownEstimate,520);
+ assert.equal(r.budgetHeadroom,480);
+ assert.equal(r.minimumGoalOverrun,0);
+ assert.equal(r.goalStatus,'unverified');
+});
+test('known costs over goal are a minimum overrun when other costs are unknown',()=>{
+ const r=snapshot({...base,goal:400,cap:500,items:[{i:0,stay:200,leg:null}]});
+ assert.equal(r.complete,false);
+ assert.equal(r.minimumGoalOverrun,120);
+ assert.equal(r.minimumCapOverrun,20);
+ assert.equal(r.budgetVerdict,'incomplete');
+});
+test('complete budget exposes estimated status and consistent headroom',()=>{
+ const r=snapshot(base);
+ assert.equal(r.complete,true);
+ assert.equal(r.budgetVerdict,'within-estimate');
+ assert.equal(r.minimumKnownEstimate,r.totalEstimate);
+ assert.equal(r.budgetHeadroom,460);
+});
