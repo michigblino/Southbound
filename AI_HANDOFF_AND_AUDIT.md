@@ -251,3 +251,12 @@ Decision: DOCUMENT ONLY, DO NOT IMPLEMENT YET.
 - Two regression tests in `tests/route-timing.test.cjs` cover missing vs explicit compatible host windows.
 - Still to do: an integrated, dated before/after volunteer scenario with explicit extra-day meals, lodging, transport and wait costs, recomputed all-in budget and user-confirmed application. Do not claim verified net savings based solely on the existing gross lodging estimate.
 - CI not yet confirmed for these commits; branch only, public site unchanged.
+
+### 2026-10-12 — Volunteer scenario comparison foundation
+
+- Added `volunteer-scenario.js` pure `SouthboundVolunteerScenario.compare(...)` to recompute baseline and proposed itineraries, route timing, waiting costs and all-in budgets after a proposed volunteering duration/host change. Does not mutate persisted trip state and is not yet wired into the UI.
+- `route-budget.js` accepts optional `additionalCosts` (default 0) for explicitly priced scenario fees; unknown fees remain unknown. No new costs are injected into ordinary snapshots.
+- The comparison exposes `netImpactCalculable` and `costDelta` only when the host and price, dates, extra fees, transfers and all-in budgets are complete. `costDelta` is an **estimate**, not proof of paid/verified market prices. Incomplete scenarios expose reasons and `costDelta:null`.
+- Added `tests/volunteer-scenario.test.cjs` for confirmed, unconfirmed, missing dates, missing fees, unknown transport, invalid duration and explicit host fees.
+- Follow-up before UI: integrate script loading into browser if needed, evaluate actual volunteer host overlap, meals/transport extra-day evidence and date conflicts; add browser integration tests. CI not yet confirmed.
+- Changes confined to `feat/global-trip-foundations`; public app untouched.
