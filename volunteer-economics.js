@@ -1,7 +1,7 @@
 /* Conservative gross accommodation-only volunteering opportunity, not net savings. */
 (function(g){'use strict';
 const valid=v=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v))&&Number(v)>=0;
-function estimate({plannedDays,proposedDays,nightlyBed,hostNightlyBed=0,hostConfirmed=false,extraCostsKnown=false,extraCosts=0,extraDayDailyCost=null}={}){
+function estimate({plannedDays,proposedDays,nightlyBed,hostNightlyBed=null,hostConfirmed=false,extraCostsKnown=false,extraCosts=0,extraDayDailyCost=null}={}){
  const days=valid(plannedDays)?Math.floor(Number(plannedDays)):0;
  const proposed=valid(proposedDays)?Math.floor(Number(proposedDays)):0;
  const overlap=Math.min(days,proposed);
