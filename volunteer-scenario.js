@@ -23,7 +23,7 @@ function compare({stops=[],start,stopId,proposedDays,host={},options={},budget={
  const beforeBudget=snapshot({...shared,items:baseline.items,waitingCost:beforeTiming.waiting.total,waitingComplete:beforeTiming.waiting.complete,timingFeasible:beforeTiming.feasible});
  const afterBudget=snapshot({...shared,items:candidate.items,waitingCost:afterTiming.waiting.total,waitingComplete:afterTiming.waiting.complete,timingFeasible:afterTiming.feasible,additionalCosts:amount(host.extraCosts)});
  const extraDays=Math.max(0,n-target.days);
- const dateShift=candidate.finish!==baseline.finish;
+ const dateShift=afterTiming.schedule.finish!==beforeTiming.schedule.finish;
  const extraCosts=amount(host.extraCosts);
  const knownExtras=extraCosts!==null;
  const netImpactCalculable=beforeBudget.complete&&afterBudget.complete&&hostConfirmed&&knownExtras&&beforeTiming.feasible&&afterTiming.feasible;
