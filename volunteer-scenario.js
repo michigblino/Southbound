@@ -2,7 +2,7 @@
 (function(g){'use strict';
 const amount=v=>v===null||v===undefined||v===''?null:Number.isFinite(Number(v))&&Number(v)>=0?Number(v):null;
 function compare({stops=[],start,stopId,proposedDays,host={},options={},budget={}}={}){
- const itinerary=g.SouthboundItinerary,timing=g.SouthboundRouteTiming,snapshot=g.SouthboundRouteBudget;
+ const itinerary=g.SouthboundItinerary,timing=g.SouthboundRouteTiming,snapshot=g.SouthboundRouteBudget?.snapshot;
  if(!itinerary||!timing||!snapshot)throw Error('Volunteer scenario dependencies unavailable');
  const opts={...options,stops,start};
  const baseline=itinerary.plan(opts);
