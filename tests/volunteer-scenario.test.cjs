@@ -18,3 +18,5 @@ test('missing transport costs on a second stop prevent verified net claims',()=>
  assert.equal(r.netImpactCalculable,false);assert.ok(r.reasons.includes('incomplete-all-in-budget'));
 });
 test('invalid duration is rejected without modifying original itinerary',()=>{const r=compare({...base,host,proposedDays:0});assert.equal(r.valid,false)});
+
+test('explicit host fees are included in proposed all-in total',()=>{const r=compare({...base,host:{...host,extraCosts:50}});assert.equal(r.proposed.budget.totalEstimate,409);assert.equal(r.costDelta,21);assert.equal(r.netImpactCalculable,true)});
