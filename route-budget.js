@@ -3,7 +3,7 @@
 const amount=v=>v===null||v===undefined||v===''?null:Number.isFinite(Number(v))&&Number(v)>=0?Number(v):null;
 function snapshot({items=[],paid=0,reserve=0,goal=0,cap=null,fixedCosts={},completed={},paidByStop={},waitingCost=0,waitingComplete=true,unrecorded=0,timingFeasible=true,additionalCosts=0}={}){
  const engine=g.SouthboundBudgetEngine;if(!engine)throw Error('Budget engine unavailable');
- const lines=[],unknownTransfers=[],unknownPrepayments=[],invalidPrepayments=[];
+ const lines=[],unknownTransfers=[],unknownPrepayments=[],invalidPrepayments=[],unknownHostCosts=[],unknownHostMeals=[];
  for(const item of items){
   const i=item.i,rawPaid=paidByStop[i],parsedPaid=amount(rawPaid),already=parsedPaid||0;
   if(rawPaid!==undefined&&rawPaid!==null&&rawPaid!==''&&parsedPaid===null)invalidPrepayments.push(i);
@@ -16,6 +16,9 @@ function snapshot({items=[],paid=0,reserve=0,goal=0,cap=null,fixedCosts={},compl
   const transferRemainder=leg===null?null:Math.max(0,leg-remainingPrepayment);
   lines.push({label:'Aufenthalt '+i,amount:stayRemainder,status:'estimate'});
   lines.push({label:'Transfer '+i,amount:transferRemainder,status:leg===null?'unknown':'estimate'});
+  // Host fees are already part of item.stay when priced. Missing fees/meals block all-in verification.
+  if(item.hostExtras===null){unknownHostCosts.push(i);lines.push({label:'Host-Zusatzkosten '+i,amount:null,status:'unknown'});}
+  if(item.hostFoodKnown===false){unknownHostMeals.push(i);lines.push({label:'Host-Verpflegung '+i,amount:null,status:'unknown'});}
   if(leg===null)unknownTransfers.push(i);
   if(stay===null&&already>0)unknownPrepayments.push(i);
  }
@@ -26,6 +29,8 @@ function snapshot({items=[],paid=0,reserve=0,goal=0,cap=null,fixedCosts={},compl
  const budget=engine.calculate({paid,reserve,goal,cap,items:[],fixedCosts:lines});
  const incompleteReasons=[];
  if(unknownTransfers.length)incompleteReasons.push('unknown-transfers');
+ if(unknownHostCosts.length)incompleteReasons.push('unknown-host-extra-costs');
+ if(unknownHostMeals.length)incompleteReasons.push('unknown-host-meals');
  if(unknownPrepayments.length)incompleteReasons.push('unallocated-prepayments');
  if(invalidPrepayments.length)incompleteReasons.push('invalid-stop-prepayments');
  if(categories.some(([key])=>amount(fixedCosts[key])===null))incompleteReasons.push('missing-fixed-costs');
@@ -38,7 +43,7 @@ function snapshot({items=[],paid=0,reserve=0,goal=0,cap=null,fixedCosts={},compl
  const minimumKnownEstimate=budget.totalEstimate;
  const budgetHeadroom=budget.goal===null?null:budget.goal-minimumKnownEstimate;
  const capHeadroom=budget.cap===null?null:budget.cap-minimumKnownEstimate;
- return {...budget,unknownTransfers,unknownPrepayments,invalidPrepayments,incompleteReasons,complete,goalStatus:complete?budget.goalStatus:'unverified',allInVerified:false,minimumKnownEstimate,budgetHeadroom,capHeadroom,minimumGoalOverrun:budgetHeadroom===null?null:Math.max(0,-budgetHeadroom),minimumCapOverrun:capHeadroom===null?null:Math.max(0,-capHeadroom),budgetVerdict:complete?(budget.goalStatus==='within'?'within-estimate':'over-estimate'):'incomplete'};
+ return {...budget,unknownTransfers,unknownHostCosts,unknownHostMeals,unknownPrepayments,invalidPrepayments,incompleteReasons,complete,goalStatus:complete?budget.goalStatus:'unverified',allInVerified:false,minimumKnownEstimate,budgetHeadroom,capHeadroom,minimumGoalOverrun:budgetHeadroom===null?null:Math.max(0,-budgetHeadroom),minimumCapOverrun:capHeadroom===null?null:Math.max(0,-capHeadroom),budgetVerdict:complete?(budget.goalStatus==='within'?'within-estimate':'over-estimate'):'incomplete'};
 }
 g.SouthboundRouteBudget={snapshot};
 })(typeof window!=='undefined'?window:globalThis);

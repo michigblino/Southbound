@@ -13,3 +13,23 @@ test('confirmed host with explicit zero nightly cost can be free',()=>{const p=p
 
 test('zero placeholder transport fares remain unknown on a normal consecutive leg',()=>{const p=plan({stops:s.map((row,i)=>i===1?[...row.slice(0,9),0,0,...row.slice(11)]:row)});assert.equal(p.items[1].leg,null);assert.equal(p.items[1].quality,'connection-unknown')});
 test('explicit positive transport range remains an estimate, not a free transfer',()=>{const p=plan({stops:s});assert.equal(p.items[1].leg,30);assert.equal(p.items[1].legMin,20);assert.equal(p.items[1].legMax,40)});
+
+test('confirmed host start shifts visible stage dates and later stops',()=>{
+ const p=plan({stops:s,start:'2027-01-01',vol:{1:true},volunteerDetails:{1:{confirmed:true,night:0,from:'2027-01-10',to:'2027-01-14',foodPerDay:10,extraCosts:0}}});
+ assert.equal(p.items[1].arrival,'2027-01-05');
+ assert.equal(p.items[1].start,'2027-01-10');
+ assert.equal(p.items[1].waitingDays,5);
+ assert.equal(p.items[1].end,'2027-01-14');
+ assert.equal(p.items[2].arrival,'2027-01-14');
+ assert.equal(p.finish,'2027-01-18');
+});
+test('confirmed host expenses are added once to itinerary stay',()=>{
+ const p=plan({stops:s,vol:{1:true},volunteerDetails:{1:{confirmed:true,night:0,foodPerDay:10,extraCosts:60}}});
+ assert.equal(p.items[1].hostExtras,60);
+ assert.equal(p.items[1].stay,p.items[1].days*p.items[1].daily+60);
+ assert.equal(p.known,p.items.reduce((sum,item)=>sum+item.stay+(item.leg||0),0));
+});
+test('unknown confirmed host fees are visible as unknown',()=>{
+ const p=plan({stops:s,vol:{1:true},volunteerDetails:{1:{confirmed:true,night:0,foodPerDay:10}}});
+ assert.equal(p.items[1].hostExtras,null);
+});

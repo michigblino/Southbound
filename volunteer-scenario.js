@@ -24,7 +24,8 @@ function compare({stops=[],start,stopId,proposedDays,host={},options={},budget={
  const afterTiming=timing.evaluate({...timingOpts,items:candidate.items,volunteerDetails,isVolunteer:i=>vol[i]===true&&volunteerDetails[i]?.confirmed===true});
  const shared={...budget};
  const beforeBudget=snapshot({...shared,items:baseline.items,waitingCost:beforeTiming.waiting.total,waitingComplete:beforeTiming.waiting.complete,timingFeasible:beforeTiming.feasible});
- const afterBudget=snapshot({...shared,items:candidate.items,waitingCost:afterTiming.waiting.total,waitingComplete:afterTiming.waiting.complete,timingFeasible:afterTiming.feasible,additionalCosts:amount(host.extraCosts)});
+ // Candidate host fees are already included in candidate.items[].stay; do not count them twice.
+ const afterBudget=snapshot({...shared,items:candidate.items,waitingCost:afterTiming.waiting.total,waitingComplete:afterTiming.waiting.complete,timingFeasible:afterTiming.feasible});
  const extraDays=Math.max(0,n-target.days);
  const dateShift=afterTiming.schedule.finish!==beforeTiming.schedule.finish;
  const extraCosts=amount(host.extraCosts);

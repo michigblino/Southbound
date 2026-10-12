@@ -8,10 +8,12 @@ function evaluate({items=[],start,stops=[],quotes={},volunteerDetails={},isVolun
   const i=x.i,stop=stops[i]||[],host=volunteerDetails[i]||{},q=quotes[i]||{};
   if(isVolunteer(i)&&(!host.from||!host.to))unverifiedHostDates.push(i);
   const quoted=Number(q.night),fallback=Number(stop[5]);
-  const normalBed=q.night!==null&&q.night!==undefined&&q.night!==''&&Number.isFinite(quoted)&&quoted>0?quoted:Number.isFinite(fallback)&&fallback>0?fallback:null;
+  const normalBed=Number.isFinite(x.regularBed)&&x.regularBed>0?x.regularBed:q.night!==null&&q.night!==undefined&&q.night!==''&&Number.isFinite(quoted)&&quoted>0?quoted:Number.isFinite(fallback)&&fallback>0?fallback:null;
+  // A free host meal does not also make the nights spent waiting for that host free.
+  const stopFood=Number(stop[6]),normalFood=stop[6]!==null&&stop[6]!==undefined&&stop[6]!==''&&Number.isFinite(stopFood)&&stopFood>=0?stopFood:x.food;
   const raw=transferDaysByStop[i];const explicit=raw!==null&&raw!==undefined&&raw!==''&&Number.isInteger(Number(raw))&&Number(raw)>=0;
   if(index>0&&!explicit)unknownTransferDays.push(i);
-  return {name:x.name||stop[0]||'',days:x.days,transferDays:index===0?0:explicit?Number(raw):0,waitBed:normalBed,waitFood:x.food,waitOther:x.other,confirmedHost:isVolunteer(i)&&host.from&&host.to?{from:host.from,to:host.to}:null};
+  return {name:x.name||stop[0]||'',days:x.days,transferDays:index===0?0:explicit?Number(raw):0,waitBed:normalBed,waitFood:normalFood,waitOther:x.other,confirmedHost:isVolunteer(i)&&host.from&&host.to?{from:host.from,to:host.to}:null};
  });
  const schedule=calendar.schedule({start,stops:stages});
  const waiting=wait.estimate({calendarItems:schedule.items,stages});
