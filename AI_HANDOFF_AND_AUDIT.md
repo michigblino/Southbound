@@ -237,3 +237,10 @@ Decision: DOCUMENT ONLY, DO NOT IMPLEMENT YET.
 - Fixed `volunteer-economics.js`: a confirmed host with **no quoted nightly price** no longer silently defaults to €0 accommodation and produces a false verified net saving. Explicit `hostNightlyBed: 0` remains valid when supplied. Two regression tests added in `tests/volunteer-economics.test.cjs`.
 - This only verifies the standalone volunteer economics helper; it does **not** guarantee complete trip-level savings, host availability, date overlap, transport or waiting expenses. Audit integration before claiming total savings.
 - CI for these commits is pending. Changes are confined to `feat/global-trip-foundations`; public site untouched.
+
+### 2026-10-12 — Volunteer recommendation shortlist integrity
+
+- In `index.html`, `sbVolunteerScenario` previously stopped selecting recommendations when summed **gross lodging opportunity** appeared to cover `goalGap`, incorrectly implying a budget shortfall was resolved without host prices, meals, transport, or extra-day expenses. The shortlist now displays up to five candidate locations independently of the gross sum. It retains chronological presentation.
+- Each recommendation explicitly marks extra volunteering days requiring further costing, and explains that theoretical accommodation opportunity is not deducted from the budget gap.
+- Added a static regression guard in `tests/integration-assets.test.cjs`. Further work: calculate true date-aware route-level net impact before any recommendation can claim verified savings. Do not use the gross opportunity to update the main all-in budget.
+- CI after these commits has not yet been confirmed. All changes remain on `feat/global-trip-foundations`.
