@@ -26,15 +26,15 @@ function compare({stops=[],start,stopId,proposedDays,host={},options={},budget={
  const dateShift=candidate.finish!==baseline.finish;
  const extraCosts=amount(host.extraCosts);
  const knownExtras=extraCosts!==null;
- const netImpactVerified=beforeBudget.complete&&afterBudget.complete&&hostConfirmed&&knownExtras&&beforeTiming.feasible&&afterTiming.feasible;
- const costDelta=netImpactVerified?Math.round((afterBudget.totalEstimate-beforeBudget.totalEstimate)*100)/100:null;
+ const netImpactCalculable=beforeBudget.complete&&afterBudget.complete&&hostConfirmed&&knownExtras&&beforeTiming.feasible&&afterTiming.feasible;
+ const costDelta=netImpactCalculable?Math.round((afterBudget.totalEstimate-beforeBudget.totalEstimate)*100)/100:null;
  const reasons=[];
  if(!hostConfirmed)reasons.push('unconfirmed-host-or-price');
  if(!host.from||!host.to)reasons.push('missing-host-dates');
  if(!knownExtras)reasons.push('unknown-host-extra-costs');
  if(!beforeTiming.feasible||!afterTiming.feasible)reasons.push('unverified-route-timing');
  if(!beforeBudget.complete||!afterBudget.complete)reasons.push('incomplete-all-in-budget');
- return {valid:true,stopId,extraDays,dateShift,baseline:{itinerary:baseline,timing:beforeTiming,budget:beforeBudget},proposed:{itinerary:candidate,timing:afterTiming,budget:afterBudget},netImpactVerified,costDelta,reasons};
+ return {valid:true,stopId,extraDays,dateShift,baseline:{itinerary:baseline,timing:beforeTiming,budget:beforeBudget},proposed:{itinerary:candidate,timing:afterTiming,budget:afterBudget},netImpactCalculable,costDelta,reasons};
 }
 g.SouthboundVolunteerScenario={compare};
 })(typeof window!=='undefined'?window:globalThis);
