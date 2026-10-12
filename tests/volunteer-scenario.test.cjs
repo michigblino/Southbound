@@ -3,7 +3,7 @@ require('../itinerary.js');require('../trip-calendar.js');require('../wait-costs
 const {compare}=globalThis.SouthboundVolunteerScenario;
 const stops=[['A','X',0,0,4,20,10,5,2,0,0,'arrival']];
 const budget={paid:0,reserve:100,goal:8000,cap:12000,fixedCosts:{return:100,insurance:40,visas:0,equipment:0}};
-const host={confirmed:true,night:0,from:'2027-01-01',to:'2027-01-08',extraCosts:0};
+const host={confirmed:true,night:0,from:'2027-01-01',to:'2027-01-08',extraCosts:0,foodPerDay:10};
 const base={stops,start:'2027-01-01',stopId:0,proposedDays:7,budget};
 test('confirmed free host with dates and explicit extra expenses recalculates all-in route',()=>{
  const r=compare({...base,host});assert.equal(r.valid,true);assert.equal(r.extraDays,3);assert.equal(r.dateShift,true);assert.equal(r.netImpactCalculable,true);
@@ -22,3 +22,6 @@ test('invalid duration is rejected without modifying original itinerary',()=>{co
 test('explicit host fees are included in proposed all-in total',()=>{const r=compare({...base,host:{...host,extraCosts:50}});assert.equal(r.proposed.budget.totalEstimate,409);assert.equal(r.costDelta,21);assert.equal(r.netImpactCalculable,true)});
 
 test('date shift uses real host waiting, not naive itinerary finish',()=>{const r=compare({...base,proposedDays:2,host:{...host,from:'2027-01-03',to:'2027-01-05'}});assert.equal(r.proposed.timing.schedule.items[0].waitingDays,2);assert.equal(r.baseline.timing.schedule.finish,'2027-01-05');assert.equal(r.proposed.timing.schedule.finish,'2027-01-05');assert.equal(r.dateShift,false)});
+
+test('host meals can cost more than the original route food estimate',()=>{const r=compare({...base,host:{...host,foodPerDay:20}});assert.equal(r.proposed.budget.totalEstimate,429);assert.equal(r.costDelta,41)});
+test('missing host meal price cannot produce a calculable saving',()=>{const r=compare({...base,host:{...host,foodPerDay:undefined}});assert.equal(r.netImpactCalculable,false);assert.equal(r.costDelta,null);assert.ok(r.reasons.includes('unknown-host-meals'))});
