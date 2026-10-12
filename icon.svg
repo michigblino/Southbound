@@ -1,1 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="#071c26"/><circle cx="256" cy="256" r="180" fill="#1c5960" stroke="#73dfbb" stroke-width="12"/><path d="M110 270q120-110 290-35M128 328q125-65 252-20" fill="none" stroke="#73dfbb" stroke-width="15" stroke-linecap="round"/><path d="M255 112q-90 150 0 288M255 112q90 150 0 288" fill="none" stroke="#b2e4cc" stroke-width="12"/><path d="m242 160 73 74-74 115-13-79-50-40z" fill="#f0cc87"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Southbound STH BND">
+  <rect width="512" height="512" rx="100" fill="#f6f4ef"/>
+  <g fill="#171717" font-family="Arial,Helvetica,sans-serif" font-size="120" font-weight="700" text-anchor="middle" letter-spacing="4">
+    <text x="256" y="244" textLength="322" lengthAdjust="spacingAndGlyphs">STH</text>
+    <text x="256" y="362" textLength="322" lengthAdjust="spacingAndGlyphs">BND</text>
+  </g>
+  <path d="M95 116H417M95 394H417" stroke="#171717" stroke-width="13"/>
+</svg>
