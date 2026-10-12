@@ -280,3 +280,10 @@ Decision: DOCUMENT ONLY, DO NOT IMPLEMENT YET.
 - Tests cover increased host meal prices and missing meal prices, as well as existing date/fee/transfer cases.
 - Added `volunteer-scenario.js` script to `index.html`, making the calculation available to the browser. **No user-facing comparison UI yet; no automatic acceptance or persisted model changes.** Must integrate UI safely and verify browser tests before calling feature complete.
 - No deployment or main branch changes; CI pending.
+
+### 2026-10-12 — Volunteer before/after UI (branch only)
+
+- `index.html` volunteer confirmation dialog now includes explicit `foodPerDay` and `extraCosts` inputs, both nullable when left blank. On confirmation both are persisted to `m.volunteerDetails[selected]` (existing localStorage structure preserved).
+- Preview button computes `SouthboundVolunteerScenario.compare` from current route, transfer days, prepayments, completed stops, fixed costs, reserve, recorded expenses, host dates and user input. Displays before/after calendar finish and all-in totals. Preview does not call `save()` or modify `m`; existing confirmation still persists.
+- Added `tests/volunteer-preview-ui.test.cjs` for integration markup and wiring. Browser interaction/Playwright test and end-to-end consistency with already-confirmed volunteer hosts remain outstanding. Avoid calling this production-ready; inspect CI.
+- No deployment or main branch modifications.
