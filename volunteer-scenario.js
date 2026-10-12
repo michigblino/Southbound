@@ -18,7 +18,7 @@ function compare({stops=[],start,stopId,proposedDays,host={},options={},budget={
  const candidate=itinerary.plan({...opts,days,vol,volunteerDetails});
  // Host meals are not assumed free: require an explicit daily amount for a priced comparison.
  const hostFood=amount(host.foodPerDay);
- if(hostConfirmed&&hostFood!==null){const stage=candidate.items.find(x=>x.i===stopId);if(stage){stage.stay=Math.round((stage.stay+stage.days*(hostFood-stage.food))*100)/100;stage.daily=Math.round((stage.daily+hostFood-stage.food)*100)/100;stage.food=hostFood;}}
+ // The canonical itinerary already prices confirmed host meals; never apply them twice.
  const timingOpts={start,stops,quotes:options.quotes||{},transferDaysByStop:options.transferDaysByStop||{}};
  const beforeTiming=timing.evaluate({...timingOpts,items:baseline.items,volunteerDetails:options.volunteerDetails||{},isVolunteer:i=>options.vol?.[i]===true&&options.volunteerDetails?.[i]?.confirmed===true});
  const afterTiming=timing.evaluate({...timingOpts,items:candidate.items,volunteerDetails,isVolunteer:i=>vol[i]===true&&volunteerDetails[i]?.confirmed===true});
