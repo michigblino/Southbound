@@ -9,3 +9,5 @@ test('legacy traveler storage key preserved',()=>assert.ok(html.includes('southb
 test('budget integrity panel passes keyed fixed costs to shared snapshot',()=>{assert.match(html,/const fixedCosts=Object\.fromEntries\(keys\.map/);assert.match(html,/fixedCosts:fixed,paidByStop:/);assert.doesNotMatch(html,/const fixedCosts=keys\.map\(\(\[k,label\]\)=>\(\{label,amount:/)});
 
 test('overview distinguishes primary all-in subtotal from optional risk simulation',()=>{assert.match(html,/data-sb-all-in-total/);assert.match(html,/Zusätzliche Preisrisiko-Simulation \(kein All-in-Budget\)/);assert.match(html,/<details class="panel"><summary><b>Zusätzliche Preisrisiko-Simulation/);assert.doesNotMatch(html,/budgetGap=t\.mid/)});
+
+test('STH/BND app icon is used by favicon and PWA manifest',()=>{const icon=fs.readFileSync(path.join(root,'icon.svg'),'utf8'),manifest=JSON.parse(fs.readFileSync(path.join(root,'manifest.webmanifest'),'utf8'));assert.match(icon,/>STH<\/text>/);assert.match(icon,/>BND<\/text>/);assert.match(icon,/M95 116H417M95 394H417/);assert.ok(html.includes('href="./icon.svg"'));assert.ok(manifest.icons.some(x=>x.src==='./icon.svg'))});
