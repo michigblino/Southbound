@@ -34,7 +34,11 @@ function snapshot({items=[],paid=0,reserve=0,goal=0,cap=null,fixedCosts={},compl
  if(!timingFeasible)incompleteReasons.push('unverified-route-dates');
  if(budget.missingCount>0)incompleteReasons.push('missing-amounts');
  if(budget.errors.length)incompleteReasons.push('invalid-input');
- return {...budget,unknownTransfers,unknownPrepayments,invalidPrepayments,incompleteReasons,complete:budget.complete&&incompleteReasons.length===0,goalStatus:budget.complete&&incompleteReasons.length===0?budget.goalStatus:'unverified',allInVerified:false};
+ const complete=budget.complete&&incompleteReasons.length===0;
+ const minimumKnownEstimate=budget.totalEstimate;
+ const budgetHeadroom=budget.goal===null?null:budget.goal-minimumKnownEstimate;
+ const capHeadroom=budget.cap===null?null:budget.cap-minimumKnownEstimate;
+ return {...budget,unknownTransfers,unknownPrepayments,invalidPrepayments,incompleteReasons,complete,goalStatus:complete?budget.goalStatus:'unverified',allInVerified:false,minimumKnownEstimate,budgetHeadroom,capHeadroom,minimumGoalOverrun:budgetHeadroom===null?null:Math.max(0,-budgetHeadroom),minimumCapOverrun:capHeadroom===null?null:Math.max(0,-capHeadroom),budgetVerdict:complete?(budget.goalStatus==='within'?'within-estimate':'over-estimate'):'incomplete'};
 }
 g.SouthboundRouteBudget={snapshot};
 })(typeof window!=='undefined'?window:globalThis);

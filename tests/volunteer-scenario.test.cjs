@@ -25,3 +25,17 @@ test('date shift uses real host waiting, not naive itinerary finish',()=>{const 
 
 test('host meals can cost more than the original route food estimate',()=>{const r=compare({...base,host:{...host,foodPerDay:20}});assert.equal(r.proposed.budget.totalEstimate,429);assert.equal(r.costDelta,41)});
 test('missing host meal price cannot produce a calculable saving',()=>{const r=compare({...base,host:{...host,foodPerDay:undefined}});assert.equal(r.netImpactCalculable,false);assert.equal(r.costDelta,null);assert.ok(r.reasons.includes('unknown-host-meals'))});
+
+
+test('confirmed host meals are included in the actual itinerary, not just scenario preview',()=>{
+ const plan=globalThis.SouthboundItinerary.plan({stops,start:'2027-01-01',vol:{0:true},volunteerDetails:{0:host}});
+ assert.equal(plan.items[0].food,10);
+ assert.equal(plan.items[0].daily,17);
+ const expensive=globalThis.SouthboundItinerary.plan({stops,start:'2027-01-01',vol:{0:true},volunteerDetails:{0:{...host,foodPerDay:20}}});
+ assert.equal(expensive.items[0].food,20);
+ assert.equal(expensive.items[0].daily,27);
+ assert.equal(expensive.items[0].stay-plan.items[0].stay,40);
+ const preview=compare({...base,host:{...host,foodPerDay:20}});
+ assert.equal(preview.proposed.itinerary.items[0].food,20);
+ assert.equal(preview.proposed.budget.totalEstimate,429);
+});
