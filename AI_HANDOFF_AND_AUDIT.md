@@ -273,3 +273,10 @@ Decision: DOCUMENT ONLY, DO NOT IMPLEMENT YET.
 - `volunteer-scenario.js` now derives `dateShift` from the evaluated calendar `schedule.finish` rather than the naive itinerary `finish`, because confirmed host waiting and known transfer days change the real schedule.
 - Regression test verifies that a 2-day volunteer stay preceded by 2 waiting days finishes on the same date as an ordinary 4-day stay; it must not be marked as a shifted finish.
 - Next priorities: test host-date conflicts and multiple stops in the UI workflow; conservative extra-day food/transport coverage; connect the comparison to user-controlled scenario preview without persisting automatically. No design changes or deployment.
+
+### 2026-10-12 — Volunteer food pricing and browser availability
+
+- `SouthboundVolunteerScenario.compare` now requires explicit `host.foodPerDay` for a calculable net delta. It reprices the candidate stage's food and stay before calendar/budget evaluation. `0` means explicitly free meals; omitted does **not** mean free. This prevents claiming savings when meals are unknown. `host.extraCosts` remains a separate explicit amount; extra days and host waiting costs are included in recalculation.
+- Tests cover increased host meal prices and missing meal prices, as well as existing date/fee/transfer cases.
+- Added `volunteer-scenario.js` script to `index.html`, making the calculation available to the browser. **No user-facing comparison UI yet; no automatic acceptance or persisted model changes.** Must integrate UI safely and verify browser tests before calling feature complete.
+- No deployment or main branch changes; CI pending.
