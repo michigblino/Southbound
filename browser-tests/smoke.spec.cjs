@@ -41,8 +41,9 @@ test('confirmed host is saved with fees and may be revoked without erasing detai
  let host=await page.evaluate(()=>JSON.parse(localStorage.getItem('southbound-v3')).volunteerDetails[0]);
  expect(host).toMatchObject({confirmed:true,extraCosts:35,hoursPerWeek:25,night:0});
  await expect(page.locator('#sb-stage-0 summary')).toContainText('Host ab');
- await page.locator('#sb-stage-0 summary').click();
- await page.locator('#sb-stage-0 [data-vol-confirm="0"]').click();
+ const stage=page.locator('#sb-stage-0');
+ if(!(await stage.evaluate(el=>el.open)))await stage.locator('summary').click();
+ await stage.locator('[data-vol-confirm="0"]').click();
  await expect(page.locator('#sb-vol-revoke')).toBeVisible();
  page.once('dialog',dialog=>dialog.accept());
  await page.locator('#sb-vol-revoke').click();
