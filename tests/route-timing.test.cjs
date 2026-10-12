@@ -8,3 +8,13 @@ test('confirmed transfer duration shifts downstream arrival',()=>{const x=evalua
 
 test('confirmed volunteering without host dates cannot verify route feasibility',()=>{const x=evaluate({start:'2027-01-01',stops:[['A','X',0,0,4,20]],items:[{i:0,days:4,food:10,other:2}],volunteerDetails:{0:{confirmed:true,night:0}},isVolunteer:()=>true});assert.deepEqual(x.unverifiedHostDates,[0]);assert.equal(x.hostDatesVerified,false);assert.equal(x.feasible,false)});
 test('complete confirmed host window verifies date constraint when no transfers are missing',()=>{const x=evaluate({start:'2027-01-01',stops:[['A','X',0,0,4,20]],items:[{i:0,days:4,food:10,other:2}],volunteerDetails:{0:{confirmed:true,night:0,from:'2027-01-01',to:'2027-01-05'}},isVolunteer:()=>true});assert.deepEqual(x.unverifiedHostDates,[]);assert.equal(x.hostDatesVerified,true);assert.equal(x.feasible,true)});
+
+test('waiting for host uses normal food and lodging instead of confirmed free meals',()=>{
+ const opts={start:'2027-01-01',
+  stops:[['A','X',0,0,2,22,10,5,2,0,0],['B','X',0,1,3,22,10,5,2,0,0]],
+  items:[{i:0,days:2,food:10,other:2},{i:1,days:3,food:0,regularBed:22,other:2}],
+  volunteerDetails:{1:{confirmed:true,night:0,from:'2027-01-10',to:'2027-01-13'}},
+  isVolunteer:i=>i===1,transferDaysByStop:{1:0}};
+ const r=evaluate(opts);assert.equal(r.schedule.items[1].waitingDays,7);
+ assert.equal(r.waiting.total,7*(22+10+2));
+});
