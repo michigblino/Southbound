@@ -39,3 +39,13 @@ test('confirmed host meals are included in the actual itinerary, not just scenar
  assert.equal(preview.proposed.itinerary.items[0].food,20);
  assert.equal(preview.proposed.budget.totalEstimate,429);
 });
+
+test('previously confirmed host fees are present in baseline as well as candidate budget',()=>{
+ const prior={...host,extraCosts:65,from:'2027-01-01',to:'2027-01-05'};
+ const withHost=compare({...base,proposedDays:7,host,
+   options:{vol:{0:true},volunteerDetails:{0:prior}}});
+ assert.equal(withHost.baseline.itinerary.items[0].hostExtras,65);
+ assert.equal(withHost.baseline.itinerary.items[0].stay,4*17+65);
+ assert.equal(withHost.proposed.itinerary.items[0].hostExtras,0);
+ assert.equal(withHost.baseline.budget.totalEstimate-withHost.proposed.budget.totalEstimate,65+4*17-7*17);
+});
