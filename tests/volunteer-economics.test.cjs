@@ -6,3 +6,6 @@ test('gross opportunity does not imply confirmed net savings',()=>{const r=estim
 
 test('extra volunteering days cannot be called verified savings without their daily costs',()=>{const r=estimate({plannedDays:4,proposedDays:10,nightlyBed:20,hostConfirmed:true,hostNightlyBed:0,extraCostsKnown:true,extraCosts:0});assert.equal(r.extraDays,6);assert.equal(r.confirmedNet,null);assert.equal(r.netVerified,false)});
 test('explicit incremental daily costs are deducted from extended volunteering',()=>{const r=estimate({plannedDays:4,proposedDays:10,nightlyBed:20,hostConfirmed:true,hostNightlyBed:0,extraCostsKnown:true,extraCosts:0,extraDayDailyCost:15});assert.equal(r.confirmedNet,-10);assert.equal(r.netVerified,true)});
+
+test('confirmed host without an explicit nightly price cannot produce verified net savings',()=>{const r=estimate({plannedDays:7,proposedDays:7,nightlyBed:20,hostConfirmed:true,extraCostsKnown:true,extraCosts:0});assert.equal(r.confirmedNet,null);assert.equal(r.netVerified,false)});
+test('explicit free host accommodation is distinguishable from missing price',()=>{const r=estimate({plannedDays:7,proposedDays:7,nightlyBed:20,hostConfirmed:true,hostNightlyBed:0,extraCostsKnown:true,extraCosts:0});assert.equal(r.confirmedNet,140);assert.equal(r.netVerified,true)});
