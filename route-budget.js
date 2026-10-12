@@ -1,7 +1,7 @@
 /* Shared, conservative route budget snapshot for UI and volunteer scenarios. */
 (function(g){'use strict';
 const amount=v=>v===null||v===undefined||v===''?null:Number.isFinite(Number(v))&&Number(v)>=0?Number(v):null;
-function snapshot({items=[],paid=0,reserve=0,goal=0,cap=null,fixedCosts={},completed={},paidByStop={},waitingCost=0,waitingComplete=true,unrecorded=0,timingFeasible=true}={}){
+function snapshot({items=[],paid=0,reserve=0,goal=0,cap=null,fixedCosts={},completed={},paidByStop={},waitingCost=0,waitingComplete=true,unrecorded=0,timingFeasible=true,additionalCosts=0}={}){
  const engine=g.SouthboundBudgetEngine;if(!engine)throw Error('Budget engine unavailable');
  const lines=[],unknownTransfers=[],unknownPrepayments=[],invalidPrepayments=[];
  for(const item of items){
@@ -22,6 +22,7 @@ function snapshot({items=[],paid=0,reserve=0,goal=0,cap=null,fixedCosts={},compl
  const categories=[['return','Rückreise'],['insurance','Versicherung'],['visas','Visa'],['equipment','Ausrüstung']];
  for(const [key,label] of categories)lines.push({label,amount:amount(fixedCosts[key]),status:'estimate'});
  lines.push({label:'Wartekosten',amount:waitingComplete?amount(waitingCost):null,status:'estimate'});
+ lines.push({label:'Zusätzliche Szenariokosten',amount:amount(additionalCosts),status:'estimate'});
  const budget=engine.calculate({paid,reserve,goal,cap,items:[],fixedCosts:lines});
  const incompleteReasons=[];
  if(unknownTransfers.length)incompleteReasons.push('unknown-transfers');
