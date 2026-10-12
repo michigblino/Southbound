@@ -21,13 +21,13 @@ function compare({stops=[],start,stopId,proposedDays,host={},options={},budget={
  const afterTiming=timing.evaluate({...timingOpts,items:candidate.items,volunteerDetails,isVolunteer:i=>vol[i]===true&&volunteerDetails[i]?.confirmed===true});
  const shared={...budget};
  const beforeBudget=snapshot({...shared,items:baseline.items,waitingCost:beforeTiming.waiting.total,waitingComplete:beforeTiming.waiting.complete,timingFeasible:beforeTiming.feasible});
- const afterBudget=snapshot({...shared,items:candidate.items,waitingCost:afterTiming.waiting.total,waitingComplete:afterTiming.waiting.complete,timingFeasible:afterTiming.feasible});
+ const afterBudget=snapshot({...shared,items:candidate.items,waitingCost:afterTiming.waiting.total,waitingComplete:afterTiming.waiting.complete,timingFeasible:afterTiming.feasible,additionalCosts:amount(host.extraCosts)});
  const extraDays=Math.max(0,n-target.days);
  const dateShift=candidate.finish!==baseline.finish;
  const extraCosts=amount(host.extraCosts);
  const knownExtras=extraCosts!==null;
  const netImpactVerified=beforeBudget.complete&&afterBudget.complete&&hostConfirmed&&knownExtras&&beforeTiming.feasible&&afterTiming.feasible;
- const costDelta=netImpactVerified?Math.round((afterBudget.totalEstimate-beforeBudget.totalEstimate+extraCosts)*100)/100:null;
+ const costDelta=netImpactVerified?Math.round((afterBudget.totalEstimate-beforeBudget.totalEstimate)*100)/100:null;
  const reasons=[];
  if(!hostConfirmed)reasons.push('unconfirmed-host-or-price');
  if(!host.from||!host.to)reasons.push('missing-host-dates');
