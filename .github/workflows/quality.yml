@@ -87,3 +87,25 @@ jobs:
             playwright-report/
             test-results/
           if-no-files-found: ignore
+
+  preview-artifact:
+    name: Downloadable development preview (not deployed)
+    needs: [test, browser]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Package branch snapshot for local preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: southbound-development-preview
+          path: |
+            .
+            !.git/**
+            !.github/**
+            !node_modules/**
+            !tests/**
+            !scripts/**
+            !playwright-report/**
+            !test-results/**
+          retention-days: 14
+          if-no-files-found: error
