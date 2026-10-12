@@ -20,3 +20,5 @@ test('missing transport costs on a second stop prevent verified net claims',()=>
 test('invalid duration is rejected without modifying original itinerary',()=>{const r=compare({...base,host,proposedDays:0});assert.equal(r.valid,false)});
 
 test('explicit host fees are included in proposed all-in total',()=>{const r=compare({...base,host:{...host,extraCosts:50}});assert.equal(r.proposed.budget.totalEstimate,409);assert.equal(r.costDelta,21);assert.equal(r.netImpactCalculable,true)});
+
+test('date shift uses real host waiting, not naive itinerary finish',()=>{const r=compare({...base,proposedDays:2,host:{...host,from:'2027-01-03',to:'2027-01-05'}});assert.equal(r.proposed.timing.schedule.items[0].waitingDays,2);assert.equal(r.baseline.timing.schedule.finish,'2027-01-05');assert.equal(r.proposed.timing.schedule.finish,'2027-01-05');assert.equal(r.dateShift,false)});
