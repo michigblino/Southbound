@@ -287,3 +287,10 @@ Decision: DOCUMENT ONLY, DO NOT IMPLEMENT YET.
 - Preview button computes `SouthboundVolunteerScenario.compare` from current route, transfer days, prepayments, completed stops, fixed costs, reserve, recorded expenses, host dates and user input. Displays before/after calendar finish and all-in totals. Preview does not call `save()` or modify `m`; existing confirmation still persists.
 - Added `tests/volunteer-preview-ui.test.cjs` for integration markup and wiring. Browser interaction/Playwright test and end-to-end consistency with already-confirmed volunteer hosts remain outstanding. Avoid calling this production-ready; inspect CI.
 - No deployment or main branch modifications.
+
+### 2026-10-12 — Private-ish local preview artifact, no public deployment
+
+- `sw.js` cache bumped to `southbound-v57` and now precaches `volunteer-scenario.js`; integration asset test enforces both HTML and offline inclusion.
+- `.github/workflows/quality.yml` adds `preview-artifact` job dependent on successful `test` and `browser`. It uploads the feature-branch static files as `southbound-development-preview` (14-day retention). This is a **downloadable artifact, not a hosted preview URL**; GitHub artifact visibility follows repository/Actions permissions and must not be described as confidential/private if repository is public.
+- To test locally: download artifact from successful Actions run, extract, start `python -m http.server 8000` in extracted directory, open `http://localhost:8000/` in browser. Avoid `file://` due to service-worker and fetch restrictions. Local storage is origin-scoped, so localhost test state is separate from GitHub Pages data; still back up travel data before any later production migration.
+- Next: real Playwright interaction tests of volunteer dialog, confirm/save, mobile layout; inspect artifact completeness and verify workflow succeeds. No GitHub Pages publishing or main merge.
