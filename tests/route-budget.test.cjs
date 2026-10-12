@@ -16,3 +16,6 @@ test('unknown lodging does not erase known transfer estimate',()=>{const r=snaps
 test('unknown transfer does not erase known lodging',()=>{const r=snapshot({...base,items:[{i:0,stay:200,leg:null}]});assert.equal(r.totalEstimate,520);assert.equal(r.missingCount,1);assert.ok(r.lines.some(x=>x.label==='Aufenthalt 0'&&x.amount===200))});
 test('prepayment beyond lodging offsets the remaining transfer once',()=>{const r=snapshot({...base,paidByStop:{0:210}});assert.equal(r.totalEstimate,330);assert.ok(r.lines.some(x=>x.label==='Transfer 0'&&x.amount===10))});
 test('prepayment with unknown lodging cannot be silently allocated',()=>{const r=snapshot({...base,items:[{i:0,stay:null,leg:45}],paidByStop:{0:20}});assert.equal(r.totalEstimate,365);assert.ok(r.incompleteReasons.includes('unallocated-prepayments'))});
+
+test('invalid negative stop prepayment is not silently accepted as verified',()=>{const r=snapshot({...base,paidByStop:{0:-20}});assert.equal(r.complete,false);assert.ok(r.incompleteReasons.includes('invalid-stop-prepayments'));assert.deepEqual(r.invalidPrepayments,[0])});
+test('non-numeric stop prepayment is explicitly flagged',()=>{const r=snapshot({...base,paidByStop:{0:'unknown'}});assert.equal(r.goalStatus,'unverified');assert.ok(r.incompleteReasons.includes('invalid-stop-prepayments'))});
