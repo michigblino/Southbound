@@ -13,3 +13,5 @@ test('overview distinguishes primary all-in subtotal from optional risk simulati
 test('STH/BND app icon is used by favicon and PWA manifest',()=>{const icon=fs.readFileSync(path.join(root,'icon.svg'),'utf8'),manifest=JSON.parse(fs.readFileSync(path.join(root,'manifest.webmanifest'),'utf8'));assert.match(icon,/>STH<\/text>/);assert.match(icon,/>BND<\/text>/);assert.match(icon,/M95 116H417M95 394H417/);assert.ok(html.includes('href="./icon.svg"'));assert.ok(manifest.icons.some(x=>x.src==='./icon.svg'))});
 
 test('volunteer recommendations do not stop when gross savings seem to cover budget gap',()=>{assert.match(html,/if\(selected\.length>=5\)break/);assert.doesNotMatch(html,/if\(gap>0&&covered>=gap\)break/);assert.match(html,/zusätzliche Tage mit noch zu kalkulierenden Kosten/);assert.match(html,/nicht<\/b> von der Budgetlücke abgezogen/)});
+
+test('STH/BND visual theme supports persistent dark and light modes',()=>{assert.match(html,/data-sb-theme/);assert.match(html,/southbound-theme/);assert.match(html,/prefers-color-scheme: light/);assert.match(html,/sb-theme-toggle/);assert.match(html,/--bg:#f4f1e9/);assert.match(html,/--bg:#111310/)});
