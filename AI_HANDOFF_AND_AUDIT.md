@@ -244,3 +244,10 @@ Decision: DOCUMENT ONLY, DO NOT IMPLEMENT YET.
 - Each recommendation explicitly marks extra volunteering days requiring further costing, and explains that theoretical accommodation opportunity is not deducted from the budget gap.
 - Added a static regression guard in `tests/integration-assets.test.cjs`. Further work: calculate true date-aware route-level net impact before any recommendation can claim verified savings. Do not use the gross opportunity to update the main all-in budget.
 - CI after these commits has not yet been confirmed. All changes remain on `feat/global-trip-foundations`.
+
+### 2026-10-12 — Volunteer host date feasibility
+
+- `route-timing.js` now reports `unverifiedHostDates` and `hostDatesVerified`; any active confirmed volunteering stage missing host `from` or `to` makes route timing `feasible=false`, even when the provisional calendar can still be rendered. This prevents missing host windows from being interpreted as verified feasibility.
+- Two regression tests in `tests/route-timing.test.cjs` cover missing vs explicit compatible host windows.
+- Still to do: an integrated, dated before/after volunteer scenario with explicit extra-day meals, lodging, transport and wait costs, recomputed all-in budget and user-confirmed application. Do not claim verified net savings based solely on the existing gross lodging estimate.
+- CI not yet confirmed for these commits; branch only, public site unchanged.
