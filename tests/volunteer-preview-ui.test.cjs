@@ -1,0 +1,3 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
+const html=fs.readFileSync(require('node:path').join(__dirname,'../index.html'),'utf8');
+test('volunteer dialog exposes food, fees and non-persisting before-after preview',()=>{for(const id of ['sb-vol-food','sb-vol-extra','sb-vol-preview','sb-vol-preview-result'])assert.ok(html.includes(id),id);assert.match(html,/SouthboundVolunteerScenario\.compare\(/);assert.match(html,/Noch nichts gespeichert/);assert.match(html,/foodPerDay:document\.getElementById\('sb-vol-food'\)/);assert.match(html,/extraCosts:document\.getElementById\('sb-vol-extra'\)/)});

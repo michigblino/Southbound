@@ -105,3 +105,192 @@
 - Current calculation use: budget definition controls *volunteer scenario gap only*, pace changes heuristic minimum stay, must-visit names protect stops from auto-shortening, volunteer hours filter known hours, desired/max weeks affect scenario potential, buffer affects earliest search start, platform changes external search site.
 - **Not fully wired**: latest return date, travel days/week, full-budget treatment of exclusions, actual availability. Workaway/Worldpackers platform selection is external search only, not an API integration. Budget overview still displays reserve-inclusive totals; do not interpret budget-definition toggle as having rewritten the whole budget model.
 - Test real Android and inspect save/persist/reload. The patch was JS-syntax-validated but no end-to-end UI automation run.
+
+## 2026-10-11 global product direction and implementation branch
+
+- **Worldwide product**: Southbound must support arbitrary world regions, currencies and custom routes; South America is the initial test trip, not a fixed scope.
+- **Volunteer onboarding**: collect user-defined hard constraints (e.g. max 30 hours/week), stay length, activities, food, radius and date flexibility before recommending regions. The 30 h/week limit is a user-specific default, **not** a universal cap.
+- **MVP**: recommend route-compatible volunteering regions and provide honest external Worldpackers/Workaway search links. User confirms actual host acceptance and conditions manually. **No scraping, fabricated host counts or claims of live availability.** Later explore licensed APIs/partnerships.
+- **Feature branch**: `feat/global-trip-foundations`; leave `main` deployed and `southbound-v3` browser state untouched.
+- Added `budget-engine.js`, `volunteer-matching.js`, tests, `ARCHITECTURE.md`, `TEST_PLAN.md`, `CHANGELOG.md`. These are independent foundation modules **not yet wired to the UI**.
+- New budget engine distinguishes zero from unknown, paid from future and target from spending cap. Its `complete` flag only validates supplied line items: before claiming true all-in coverage, require all mandatory expense categories.
+- New volunteer engine returns `eligible` / `needs-verification` / `excluded`; unknown host hours and unconfirmed availability cannot be called eligible.
+- **Execution status**: files were committed through GitHub API. Full `node --test tests/*.test.cjs` and browser tests have **not** been run. No production UI change.
+- **Next task**: run tests in a checkout, inventory the existing budget display paths, wire the engine only after reconciliation, then host-date itinerary constraints and onboarding. Read this handoff, then only relevant files; record test evidence after each change.
+
+## 2026-10-11 continuation — explicit calendar foundation
+- Added `trip-calendar.js` with transfer-day reservation, waiting days, confirmed-host start/end constraints and explicit conflict results. Added `tests/trip-calendar.test.cjs` for transfer, wait, arrival conflict, host end, two-host propagation and invalid date.
+- **Not yet wired to visible UI**; waiting-night accommodation/food costs and cross-time-zone overnight transfers still need integration. Existing itinerary dates remain unchanged.
+- No end-to-end/browser verification; full test suite pending. Next: wire calendar and all-in budget into existing UI carefully, without duplicate charges or resetting `southbound-v3`.
+
+## 2026-10-11 integration update
+- Feature branch `index.html` now loads `budget-engine.js`, `trip-calendar.js`, `volunteer-matching.js` and renders `sbBudgetIntegrityPanel(p)` before the existing overview budget. This is a **diagnostic**, not a replacement of the production all-in budget.
+- Diagnostic shows paid + remaining estimated route costs + reserve, missing transport legs, confirmed-host date conflicts, and waiting-day count. Waiting-day food/lodging **not yet priced**; travel-day durations are currently passed as zero because no verified schedule is available. No all-in clearance is claimed.
+- Main branch remains unchanged. Browser E2E and Node suite still not run. Next: check syntax/tests and add missing fixed-cost input and priced wait nights before using this figure for volunteer optimization.
+
+## 2026-10-11 beta fixed-cost / waiting-cost integration
+- Feature branch overview now offers optional **remaining** fixed-cost inputs (return trip, insurance, visas, equipment), saved in `m.fixedCosts` inside existing `southbound-v3`. Blank means unknown, numeric zero is explicitly free; paid amounts already in `m.actuals` should not be entered again.
+- Added `wait-costs.js` and `tests/wait-costs.test.cjs`: waiting days before confirmed host start are priced with non-host lodging, food and other daily cost. Missing lodging is **unknown**, not free. The diagnostic shows missing categories and conflicts.
+- **Critical limitations**: this remains a beta diagnostic; the existing overview and volunteer optimizer still use their legacy budget paths. Waiting days are not integrated into the main itinerary, transfer-day duration is still zero absent verified schedules, and fixed-cost coverage is user-entered (not independently verified). The beta budget engine's `complete` only means supplied inputs were populated; do not call this final all-in accuracy.
+- Main remains untouched. Node test suite, JS syntax validation and mobile E2E are still pending. Next: execute tests, reconcile fixed costs and waiting costs into a single authoritative model, then fix `sbVolunteerScenario` to use it.
+
+## 2026-10-11 budget fixes and automated checks
+- Fixed beta budget diagnostic phantom transfers: stage balances now use explicit cost lines, with separate unknown-transfer flags.
+- Volunteer scenario gap includes already-paid spending and known manually entered remaining fixed expenses. It still excludes unknown transfers and some waiting-night costs, so it is NOT an all-in verified target.
+- Service worker cache bumped to v52 and new modules added to offline precache.
+- GitHub Actions quality workflow added for JavaScript syntax and Node regression tests; results NOT yet verified.
+- Main unchanged. Next: inspect CI, integrate one shared route-budget snapshot, price transfer days, test Android/mobile and storage persistence.
+
+## 2026-10-11 shared route budget integration
+- New `route-budget.js` exports `SouthboundRouteBudget.snapshot`. Both beta overview diagnostics and `sbVolunteerScenario` gap now call it. It reconciles paid spending, future stage costs minus per-stop paid amounts, reserve, remaining return/insurance/visa/equipment costs, and waiting costs when known. Missing transfers and missing fixed costs remain unknown. It never claims verified all-in completeness.
+- **Important limitation:** volunteer scenario passes waiting cost as unknown until its revised route calendar is reconciled. Thus the displayed gap is a **known-cost lower bound**, not a verified total. Legacy main headline budget still uses dynamic-risk calculation; do not claim complete unification yet.
+- Added six route-budget tests, offline precache update v53 and CI syntax check. Tests/CI outcomes not yet inspected; main remains unchanged.
+- Next: inspect actual CI status, replace legacy main headline after reconciling price bands and fixed categories; calculate waiting and transfer-day costs for hypothetical volunteer scenarios; test mobile and persistence.
+
+## 2026-10-11 follow-up: shared headline and completeness
+- Beta budget panel now displays the shared `SouthboundRouteBudget.snapshot` total as a prominent provisional all-in subtotal. The old dynamic-risk headline is relabeled **separate legacy risk corridor**, not the authoritative all-in total.
+- `route-budget.js` now marks `complete=false` and `goalStatus=unverified` when historical completed-stop expenses are unrecorded, waiting costs are unknown, or any required amounts are missing. Two additional regression tests added.
+- **Outstanding:** actual GitHub CI status and browser/E2E are not verified. A provisional subtotal is not a full all-in forecast. Hypothetical volunteering route still lacks waiting-day repricing and transfer-day schedule integration. Production main unchanged.
+
+## 2026-10-11 shared route timing
+- Added `route-timing.js` and three Node tests. Both current budget panel and hypothetical volunteer sparroute now call `SouthboundRouteTiming.evaluate` to calculate calendar conflicts and waiting-night cost estimates from the same inputs. Previously the scenario forced waiting cost to unknown.
+- Candidate route UI now warns on confirmed host date collisions. New module precached in service worker v54 and included in CI syntax checks.
+- **Limitations:** transfer durations still zero, waiting accommodation uses existing normal nightly quote or original stop fallback (not a verified booking), and no real host API. Main untouched; CI/browser results unverified. Do not implement social route-sharing or RealGuessr integration without explicit later request.
+
+## Product backlog — future collaborative travel (2026-10-12)
+Decision: DOCUMENT ONLY, DO NOT IMPLEMENT YET.
+- Private route sharing: owner can share only selected future stops or a date range via a revocable, expiring link. Never expose the full private itinerary by default.
+- Invite existing friends to co-plan a trip, with explicit roles (view/comment/edit) and owner approval.
+- Hostel acquaintances can request to join selected future legs without access to unrelated private plans; joining is not automatic. Support partial overlapping journeys and independent departure dates.
+- Privacy/security requirements before implementation: opt-in location visibility, no public live tracking by default, revocation, access controls, abuse reporting, and protection of personal spending/host details.
+- Suggested staged rollout: (1) read-only limited route sharing; (2) invitations and permissioned co-planning; (3) optional join-a-leg requests. Validate demand and data model before social discovery.
+- RealGuessr/BeGuessr integration: explicitly deferred; do not plan or implement for now.
+- Near-term priority remains unified all-in budget, realistic transfer/calendar constraints, honest volunteering net savings, automated tests and Android QA. Do not implement collaborative features without a later explicit user request.
+
+## 2026-10-12 transfer-duration integrity
+- `route-timing.js` now accepts optional `transferDaysByStop` (destination stop index -> integer travel days) and emits `unknownTransferDays`, `transferDaysVerified`. A missing duration is **not** a verified zero; schedule still uses provisional zero solely to render dates, and marks feasibility false.
+- Overview and hypothetical volunteer scenario pass `m.transferDaysByStop||{}` without migrating or clearing stored data. UI warns on unknown durations and does not present optimized itinerary as date-verified.
+- Added two route-timing tests for unknown duration and explicit 2-day downstream shift. No provider travel-time integration yet; durations are optional user/state input only, no invented metrics.
+- Workflow status not confirmed: commit workflow query returned no PR-triggered runs; that endpoint does not cover push-triggered runs. Do not report CI green. Main unchanged.
+
+## 2026-10-12 CI hardening
+- `.github/workflows/quality.yml` now syntax-checks new route-budget/route-timing/integration tests and runs a dedicated `scripts/check-inline-scripts.cjs` using `vm.Script` rather than fragile shell-escaped inline regex. All `tests/*.test.cjs` are still executed via Node test runner.
+- `tests/integration-assets.test.cjs` checks that budget/timing modules are present in HTML and PWA cache, cache version is present, and original localStorage key is preserved.
+- **Status:** commits are in feature branch only. GitHub Actions push-run success has NOT been independently confirmed, and Android browser/E2E remain untested. Next action: inspect Actions run, fix any failures, then verify mobile UI, persistence and volunteer budgets.
+
+## 2026-10-12 independent runtime smoke checks
+- Retrieved current `budget-engine.js`, `route-budget.js`, `trip-calendar.js`, `wait-costs.js`, `route-timing.js` and `volunteer-matching.js` directly from the feature branch and evaluated their browser-global modules in an isolated V8 runtime.
+- **9/9 smoke assertions passed**: missing transfer, blank fixed cost, paid offset, completed stop, unrecorded history, unknown waiting cost, priced host waiting, waiting-day count, and unknown transfer duration. Additional baseline checks passed for €540 total, explicit two-day transfer shifting arrival to 2027-01-05, and no missing duration with explicit value.
+- This does **not** execute Node's `node:test` suite or prove GitHub Actions green; it also does not test HTML rendering, offline service worker, persistence in a real browser, or Android. Do not label these verified until tested in their environments.
+
+## 2026-10-12 timing-budget integrity and syntax smoke check
+- `route-budget.js` accepts `timingFeasible`; a false value adds `unverified-route-dates` and prevents `complete=true` / verified goal status. Both overview and hypothetical volunteering pass the result of `SouthboundRouteTiming.evaluate().feasible`. Regression test added.
+- Current feature-branch HTML was fetched and its two inline JS scripts passed isolated V8 parse checks. Five isolated budget assertions also passed (7/7 checks in this session). This is NOT a full Node CI or browser E2E run.
+- Full GitHub Actions status and Android QA still require verification. Keep main unchanged until confirmed.
+
+## 2026-10-12 full calculation-suite isolated execution
+- Retrieved the six core module sources and all six corresponding `tests/*.test.cjs` sources directly from the feature branch. Evaluated all test callbacks in a V8 harness providing equivalents of Node's `node:test` and `node:assert/strict` (`equal`, `ok`, `deepEqual`) and module loading for those six files.
+- **33/33 existing calculation tests passed, 0 failed.** Covers budget engine, route budget, route timing, trip calendar, waiting costs and volunteering matching.
+- Scope is **isolated test harness**, not the official Node test runner. Does not execute filesystem-dependent `integration-assets.test.cjs`, browser UI, service worker, or Android E2E. GitHub Actions status not independently verified. Do not claim CI green.
+
+## 2026-10-12 volunteer economics + QA
+- Added `volunteer-economics.js`: theoretical gross lodging opportunity capped to existing planned nights, not proposed host duration. Added four Node regression tests, updated UI labels to distinguish gross opportunity from **unverified net savings**, and bumped offline cache v55. A longer volunteer placement can require extra meals, accommodation, fees, transport, and waiting nights; never claim the gross upper bound closes an all-in budget gap.
+- Isolated V8 smoke verification: 6/6 economics and asset checks passed; both inline scripts parsed successfully. GitHub Actions status and Android real-device testing still unverified. No source-backed live ticket quotes were added; `transport-estimate.js` remains low-confidence heuristic.
+
+## 2026-10-12 browser automation added
+- Added `package.json`, `playwright.config.cjs`, `browser-tests/smoke.spec.cjs`, and a separate `browser` job in `.github/workflows/quality.yml` on feature branch pushes/PRs/manual workflow dispatch.
+- Chromium smoke scenarios: page title + JS runtime modules + page errors, localStorage survives reload, and 390x844 mobile viewport horizontal overflow check. Uses local Python HTTP server; no publishing to `main`.
+- GitHub-hosted Chromium is **not** a real Android device; 3D globe gesture and GPU rendering remain manual Android acceptance items. Browser CI status is not confirmed until actual GitHub Actions run reports success. Browser tests may expose genuine existing UI issues; fix based on logs rather than weakening assertions.
+
+## 2026-10-12 — Volunteering economics guardrail
+
+- `volunteer-economics.js`: confirmed net savings for a proposed volunteer stay longer than the planned stop are **unverified** until `extraDayDailyCost` is explicitly supplied (zero is accepted only when explicitly verified). This is the per-extra-day food/activities/other incremental cost; host accommodation is priced separately by `hostNightlyBed`. `extraCosts` remains the separate one-off cost input.
+- The original stop's gross lodging opportunity remains capped at `min(plannedDays, proposedDays) * nightlyBed`; never advertise it as verified net savings.
+- Added two unit regressions for unknown versus priced extra days. Full CI status must be checked; no claim of full test pass yet.
+- CI workflow now uses a readable Node spec reporter and publishes failure diagnostics in the job summary and artifact. Existing three failing tests from run #59 have not yet been individually identified.
+
+
+## Budget audit follow-up — 2026-10-12 (feature branch only)
+
+- Reviewed `budget-engine.js`, `route-budget.js`, `itinerary.js`, `route-timing.js`, and `volunteer-economics.js`.
+- **Fixed in `route-budget.js`:** separate accommodation/stay and inbound transfer liabilities per stop. Previously, if stay was unknown, a priced transfer disappeared from the numeric forecast; if a transfer was unknown, the known stay was folded into an opaque combined line. The snapshot now preserves both independent lines, counts missing values, and keeps the budget unverified.
+- **Prepayment allocation:** `paidByStop[i]` is deducted from future stay first and then inbound transfer, not twice. If stay is unknown, prepayment allocation cannot be validated and the snapshot emits `unallocated-prepayments` instead of guessing.
+- Added regression tests in `tests/route-budget.test.cjs` for independent missing stay/transfer amounts and prepayments.
+- **Known unresolved financial risks:** `paid` and `paidByStop` can overlap if the calling UI records expenses inconsistently; the engine cannot reconcile receipts without transaction-level identifiers. `reserve` must represent a cash buffer, not a second copy of return flight/insurance/visa costs. `fixedCosts` are manually supplied, not verified quotes. `itinerary.js` uses estimated daily costs and heuristic transport, not booking prices. Missing transfer durations prevent a fully verified calendar. `allInVerified` deliberately remains false.
+- **Verification status:** Changes pushed to `feat/global-trip-foundations`. New GitHub Actions test results must be checked; this entry does not claim the new regressions have passed. Do not merge into `main` without explicit user approval.
+
+### 2026-10-12 — UI-to-budget contract audit
+
+- **Critical fixed-cost integration bug fixed:** `sbBudgetIntegrityPanel` previously converted `m.fixedCosts` to an **array** of `{label,amount,status}` before passing it to `SouthboundRouteBudget.snapshot`, which expects a **keyed object** (`return`, `insurance`, `visas`, `equipment`). The snapshot therefore saw all four amounts as missing even when entered. The UI now passes the keyed object, and the missing-value check uses its values.
+- Added integration regression guard in `tests/integration-assets.test.cjs`. CI results for this commit must still be checked.
+- The overview deliberately shows **two different numbers**: a unified provisional all-in subtotal (`sbBudgetIntegrityPanel`) and a separate heuristic price-risk corridor (`SouthboundDynamicRisk.total`). These are not interchangeable. The risk corridor uses placeholder fares for unknown transfers and does not automatically include fixed costs, so it must never be presented as the complete all-in forecast. A follow-up UI simplification should make the all-in subtotal the prominent primary figure and keep the risk corridor subordinate.
+- User reported GitHub Actions check #76 green for the preceding batch. This note does not imply later commits have passed.
+
+### 2026-10-12 — Single primary budget figure in overview
+
+- Promoted `sbBudgetIntegrityPanel`'s `SouthboundRouteBudget.snapshot().totalEstimate` to the labeled primary **provisional all-in subtotal** (`data-sb-all-in-total`). Show €8,000 goal, €12,000 cap, known missing amount count and verification reasons. Never interpret the subtotal as a final price when costs are missing.
+- Collapsed the separate `SouthboundDynamicRisk.total` projection into an optional `<details>` panel and removed its misleading goal-gap comparison. The risk simulation may substitute placeholder fares and omit fixed expenses; it must not compete with the primary all-in figure.
+- Added integration guard in `tests/integration-assets.test.cjs`. CI after these commits is pending; no claim of passing.
+
+### 2026-10-12 — Volunteer savings validation
+
+- Fixed `volunteer-economics.js`: a confirmed host with **no quoted nightly price** no longer silently defaults to €0 accommodation and produces a false verified net saving. Explicit `hostNightlyBed: 0` remains valid when supplied. Two regression tests added in `tests/volunteer-economics.test.cjs`.
+- This only verifies the standalone volunteer economics helper; it does **not** guarantee complete trip-level savings, host availability, date overlap, transport or waiting expenses. Audit integration before claiming total savings.
+- CI for these commits is pending. Changes are confined to `feat/global-trip-foundations`; public site untouched.
+
+### 2026-10-12 — Volunteer recommendation shortlist integrity
+
+- In `index.html`, `sbVolunteerScenario` previously stopped selecting recommendations when summed **gross lodging opportunity** appeared to cover `goalGap`, incorrectly implying a budget shortfall was resolved without host prices, meals, transport, or extra-day expenses. The shortlist now displays up to five candidate locations independently of the gross sum. It retains chronological presentation.
+- Each recommendation explicitly marks extra volunteering days requiring further costing, and explains that theoretical accommodation opportunity is not deducted from the budget gap.
+- Added a static regression guard in `tests/integration-assets.test.cjs`. Further work: calculate true date-aware route-level net impact before any recommendation can claim verified savings. Do not use the gross opportunity to update the main all-in budget.
+- CI after these commits has not yet been confirmed. All changes remain on `feat/global-trip-foundations`.
+
+### 2026-10-12 — Volunteer host date feasibility
+
+- `route-timing.js` now reports `unverifiedHostDates` and `hostDatesVerified`; any active confirmed volunteering stage missing host `from` or `to` makes route timing `feasible=false`, even when the provisional calendar can still be rendered. This prevents missing host windows from being interpreted as verified feasibility.
+- Two regression tests in `tests/route-timing.test.cjs` cover missing vs explicit compatible host windows.
+- Still to do: an integrated, dated before/after volunteer scenario with explicit extra-day meals, lodging, transport and wait costs, recomputed all-in budget and user-confirmed application. Do not claim verified net savings based solely on the existing gross lodging estimate.
+- CI not yet confirmed for these commits; branch only, public site unchanged.
+
+### 2026-10-12 — Volunteer scenario comparison foundation
+
+- Added `volunteer-scenario.js` pure `SouthboundVolunteerScenario.compare(...)` to recompute baseline and proposed itineraries, route timing, waiting costs and all-in budgets after a proposed volunteering duration/host change. Does not mutate persisted trip state and is not yet wired into the UI.
+- `route-budget.js` accepts optional `additionalCosts` (default 0) for explicitly priced scenario fees; unknown fees remain unknown. No new costs are injected into ordinary snapshots.
+- The comparison exposes `netImpactCalculable` and `costDelta` only when the host and price, dates, extra fees, transfers and all-in budgets are complete. `costDelta` is an **estimate**, not proof of paid/verified market prices. Incomplete scenarios expose reasons and `costDelta:null`.
+- Added `tests/volunteer-scenario.test.cjs` for confirmed, unconfirmed, missing dates, missing fees, unknown transport, invalid duration and explicit host fees.
+- Follow-up before UI: integrate script loading into browser if needed, evaluate actual volunteer host overlap, meals/transport extra-day evidence and date conflicts; add browser integration tests. CI not yet confirmed.
+- Changes confined to `feat/global-trip-foundations`; public app untouched.
+
+### 2026-10-12 — CI #101–107 failure and logo-aligned themes
+
+- Run 38197991199: browser job succeeded; Node test job failed 6 of 143 tests. Root cause: `volunteer-scenario.js` assigned the `SouthboundRouteBudget` object to `snapshot` and invoked it as a function. Corrected to `.snapshot` in commit `001a359`.
+- Added an STH/BND-inspired ink/paper palette in `index.html`, with `data-sb-theme=light|dark`, a fixed top-right toggle, system preference as first-visit default, separate localStorage key `southbound-theme`, and matching browser theme-color. Existing trip data remains unchanged. Added theme regression assertions.
+- Design migration is incremental: existing hard-coded dark CSS, SVG and map colors need a later visual accessibility audit across all screens. Do not claim comprehensive light-mode parity before browser review.
+- New CI results not yet verified. Branch only; no main merge or deployment.
+
+### 2026-10-12 — Volunteer scenario schedule consistency
+
+- `volunteer-scenario.js` now derives `dateShift` from the evaluated calendar `schedule.finish` rather than the naive itinerary `finish`, because confirmed host waiting and known transfer days change the real schedule.
+- Regression test verifies that a 2-day volunteer stay preceded by 2 waiting days finishes on the same date as an ordinary 4-day stay; it must not be marked as a shifted finish.
+- Next priorities: test host-date conflicts and multiple stops in the UI workflow; conservative extra-day food/transport coverage; connect the comparison to user-controlled scenario preview without persisting automatically. No design changes or deployment.
+
+### 2026-10-12 — Volunteer food pricing and browser availability
+
+- `SouthboundVolunteerScenario.compare` now requires explicit `host.foodPerDay` for a calculable net delta. It reprices the candidate stage's food and stay before calendar/budget evaluation. `0` means explicitly free meals; omitted does **not** mean free. This prevents claiming savings when meals are unknown. `host.extraCosts` remains a separate explicit amount; extra days and host waiting costs are included in recalculation.
+- Tests cover increased host meal prices and missing meal prices, as well as existing date/fee/transfer cases.
+- Added `volunteer-scenario.js` script to `index.html`, making the calculation available to the browser. **No user-facing comparison UI yet; no automatic acceptance or persisted model changes.** Must integrate UI safely and verify browser tests before calling feature complete.
+- No deployment or main branch changes; CI pending.
+
+### 2026-10-12 — Volunteer before/after UI (branch only)
+
+- `index.html` volunteer confirmation dialog now includes explicit `foodPerDay` and `extraCosts` inputs, both nullable when left blank. On confirmation both are persisted to `m.volunteerDetails[selected]` (existing localStorage structure preserved).
+- Preview button computes `SouthboundVolunteerScenario.compare` from current route, transfer days, prepayments, completed stops, fixed costs, reserve, recorded expenses, host dates and user input. Displays before/after calendar finish and all-in totals. Preview does not call `save()` or modify `m`; existing confirmation still persists.
+- Added `tests/volunteer-preview-ui.test.cjs` for integration markup and wiring. Browser interaction/Playwright test and end-to-end consistency with already-confirmed volunteer hosts remain outstanding. Avoid calling this production-ready; inspect CI.
+- No deployment or main branch modifications.
+
+### 2026-10-12 — Private-ish local preview artifact, no public deployment
+
+- `sw.js` cache bumped to `southbound-v57` and now precaches `volunteer-scenario.js`; integration asset test enforces both HTML and offline inclusion.
+- `.github/workflows/quality.yml` adds `preview-artifact` job dependent on successful `test` and `browser`. It uploads the feature-branch static files as `southbound-development-preview` (14-day retention). This is a **downloadable artifact, not a hosted preview URL**; GitHub artifact visibility follows repository/Actions permissions and must not be described as confidential/private if repository is public.
+- To test locally: download artifact from successful Actions run, extract, start `python -m http.server 8000` in extracted directory, open `http://localhost:8000/` in browser. Avoid `file://` due to service-worker and fetch restrictions. Local storage is origin-scoped, so localhost test state is separate from GitHub Pages data; still back up travel data before any later production migration.
+- Next: real Playwright interaction tests of volunteer dialog, confirm/save, mobile layout; inspect artifact completeness and verify workflow succeeds. No GitHub Pages publishing or main merge.

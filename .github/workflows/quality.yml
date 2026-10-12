@@ -1,0 +1,111 @@
+name: Southbound checks
+on:
+  push:
+    branches: [feat/global-trip-foundations]
+  pull_request:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check JavaScript syntax
+        run: |
+          node --check budget-engine.js
+          node --check route-budget.js
+          node --check trip-calendar.js
+          node --check route-timing.js
+          node --check wait-costs.js
+          node --check volunteer-matching.js
+          node --check volunteer-economics.js
+          node --check tests/volunteer-economics.test.cjs
+          node --check itinerary.js
+          node --check tests/budget-engine.test.cjs
+          node --check tests/route-budget.test.cjs
+          node --check tests/route-timing.test.cjs
+          node --check tests/integration-assets.test.cjs
+          node --check scripts/check-inline-scripts.cjs
+          node --check tests/trip-calendar.test.cjs
+          node --check tests/wait-costs.test.cjs
+          node --check tests/volunteer-matching.test.cjs
+          node scripts/check-inline-scripts.cjs
+      - name: Run all node tests with readable failure diagnostics
+        shell: bash
+        run: |
+          set -o pipefail
+          node --test --test-reporter=spec tests/*.test.cjs 2>&1 | tee node-test-results.log
+      - name: Publish failing test details to job summary
+        if: failure()
+        shell: bash
+        run: |
+          {
+            echo '## Node test diagnostics'
+            echo '```text'
+            tail -n 120 node-test-results.log || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Preserve complete Node test log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: node-test-results
+          path: node-test-results.log
+          if-no-files-found: ignore
+
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser test dependencies
+        run: npm install --no-audit --no-fund
+      - name: Install Chromium and Linux dependencies
+        run: npx playwright install --with-deps chromium
+      - name: Run browser smoke tests
+        run: npm run test:browser
+      - name: Publish mobile layout diagnostics to job summary
+        if: failure()
+        shell: bash
+        run: |
+          {
+            echo '## Browser test diagnostics'
+            echo 'Mobile overflow offenders are included in the assertion message.'
+            echo 'See the failed Playwright test output and the attached report for element selectors and bounds.'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+
+  preview-artifact:
+    name: Downloadable development preview (not deployed)
+    needs: [test, browser]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Package branch snapshot for local preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: southbound-development-preview
+          path: |
+            .
+            !.git/**
+            !.github/**
+            !node_modules/**
+            !tests/**
+            !scripts/**
+            !playwright-report/**
+            !test-results/**
+          retention-days: 14
+          if-no-files-found: error
