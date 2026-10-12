@@ -294,3 +294,12 @@ Decision: DOCUMENT ONLY, DO NOT IMPLEMENT YET.
 - `.github/workflows/quality.yml` adds `preview-artifact` job dependent on successful `test` and `browser`. It uploads the feature-branch static files as `southbound-development-preview` (14-day retention). This is a **downloadable artifact, not a hosted preview URL**; GitHub artifact visibility follows repository/Actions permissions and must not be described as confidential/private if repository is public.
 - To test locally: download artifact from successful Actions run, extract, start `python -m http.server 8000` in extracted directory, open `http://localhost:8000/` in browser. Avoid `file://` due to service-worker and fetch restrictions. Local storage is origin-scoped, so localhost test state is separate from GitHub Pages data; still back up travel data before any later production migration.
 - Next: real Playwright interaction tests of volunteer dialog, confirm/save, mobile layout; inspect artifact completeness and verify workflow succeeds. No GitHub Pages publishing or main merge.
+
+
+## 2026-10-12 – Priorisierung nach Nutzerfreigabe (noch nicht auf main)
+
+- **Wichtig zuerst:** Ticket-Strecken-/Datumsbindung, Host-Ankunft und Terminverschiebungen, korrektes Host-Warteessen, Host-Gebühren in der primären Budgetrechnung, Stundenlimit, widerrufbare Host-Bestätigungen; Änderungen im Featurebranch `fix/booking-budget-integrity-20261012`.
+- Die gewünschte UI-Karte **„Medellín → Salento“** mit Linien-Icons und Status-Chips wurde ausdrücklich bestätigt. Umsetzung **nach** Stabilisierung von Kalender/Budget; Design und Akzeptanzkriterien in [ROADMAP_BOOKINGS_AND_STAGE_CARDS.md](ROADMAP_BOOKINGS_AND_STAGE_CARDS.md) dauerhaft festgehalten.
+- Alte `m.transportOffers[i]` bleiben unverändert gespeichert, sind ohne `fromId`/`toId` aber nicht mehr als belastbarer aktueller Preis gültig. Nutzer muss sie erneut prüfen. Keine Daten werden gelöscht.
+- Offene Hauptrisiken: tatsächliche Transferdauer und Zeitzonen, reale Hostel-Angebote und Angebotsverfall, Volunteering-Host-Freigabe, direkte Buchungs-API, unabhängige Bestätigung der Zahlung, vollständiger E2E-Buchungstest.
+- **CI und Browserstatus separat prüfen.** Kein Merge auf `main`, bevor Regressionstests und Browser-Checks erfolgreich sind. Keine Live-Tarife integriert.
