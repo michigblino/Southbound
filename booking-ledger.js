@@ -92,7 +92,7 @@ function reconcile({items=[],bookings=[],vol={},volunteerDetails={},legacyPaidBy
   return true;
  };
  // Never let two confirmed bookings silently overwrite one another.
- const groupKey=b=>b.type+':'+b.stageId+(b.type==='transport'&&b.journeyOrigin?':inbound':':route');
+ const groupKey=b=>b.type==='transport'?('transport:'+b.stageId+(b.journeyOrigin?':inbound':':route')):b.type+':'+b.stageId;
  const groups=new Map();
  for(const b of active){const key=groupKey(b);groups.set(key,(groups.get(key)||[]).concat(b))}
  for(const b of active){
