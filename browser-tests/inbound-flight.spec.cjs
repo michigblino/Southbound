@@ -64,7 +64,7 @@ test('separate layover hotel remains a visible budget warning; old hotel form is
  await page.locator('[data-bk-save]').click();
  await expect(page.locator('.sb-booking-list')).toContainText('Casablanca');
  await expect(page.locator('.sb-booking-list')).toContainText('Übernachtung');
- await expect(page.locator('.note')).toContainText('layover-overnight-cost-not-confirmed');
+ await expect(page.locator('div.note').filter({hasText:'layover-overnight-cost-not-confirmed'})).toHaveCount(1);
  await page.locator('[data-bk-preset="lodging"]').click();
  await expect(f(page,'type')).toHaveValue('lodging');
  await expect(f(page,'endDate')).toBeVisible();
