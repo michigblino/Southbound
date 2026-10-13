@@ -234,7 +234,31 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>n
  root.querySelectorAll('[data-bk-edit]').forEach(button=>button.addEventListener('click',()=>{
   const b=(getBookings()||[]).find(x=>x.id===button.dataset.bkEdit);if(b)fill(b);
  }));
- field('stageId').addEventListener('change',dates);
+ field('stageId').addEventListener('change',()=>{dates();showTransportFields()});
+ field('journeyOrigin').addEventListener('change',()=>{
+  if(field('journeyOrigin').value==='inbound'){
+   field('stageId').value=String(route[0]?.i??0);dates();field('startDate').value='';
+   if(!field('originPlace').value.trim())field('originPlace').value=tripOrigin;
+  }
+  showTransportFields();
+ });
+ field('travelMode').addEventListener('change',showTransportFields);
+ field('originPlace').addEventListener('input',showTransportFields);
+ form.querySelector('[data-bk-add-stopover]').addEventListener('click',()=>{
+  stopovers=readStopovers();
+  if(stopovers.length>=8){feedback.textContent='Maximal acht Zwischenstopps pro Flugbuchung.';return;}
+  stopovers.push({place:'',arrivalDate:'',departureDate:'',overnight:'unknown'});showStopovers();
+ });
+ root.querySelectorAll('[data-bk-preset]').forEach(btn=>btn.addEventListener('click',()=>{
+  reset();const preset=btn.dataset.bkPreset;
+  field('type').value=preset==='inbound'?'transport':preset;
+  if(preset==='inbound'){
+   field('journeyOrigin').value='inbound';field('travelMode').value='flight';
+   field('stageId').value=String(route[0]?.i??0);dates();field('startDate').value='';
+   field('title').value='Flug '+tripOrigin+' → '+(route[0]?.name||'Reiseziel');
+  }
+  syncType();form.open=true;form.scrollIntoView({behavior:'smooth',block:'start'});
+ }));
  field('currency').addEventListener('input',changeFx);
  field('currency').addEventListener('change',()=>{
   if(!tx('amount').value){
@@ -273,7 +297,7 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>n
   form.querySelector('[data-bk-payment-feedback]').textContent='Zahlungszeile vorgemerkt – Buchung bitte speichern.';
  });
  field('type').addEventListener('change',()=>{if(editing===null)dates();syncType()});
- root.querySelector('[data-bk-reset]').addEventListener('click',reset);
+ root.querySelector('[data-bk-reset]').addEventListener('click',()=>{reset();form.open=true;});
  if(deleteButton)deleteButton.addEventListener('click',()=>{
   const record=(getBookings()||[]).find(x=>x.id===editing);if(!record)return;
   const paid=Math.max(0,Number(record.paidEUR||0)-Number(record.refundedEUR||0));
@@ -287,7 +311,13 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>n
   const raw={
    id:editing||'booking-'+Date.now()+'-'+Math.random().toString(36).slice(2,10),
    type,status:value('status'),stageId:Number(value('stageId')),
-   fromStageId:type==='transport'&&value('fromStageId')!==''?Number(value('fromStageId')):null,
+   fromStageId:type==='transport'&&value('journeyOrigin')!=='inbound'&&value('fromStageId')!==''?Number(value('fromStageId')):null,
+   journeyOrigin:type==='transport'&&value('journeyOrigin')==='inbound',
+   travelMode:type==='transport'?value('travelMode'):'ground',
+   originPlace:type==='transport'&&value('journeyOrigin')==='inbound'?value('originPlace').trim():'',
+   arrivalDate:type==='transport'&&value('travelMode')==='flight'?value('arrivalDate'):'',
+   destinationAirport:type==='transport'&&value('travelMode')==='flight'?value('destinationAirport').trim():'',
+   stopovers:readStopovers(),
    title:value('title'),provider:value('provider'),url:value('url').trim(),reference:value('reference'),
    startDate:value('startDate'),endDate:type==='lodging'||type==='volunteering'?value('endDate'):'',
    currency:value('currency').toUpperCase(),totalAmount:value('totalEUR'),totalEUR:value('currency').toUpperCase()==='EUR'?value('totalEUR'):'',
@@ -309,7 +339,12 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>n
   else{
    field('type').value=prefill.type;
    field('stageId').value=String(prefill.stageId);
-   dates();syncType();
+   dates();
+   if(prefill.type==='transport'&&prefill.stageId===route[0]?.i){
+    field('journeyOrigin').value='inbound';field('travelMode').value='flight';
+    field('originPlace').value=tripOrigin;field('startDate').value='';
+   }
+   syncType();
    form.open=true;
    feedback.textContent='Eintrag für '+(labels[prefill.type]||prefill.type)+' und die ausgewählte Etappe vorbereiten. Noch nichts gespeichert.';
   }
