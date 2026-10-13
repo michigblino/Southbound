@@ -2,6 +2,7 @@ const {test,expect}=require('@playwright/test');
 test('Southbound loads without fatal page errors and retains storage key',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('/',{waitUntil:'domcontentloaded'});
+ await expect.poll(()=>page.evaluate(()=>!!localStorage.getItem('southbound-v3'))).toBe(true);
  await expect(page).toHaveTitle(/Southbound/);
  await expect(page.locator('body')).toContainText(/Southbound/i);
  await expect.poll(()=>page.evaluate(()=>typeof window.SouthboundRouteBudget?.snapshot)).toBe('function');
@@ -10,6 +11,7 @@ test('Southbound loads without fatal page errors and retains storage key',async(
 });
 test('reload preserves user-owned local storage without reset',async({page})=>{
  await page.goto('/',{waitUntil:'domcontentloaded'});
+ await expect.poll(()=>page.evaluate(()=>!!localStorage.getItem('southbound-v3'))).toBe(true);
  const key='southbound-qa-marker';
  await page.evaluate(([k,v])=>localStorage.setItem(k,v),[key,'persisted']);
  await page.reload({waitUntil:'domcontentloaded'});
@@ -19,6 +21,7 @@ test('reload preserves user-owned local storage without reset',async({page})=>{
 test('mobile viewport renders app without horizontal overflow',async({page})=>{
  await page.setViewportSize({width:390,height:844});
  await page.goto('/',{waitUntil:'domcontentloaded'});
+ await expect.poll(()=>page.evaluate(()=>!!localStorage.getItem('southbound-v3'))).toBe(true);
  await expect(page.locator('body')).toBeVisible();
  const metrics=await page.evaluate(()=>{const width=document.documentElement.clientWidth;const offenders=[...document.querySelectorAll('body *')].map(el=>({el,rect:el.getBoundingClientRect()})).filter(({el,rect})=>{const css=getComputedStyle(el);return css.display!=='none'&&css.visibility!=='hidden'&&rect.width>0&&(rect.right>width+2||rect.left< -2)}).slice(0,15).map(({el,rect})=>({tag:el.tagName,id:el.id,className:typeof el.className==='string'?el.className.slice(0,100):'',left:Math.round(rect.left),right:Math.round(rect.right),width:Math.round(rect.width)}));return {scroll:document.documentElement.scrollWidth,width,offenders}});
  expect(metrics.scroll,JSON.stringify(metrics)).toBeLessThanOrEqual(metrics.width+2);
@@ -27,6 +30,7 @@ test('mobile viewport renders app without horizontal overflow',async({page})=>{
 
 test('confirmed host is saved with fees and may be revoked without erasing details',async({page})=>{
  await page.goto('/',{waitUntil:'domcontentloaded'});
+ await expect.poll(()=>page.evaluate(()=>!!localStorage.getItem('southbound-v3'))).toBe(true);
  await page.locator('[data-view="stages"]').click();
  await page.locator('#sb-stage-0 summary').click();
  await page.locator('#sb-stage-0 [data-vol-confirm="0"]').click();
@@ -53,6 +57,7 @@ test('confirmed host is saved with fees and may be revoked without erasing detai
 });
 test('ticket save binds route/date and retains old record after trip date changes',async({page})=>{
  await page.goto('/',{waitUntil:'domcontentloaded'});
+ await expect.poll(()=>page.evaluate(()=>!!localStorage.getItem('southbound-v3'))).toBe(true);
  await page.locator('[data-view="stages"]').click();
  await page.locator('.sb-link details').first().locator('summary').click();
  await page.locator('[data-ticket-price="1"]').fill('42');
@@ -79,6 +84,7 @@ test('ticket save binds route/date and retains old record after trip date change
 test('booking center persists a confirmed transfer, adjusts itinerary and handles refund',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('/',{waitUntil:'domcontentloaded'});
+ await expect.poll(()=>page.evaluate(()=>!!localStorage.getItem('southbound-v3'))).toBe(true);
  await page.locator('[data-view="bookings"]').click();
  await expect(page.locator('#sb-bookings-editor')).toBeVisible();
  const field=k=>page.locator('[data-bk="'+k+'"]');
@@ -123,6 +129,7 @@ test('booking center persists a confirmed transfer, adjusts itinerary and handle
 });
 test('above-preference volunteering is confirmable after a warning',async({page})=>{
  await page.goto('/',{waitUntil:'domcontentloaded'});
+ await expect.poll(()=>page.evaluate(()=>!!localStorage.getItem('southbound-v3'))).toBe(true);
  await page.locator('[data-view="stages"]').click();
  await page.locator('#sb-stage-0 summary').click();
  await page.locator('#sb-stage-0 [data-vol-confirm="0"]').click();
@@ -141,6 +148,7 @@ test('above-preference volunteering is confirmable after a warning',async({page}
 test('booking center fits mobile viewport',async({page})=>{
  await page.setViewportSize({width:390,height:844});
  await page.goto('/',{waitUntil:'domcontentloaded'});
+ await expect.poll(()=>page.evaluate(()=>!!localStorage.getItem('southbound-v3'))).toBe(true);
  await page.locator('[data-view="bookings"]').click();
  const width=await page.evaluate(()=>({scroll:document.documentElement.scrollWidth,client:document.documentElement.clientWidth}));
  expect(width.scroll).toBeLessThanOrEqual(width.client+2);
@@ -149,6 +157,7 @@ test('booking center fits mobile viewport',async({page})=>{
 
 test('stage shortcut opens booking editor with correct stop and deletion needs confirmation',async({page})=>{
  await page.goto('/',{waitUntil:'domcontentloaded'});
+ await expect.poll(()=>page.evaluate(()=>!!localStorage.getItem('southbound-v3'))).toBe(true);
  await page.locator('[data-view="stages"]').click();
  await page.locator('#sb-stage-2 summary').click();
  await page.locator('#sb-stage-2 [data-open-booking="2"]').click();
@@ -168,6 +177,7 @@ test('stage shortcut opens booking editor with correct stop and deletion needs c
 });
 test('deleting a paid booking warns that its payment history would be lost',async({page})=>{
  await page.goto('/',{waitUntil:'domcontentloaded'});
+ await expect.poll(()=>page.evaluate(()=>!!localStorage.getItem('southbound-v3'))).toBe(true);
  await page.locator('[data-view="bookings"]').click();
  await page.locator('[data-bk="title"]').fill('Deposit');
  await page.locator('[data-bk="provider"]').fill('Test provider');
@@ -181,6 +191,7 @@ test('deleting a paid booking warns that its payment history would be lost',asyn
 
 test('stage card opens the correct lodging booking editor and reflects confirmation',async({page})=>{
  await page.goto('/',{waitUntil:'domcontentloaded'});
+ await expect.poll(()=>page.evaluate(()=>!!localStorage.getItem('southbound-v3'))).toBe(true);
  await page.locator('[data-view="stages"]').click();
  await page.locator('#sb-stage-1 summary').first().click();
  const row=page.locator('#sb-stage-1 [data-stage-action="lodging"]');
@@ -212,6 +223,7 @@ test('stage card opens the correct lodging booking editor and reflects confirmat
 test('stage card warns when a confirmed booking no longer matches its travel date',async({page})=>{
  await page.goto('/',{waitUntil:'domcontentloaded'});
  await expect.poll(()=>page.evaluate(()=>!!localStorage.getItem('southbound-v3'))).toBe(true);
+ await expect.poll(()=>page.evaluate(()=>!!localStorage.getItem('southbound-v3'))).toBe(true);
  await page.evaluate(()=>{
   const m=JSON.parse(localStorage.getItem('southbound-v3')||'{}');
   m.bookingLedger=[{id:'mismatch',type:'transport',status:'confirmed',stageId:1,fromStageId:0,title:'Altes Busticket',provider:'Bus Beispiel',startDate:'2027-03-01',endDate:'',totalEUR:42,paidEUR:42,refundedEUR:0,reference:'AB123',recordedElsewhere:false}];
@@ -225,6 +237,7 @@ test('stage card warns when a confirmed booking no longer matches its travel dat
 test('stage action cards do not overflow a 360px mobile viewport',async({page})=>{
  await page.setViewportSize({width:360,height:740});
  await page.goto('/',{waitUntil:'domcontentloaded'});
+ await expect.poll(()=>page.evaluate(()=>!!localStorage.getItem('southbound-v3'))).toBe(true);
  await page.locator('[data-view="stages"]').click();
  await page.locator('#sb-stage-1 summary').first().click();
  const sizes=await page.evaluate(()=>({scroll:document.documentElement.scrollWidth,width:document.documentElement.clientWidth,card:document.querySelector('#sb-stage-1 .sb-stage-dashboard')?.getBoundingClientRect().width}));
