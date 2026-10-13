@@ -240,13 +240,15 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>n
   }
   form.querySelector('[data-bk-origin-caption]').textContent=outbound?'Abflughafen / Startort':'Startflughafen / Startort';
   form.querySelector('[data-bk-caption="stageId"]').textContent=outbound?'Letzte Reiseetappe':inbound?'Ankunftsetappe':(typeCopy[type]||typeCopy.transport).captions.stageId||'Ziel / Etappe';
-  const header=form.querySelector('[data-bk-editor-title]');if(header)header.textContent=editing?'Buchung bearbeiten':outbound?'Rückreise erfassen':inbound?'Anreiseflug erfassen':(labels[type]||'Buchung')+' erfassen';
+  const header=form.querySelector('[data-bk-editor-title]');if(header)header.textContent=editing?'Buchung bearbeiten':outbound?'Rückflug erfassen':inbound?'Anreiseflug erfassen':type==='fixed'?fixedLabels[field('fixedKind').value]+' erfassen':(labels[type]||'Buchung')+' erfassen';
   const note=form.querySelector('[data-bk-context]');
+  if(type==='fixed'&&note)note.textContent=(fixedLabels[field('fixedKind').value]||'Fixkosten')+': Anbieter, Betrag und Zahlungsstand eintragen. Vertrag oder Kauf erfolgt weiterhin extern.';
   if(outbound&&note)note.textContent='Rückreise von der letzten Etappe nach '+(field('destinationPlace').value||tripOrigin)+'. Abflug am Ende der Etappe, mit optionalen Zwischenstopps und eigenem Ankunftsdatum. Ein gebuchtes Ticket ersetzt die alte Rückreiseschätzung.';
   if(inbound&&note)note.textContent='Anreiseflug ab '+(field('originPlace').value||tripOrigin)+' zur ersten Etappe. Abflug kann vor Ankunft liegen. Zwischenstopps direkt am Ticket erfassen. Keine automatische Routenänderung.';
  };
  const syncType=()=>{
   const type=field('type').value,info=typeCopy[type]||typeCopy.transport;
+   const stageField=form.querySelector('[data-bk-stage]');if(stageField){stageField.hidden=type==='fixed';stageField.style.display=type==='fixed'?'none':'';}
   const note=form.querySelector('[data-bk-context]');if(note)note.textContent=info.hint;
   form.querySelectorAll('[data-bk-for]').forEach(label=>{
    const shown=label.dataset.bkFor.split(' ').includes(type);
@@ -267,7 +269,7 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>n
   if(deleteButton)deleteButton.hidden=true;for(const k of ['title','provider','reference','url','endDate','notes','totalEUR','rateEUR','rateCheckedAt','rateSource','arrivalDate','destinationAirport','destinationPlace'])field(k).value='';
   for(const k of ['paidEUR','refundedEUR'])field(k).value='0';
   field('type').value='transport';field('status').value='planned';field('activityMode').value='allowance';field('currency').value=getBaseCurrency();
-  field('journeyOrigin').value='route';field('travelMode').value='ground';field('originPlace').value=tripOrigin;field('destinationPlace').value=tripOrigin;
+  field('fixedKind').value='insurance';field('journeyOrigin').value='route';field('travelMode').value='ground';field('originPlace').value=tripOrigin;field('destinationPlace').value=tripOrigin;
   for(const k of ['date','amount','rateEUR','rateCheckedAt','rateSource','journalReference'])tx(k).value='';
   tx('kind').value='payment';tx('currency').value=getBaseCurrency();tx('recordedElsewhere').checked=false;
   field('recordedElsewhere').checked=false;
@@ -285,7 +287,7 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>n
  };
  const fill=b=>{
   editing=b.id;if(deleteButton)deleteButton.hidden=false;
-  for(const k of ['type','status','stageId','fromStageId','title','provider','reference','url','startDate','endDate','totalEUR','paidEUR','refundedEUR','activityMode','notes']){
+  for(const k of ['type','status','stageId','fixedKind','fromStageId','title','provider','reference','url','startDate','endDate','totalEUR','paidEUR','refundedEUR','activityMode','notes']){
    if(field(k))field(k).value=b[k]??'';
   }
   field('journeyOrigin').value=b.journeyOrigin===true?'inbound':b.journeyReturn===true?'return':'route';
@@ -333,6 +335,13 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>n
   if(stopovers.length>=8){feedback.textContent='Maximal acht Zwischenstopps pro Flugbuchung.';return;}
   stopovers.push({place:'',arrivalDate:'',departureDate:'',overnight:'unknown'});showStopovers();
  });
+ root.querySelectorAll('[data-bk-fixed-preset]').forEach(btn=>btn.addEventListener('click',()=>{
+  reset();field('type').value='fixed';field('fixedKind').value=btn.dataset.bkFixedPreset;
+  field('stageId').value=String(route[0]?.i??0);dates();
+  field('title').value=fixedLabels[btn.dataset.bkFixedPreset]||'Fixkosten';
+  syncType();setWizard(true,1);form.open=true;form.scrollIntoView({behavior:'smooth',block:'start'});
+ }));
+ field('fixedKind').addEventListener('change',()=>{if(field('type').value==='fixed')showTransportFields()});
  root.querySelectorAll('[data-bk-preset]').forEach(btn=>btn.addEventListener('click',()=>{
   reset();const preset=btn.dataset.bkPreset;
   field('type').value=preset==='inbound'||preset==='return'?'transport':preset;
@@ -401,6 +410,7 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>n
   const value=k=>field(k)?.value??'';
   const type=value('type');
   const raw={
+   fixedKind:type==='fixed'?value('fixedKind'):'',
    id:editing||'booking-'+Date.now()+'-'+Math.random().toString(36).slice(2,10),
    type,status:value('status'),stageId:Number(value('stageId')),
    fromStageId:type==='transport'&&value('journeyOrigin')==='route'&&value('fromStageId')!==''?Number(value('fromStageId')):null,
@@ -428,13 +438,15 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>n
  });
  reset();setWizard(false);
  if(fromStage)form.open=true;
- if(prefill&&routeLookup(prefill.stageId)&&['transport','lodging','volunteering','activity'].includes(prefill.type)){
-  const existing=prefill.editId&&(getBookings()||[]).find(x=>x.id===prefill.editId&&x.type===prefill.type&&(x.stageId===prefill.stageId||(prefill.type==='transport'&&x.journeyReturn===true&&route.at(-1)?.isReturn===true)));
+ if(prefill&&routeLookup(prefill.stageId)&&['transport','lodging','volunteering','activity','fixed'].includes(prefill.type)){
+  const existing=(getBookings()||[]).find(x=>prefill.editId?x.id===prefill.editId&&x.type===prefill.type:(prefill.type==='fixed'&&x.type==='fixed'&&x.fixedKind===prefill.fixedKind));
   if(existing)fill(existing);
   else{
    field('type').value=prefill.type;
+   field('fixedKind').value=prefill.fixedKind||'insurance';
    field('stageId').value=String(prefill.stageId);
    dates();
+   if(prefill.type==='fixed')field('title').value=fixedLabels[prefill.fixedKind]||'Fixkosten';
    if(prefill.type==='transport'&&route.at(-1)?.isReturn&&prefill.stageId===route.at(-1)?.i){
     field('stageId').value=String(lastTravel?.i??prefill.stageId);
     field('journeyOrigin').value='return';field('travelMode').value='flight';
