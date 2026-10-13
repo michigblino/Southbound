@@ -85,10 +85,10 @@ function render({route=[],bookings=[],ledger,baseCurrency='EUR',fxQuotes=null,tr
  '<p class="small">Unterkünfte können pro Etappe auf mehrere Buchungen mit unterschiedlichen Check-in/Check-out-Daten aufgeteilt werden. Bestätigte, nicht überlappende Nächte ersetzen nur die zugehörigen Unterkunftsschätzungen. Vor einer Host-Zusage liegende Hostel-Nächte werden als Wartekosten angerechnet, nicht als kostenlose Host-Nächte. Aktivitäten werden nach ihrer Budgetart verrechnet; Bewerbungen sind keine Host-Zusagen.</p>'+
  '</details>';
 }
-function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>null,getBaseCurrency=()=> 'EUR',initialStageId=null,prefill=null}={}){
+function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>null,getBaseCurrency=()=> 'EUR',initialStageId=null,prefill=null,tripOrigin='München (MUC)'}={}){
  const form=root.querySelector('#sb-bookings-editor');if(!form)return;
  const field=k=>form.querySelector('[data-bk="'+k+'"]'),feedback=form.querySelector('#sb-booking-feedback');
- let editing=null,events=[],legacyPaid=0,legacyRefunded=0,legacyJournal=false;
+ let editing=null,events=[],legacyPaid=0,legacyRefunded=0,legacyJournal=false,stopovers=[];
  const deleteButton=root.querySelector('[data-bk-delete]');
  const tx=k=>form.querySelector('[data-bk-tx="'+k+'"]');
  const fxPanel=form.querySelector('[data-bk-fx]'),txFx=form.querySelector('[data-bk-tx-fx]');
@@ -133,6 +133,41 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>n
  };
 
  const routeLookup=i=>route.find(x=>x.i===i);
+ const layoversRoot=form.querySelector('[data-bk-stopover-list]');
+ const readStopovers=()=>field('type').value!=='transport'||field('travelMode').value!=='flight'?[]:
+  [...layoversRoot.querySelectorAll('[data-bk-layover-row]')].map(row=>({
+   place:row.querySelector('[data-bk-layover-place]').value.trim(),
+   arrivalDate:row.querySelector('[data-bk-layover-arrival]').value,
+   departureDate:row.querySelector('[data-bk-layover-departure]').value,
+   overnight:row.querySelector('[data-bk-layover-overnight]').value
+  }));
+ const showStopovers=()=>{
+  layoversRoot.innerHTML=stopovers.map((x,i)=>'<div class="sb-booking-layover" data-bk-layover-row>'+
+  '<div class="sb-booking-layover-title"><b>Zwischenstopp '+(i+1)+'</b><button type="button" data-bk-remove-stopover="'+i+'">Entfernen</button></div>'+
+  '<label>Flughafen / Ort<input data-bk-layover-place maxlength="160" value="'+esc(x.place||'')+'" placeholder="z. B. Casablanca (CMN)"></label>'+
+  '<label>Ankunft (Ortsdatum)<input type="date" data-bk-layover-arrival value="'+esc(x.arrivalDate||'')+'"></label>'+
+  '<label>Weiterflug (Ortsdatum)<input type="date" data-bk-layover-departure value="'+esc(x.departureDate||'')+'"></label>'+
+  '<label>Übernachtungskosten<select data-bk-layover-overnight>'+
+  [['unknown','Noch unbekannt'],['included','Hotel im Ticket enthalten'],['none','Kein Hotel benötigt (z. B. Flughafen)'],['separate','Hotel separat zu zahlen']].map(([v,l])=>'<option value="'+v+'"'+(x.overnight===v?' selected':'')+'>'+l+'</option>').join('')+
+  '</select></label></div>').join('');
+  layoversRoot.querySelectorAll('[data-bk-remove-stopover]').forEach(btn=>btn.onclick=()=>{
+   stopovers=readStopovers();stopovers.splice(Number(btn.dataset.bkRemoveStopover),1);showStopovers();
+  });
+ };
+ const showTransportFields=()=>{
+  const type=field('type').value,transport=type==='transport',inbound=transport&&field('journeyOrigin').value==='inbound';
+  if(inbound)field('travelMode').value='flight';
+  for(const el of form.querySelectorAll('[data-bk-conditional]')){
+   const code=el.dataset.bkConditional;
+   const shown=transport&&(code==='inbound-origin'?inbound:code==='route-origin'?!inbound:field('travelMode').value==='flight');
+   el.hidden=!shown;el.style.display=shown?'':'none';
+   for(const control of el.querySelectorAll('input,select,textarea'))control.disabled=!shown;
+  }
+  form.querySelector('[data-bk-caption="stageId"]').textContent=inbound?'Ankunftsetappe':(typeCopy[type]||typeCopy.transport).captions.stageId||'Ziel / Etappe';
+  const header=form.querySelector('[data-bk-editor-title]');if(header)header.textContent=editing?'Buchung bearbeiten':inbound?'Anreiseflug erfassen':(labels[type]||'Buchung')+' erfassen';
+  const note=form.querySelector('[data-bk-context]');
+  if(inbound&&note)note.textContent='Anreiseflug ab '+(field('originPlace').value||tripOrigin)+' zur ersten Etappe. Abflug kann vor Ankunft liegen. Zwischenstopps direkt am Ticket erfassen. Keine automatische Routenänderung.';
+ };
  const syncType=()=>{
   const type=field('type').value,info=typeCopy[type]||typeCopy.transport;
   const note=form.querySelector('[data-bk-context]');if(note)note.textContent=info.hint;
@@ -148,12 +183,14 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>n
   for(const key of ['title','provider','reference']){
    const input=field(key);if(input)input.placeholder=info.placeholders[key]||'';
   }
+  showTransportFields();
  };
  const reset=()=>{
-  editing=null;events=[];legacyPaid=0;legacyRefunded=0;legacyJournal=false;
-  if(deleteButton)deleteButton.hidden=true;for(const k of ['title','provider','reference','url','endDate','notes','totalEUR','rateEUR','rateCheckedAt','rateSource'])field(k).value='';
+  editing=null;events=[];legacyPaid=0;legacyRefunded=0;legacyJournal=false;stopovers=[];showStopovers();
+  if(deleteButton)deleteButton.hidden=true;for(const k of ['title','provider','reference','url','endDate','notes','totalEUR','rateEUR','rateCheckedAt','rateSource','arrivalDate','destinationAirport'])field(k).value='';
   for(const k of ['paidEUR','refundedEUR'])field(k).value='0';
   field('type').value='transport';field('status').value='planned';field('activityMode').value='allowance';field('currency').value=getBaseCurrency();
+  field('journeyOrigin').value='route';field('travelMode').value='ground';field('originPlace').value=tripOrigin;
   for(const k of ['date','amount','rateEUR','rateCheckedAt','rateSource','journalReference'])tx(k).value='';
   tx('kind').value='payment';tx('currency').value=getBaseCurrency();tx('recordedElsewhere').checked=false;
   field('recordedElsewhere').checked=false;
@@ -167,12 +204,20 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>n
   field('startDate').value=waitingLodging?(item?.arrival||''):(item?.arrival||item?.start||'');
   field('endDate').value=waitingLodging?(item?.start||''):(item?.end||'');
   field('fromStageId').value=at>0?String(route[at-1].i):'';
+  field('arrivalDate').value=item?.arrival||item?.start||'';
  };
  const fill=b=>{
   editing=b.id;if(deleteButton)deleteButton.hidden=false;
   for(const k of ['type','status','stageId','fromStageId','title','provider','reference','url','startDate','endDate','totalEUR','paidEUR','refundedEUR','activityMode','notes']){
    if(field(k))field(k).value=b[k]??'';
   }
+  field('journeyOrigin').value=b.journeyOrigin===true?'inbound':'route';
+  field('travelMode').value=b.travelMode==='flight'?'flight':'ground';
+  field('originPlace').value=b.originPlace||tripOrigin;
+  field('arrivalDate').value=b.arrivalDate||'';
+  field('destinationAirport').value=b.destinationAirport||'';
+  stopovers=Array.isArray(b.stopovers)?b.stopovers.map(x=>({...x})):[];
+  showStopovers();
   field('currency').value=b.currency||'EUR';
   field('totalEUR').value=b.totalAmount??b.totalEUR??'';
   for(const k of ['rateEUR','rateCheckedAt','rateSource'])field(k).value=b[k]??'';
@@ -182,7 +227,7 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>n
   legacyJournal=events.length?b.legacyRecordedElsewhere===true:b.recordedElsewhere===true;
   field('recordedElsewhere').checked=legacyJournal;
   tx('currency').value=b.currency||'EUR';
-  syncType();changeFx();showEvents();
+  syncType();changeFx();showEvents();if(events.length)form.querySelector('[data-bk-payment-details]').open=true;
   feedback.textContent='Du bearbeitest einen vorhandenen Eintrag. Änderungen werden erst mit „Eintrag speichern“ übernommen.';
   form.open=true;form.scrollIntoView({behavior:'smooth',block:'start'});
  };
