@@ -38,6 +38,7 @@ function render({route=[],bookings=[],ledger,baseCurrency='EUR',fxQuotes=null,tr
  const warnings=ledger?.warnings||[];
  const records=Array.isArray(bookings)?bookings:[];
  const total=ledger?.recordedPayment||0,real=ledger?.extraPaid||0;
+ const firstSavedGroup=bookingGroups.find(group=>records.some(b=>bookingCategory(b)===group.key))?.key;
  const chooser=(fromStage?'':'<div class="panel sb-booking-choose"><div class="eyebrow">BUCHUNGEN / SCHNELLSTART</div><h2>Was möchtest du buchen?</h2><p class="small">Wähle eine Kategorie – die passenden Felder öffnen sich direkt. Bestätigungen und Preise trägst du selbst ein.</p><div class="sb-booking-shortcuts">'+
  '<button type="button" data-bk-preset="inbound">'+shortcutIcon('inbound')+'<b>Anreiseflug</b><small>Ab Heimatflughafen</small></button>'+
  '<button type="button" data-bk-preset="return">'+shortcutIcon('return')+'<b>Rückflug</b><small>Zurück nach Hause</small></button>'+
@@ -55,7 +56,7 @@ function render({route=[],bookings=[],ledger,baseCurrency='EUR',fxQuotes=null,tr
  (records.length?'<div class="sb-booking-groups">'+bookingGroups.map(group=>{
   const subset=records.filter(b=>bookingCategory(b)===group.key).sort((a,b)=>String(a.startDate||'9999-99-99').localeCompare(String(b.startDate||'9999-99-99')));
   if(!subset.length)return '';
-  return '<section class="sb-booking-group" data-bk-group="'+group.key+'"><div class="sb-booking-group__heading"><span class="sb-booking-group__icon" aria-hidden="true">'+shortcutIcon(group.key)+'</span><div><h3>'+group.title+'</h3><p class="small">'+group.subtitle+'</p></div><span class="sb-booking-group__count" aria-label="'+subset.length+' Einträge">'+subset.length+'</span></div><div class="sb-booking-list">'+subset.map(b=>{
+  return '<details class="sb-booking-group" data-bk-group="'+group.key+'"'+(firstSavedGroup===group.key?' open':'')+'><summary class="sb-booking-group__heading"><span class="sb-booking-group__icon" aria-hidden="true">'+shortcutIcon(group.key)+'</span><div><h3>'+group.title+'</h3><p class="small">'+group.subtitle+'</p></div><span class="sb-booking-group__count" aria-label="'+subset.length+' Einträge">'+subset.length+'</span><span class="sb-booking-group__chevron" aria-hidden="true">⌄</span></summary><div class="sb-booking-list">'+subset.map(b=>{
   const place=available.find(x=>x.i===b.stageId)?.name||'Etappe '+b.stageId;
   const description=b.type==='transport'&&b.journeyOrigin?(b.originPlace||tripOrigin)+' → '+place:b.type==='transport'&&b.journeyReturn?(b.originPlace||place)+' → '+(b.destinationPlace||tripOrigin):place;
   const stopoverLabel=Array.isArray(b.stopovers)&&b.stopovers.length?' · via '+b.stopovers.map(x=>x.place+(x.departureDate>x.arrivalDate?' (Übernachtung)':'')).join(', '):'';
@@ -63,11 +64,15 @@ function render({route=[],bookings=[],ledger,baseCurrency='EUR',fxQuotes=null,tr
   const converted=String(b.currency||'EUR')!=='EUR'&&b.totalAmount!==null&&b.totalAmount!==undefined?
    esc(b.totalAmount)+' '+esc(b.currency)+' ≈ '+euro(b.totalEUR):b.totalEUR===null?'Preis unbekannt':euro(b.totalEUR);
   return '<div class="sb-booking-card"><span class="sb-booking-symbol" aria-hidden="true">'+esc(icons[b.type]||'·')+'</span><div class="sb-booking-info"><b>'+esc(b.title||'Eintrag')+'</b><small>'+esc(b.type==='transport'&&b.journeyOrigin?'Anreiseflug':b.type==='transport'&&b.journeyReturn?'Rückflug':labels[b.type]||b.type)+' · '+esc(description)+esc(stopoverLabel)+' · '+esc(b.startDate||'ohne Datum')+'</small><small>'+esc(b.provider||'')+' · '+esc(statuses[b.status]||'Unbekannt')+' · '+converted+' · '+euro(paid)+' netto bezahlt</small></div><button type="button" data-bk-edit="'+esc(b.id)+'" class="sb-booking-edit">Bearbeiten</button></div>'
- }).join('')+'</div></section>';
+ }).join('')+'</div></details>';
  }).join('')+'</div>':'<p class="small">Noch keine Buchungen hinterlegt. Du kannst jetzt die erste Reiseleistung erfassen.</p>')+
  '</div>'+'<details class="panel" id="sb-bookings-editor"'+(fromStage?' open':'')+'><summary><b data-bk-editor-title>Buchung erfassen oder bearbeiten</b></summary>'+
  '<p class="small">Nur tatsächlich erhaltene Buchungsbestätigungen als „Bestätigt“ markieren. Bei Volunteering erfolgt die eigentliche Host-Zusage weiterhin über „Etappen“.</p>'+
- '<p class="small" data-bk-context role="note"></p><div class="sb-booking-form" role="group" aria-label="Buchungseintrag">'+
+ '<p class="small" data-bk-context role="note"></p><div class="sb-booking-wizard" data-bk-wizard hidden aria-label="Buchung in drei Schritten">'+
+ '<button type="button" data-bk-step-go="1"><span>1</span> Reiseleistung</button>'+
+ '<button type="button" data-bk-step-go="2"><span>2</span> Preis & Zahlung</button>'+
+ '<button type="button" data-bk-step-go="3"><span>3</span> Bestätigung</button></div>'+
+ '<div class="sb-booking-form" role="group" aria-label="Buchungseintrag">'+
  '<label>Art<select data-bk="type"><option value="transport">Transfer</option><option value="lodging">Unterkunft</option><option value="volunteering">Volunteering</option><option value="activity">Erlebnis</option></select></label>'+
  '<label>Status<select data-bk="status"><option value="planned">Vorgemerkt</option><option value="requested">Angefragt / reserviert</option><option value="confirmed">Bestätigt (selbst eingetragen)</option><option value="cancelled">Storniert</option></select></label>'+
  '<label><span data-bk-caption="stageId">Ziel / Etappe</span><select data-bk="stageId">'+opts+'</select></label>'+
@@ -106,7 +111,10 @@ function render({route=[],bookings=[],ledger,baseCurrency='EUR',fxQuotes=null,tr
  '<label data-bk-journal hidden style="display:none">Journal-Referenz zur manuellen Zuordnung<input data-bk-tx="journalReference" maxlength="160" placeholder="z. B. Kartenzahlung im Reisejournal"></label>'+
  '</div><button type="button" data-bk-add-payment>Zahlung / Erstattung vormerken</button><p data-bk-payment-feedback class="small" role="status"></p></details>'+
  '<label class="sb-booking-notes">Notiz<textarea data-bk="notes" rows="2" maxlength="500" placeholder="Gepäck, Stornierung, enthaltene Leistungen ..."></textarea></label>'+
- '</div><p id="sb-booking-feedback" class="small" role="status"></p>'+
+ '</div><div class="sb-booking-wizard__footer" data-bk-wizard-footer hidden>'+
+ '<button type="button" data-bk-prev>Zurück</button><button type="button" data-bk-next class="primary">Weiter</button>'+
+ '<button type="button" data-bk-all aria-label="Zur vollständigen Buchungsmaske wechseln">Alle Felder anzeigen</button></div>'+
+ '<p id="sb-booking-feedback" class="small" role="status"></p>'+
  '<div class="controls"><button type="button" data-bk-save>Eintrag speichern</button><button type="button" data-bk-reset>Neue Buchung</button><button type="button" data-bk-delete hidden>Eintrag löschen</button></div>'+
  '<p class="small">Unterkünfte können pro Etappe auf mehrere Buchungen mit unterschiedlichen Check-in/Check-out-Daten aufgeteilt werden. Bestätigte, nicht überlappende Nächte ersetzen nur die zugehörigen Unterkunftsschätzungen. Vor einer Host-Zusage liegende Hostel-Nächte werden als Wartekosten angerechnet, nicht als kostenlose Host-Nächte. Aktivitäten werden nach ihrer Budgetart verrechnet; Bewerbungen sind keine Host-Zusagen.</p>'+
  '</details>';
@@ -117,6 +125,35 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>n
  let editing=null,events=[],legacyPaid=0,legacyRefunded=0,legacyJournal=false,stopovers=[];
  const lastTravel=[...route].reverse().find(x=>!x.isReturn&&Number(x.days)>0)||route.at(-1);
  const deleteButton=root.querySelector('[data-bk-delete]');
+ // Progressive disclosure is opt-in from the six cards. Existing edits and
+ // stage context actions retain the full editor (and legacy data semantics).
+ const formFields=form.querySelector('.sb-booking-form[aria-label="Buchungseintrag"]');
+ const wizardBar=form.querySelector('[data-bk-wizard]'),wizardFoot=form.querySelector('[data-bk-wizard-footer]');
+ const backButton=form.querySelector('[data-bk-prev]'),nextButton=form.querySelector('[data-bk-next]');
+ let wizardStep=1,wizardEnabled=false;
+ const paymentKeys=new Set(['currency','totalEUR','rateEUR','rateCheckedAt','rateSource','paidEUR','refundedEUR','recordedElsewhere','notes']);
+ const reviewKeys=new Set(['status','reference','url']);
+ for(const el of formFields.children){
+  const entry=el.querySelector('[data-bk]'),key=entry?.dataset.bk||'';
+  const step=el.matches('[data-bk-fx],[data-bk-payment-details]')||paymentKeys.has(key)?2:reviewKeys.has(key)?3:1;
+  el.dataset.bkStep=String(step);
+ }
+ formFields.setAttribute('data-bk-wizard-fields','');
+ const setWizard=(enabled,step=1)=>{
+  wizardEnabled=!!enabled;wizardStep=Math.min(3,Math.max(1,step));form.dataset.bkGuided=String(wizardEnabled);
+  wizardBar.hidden=!wizardEnabled;wizardFoot.hidden=!wizardEnabled;
+  for(const el of formFields.children){el.toggleAttribute('data-bk-current',!wizardEnabled||Number(el.dataset.bkStep)===wizardStep);}
+  for(const btn of wizardBar.querySelectorAll('[data-bk-step-go]')){
+   const selected=Number(btn.dataset.bkStepGo)===wizardStep;
+   btn.setAttribute('aria-current',selected?'step':'false');btn.classList.toggle('active',selected);
+  }
+  backButton.disabled=wizardStep===1;nextButton.hidden=wizardStep===3;
+  form.querySelector('[data-bk-save]').hidden=wizardEnabled&&wizardStep!==3;
+ };
+ for(const btn of wizardBar.querySelectorAll('[data-bk-step-go]'))btn.addEventListener('click',()=>setWizard(true,Number(btn.dataset.bkStepGo)));
+ backButton.addEventListener('click',()=>setWizard(true,wizardStep-1));
+ nextButton.addEventListener('click',()=>setWizard(true,wizardStep+1));
+ form.querySelector('[data-bk-all]').addEventListener('click',()=>setWizard(false));
  const tx=k=>form.querySelector('[data-bk-tx="'+k+'"]');
  const fxPanel=form.querySelector('[data-bk-fx]'),txFx=form.querySelector('[data-bk-tx-fx]');
  const journalRow=form.querySelector('[data-bk-journal]'),legacyControls=['paidEUR','refundedEUR','recordedElsewhere'];
@@ -258,7 +295,7 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>n
   tx('currency').value=b.currency||'EUR';
   syncType();changeFx();showEvents();if(events.length)form.querySelector('[data-bk-payment-details]').open=true;
   feedback.textContent='Du bearbeitest einen vorhandenen Eintrag. Änderungen werden erst mit „Eintrag speichern“ übernommen.';
-  form.open=true;form.scrollIntoView({behavior:'smooth',block:'start'});
+  setWizard(false);form.open=true;form.scrollIntoView({behavior:'smooth',block:'start'});
  };
  root.querySelectorAll('[data-bk-edit]').forEach(button=>button.addEventListener('click',()=>{
   const b=(getBookings()||[]).find(x=>x.id===button.dataset.bkEdit);if(b)fill(b);
@@ -301,7 +338,7 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>n
    field('destinationPlace').value=tripOrigin;
    field('title').value='Rückflug '+(lastTravel?.name||'Reiseziel')+' → '+tripOrigin;
   }
-  syncType();form.open=true;form.scrollIntoView({behavior:'smooth',block:'start'});
+  syncType();setWizard(true,1);form.open=true;form.scrollIntoView({behavior:'smooth',block:'start'});
  }));
  field('currency').addEventListener('input',changeFx);
  field('currency').addEventListener('change',()=>{
@@ -341,7 +378,7 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>n
   form.querySelector('[data-bk-payment-feedback]').textContent='Zahlungszeile vorgemerkt – Buchung bitte speichern.';
  });
  field('type').addEventListener('change',()=>{if(editing===null)dates();syncType()});
- root.querySelector('[data-bk-reset]').addEventListener('click',()=>{reset();form.open=true;});
+ root.querySelector('[data-bk-reset]').addEventListener('click',()=>{reset();setWizard(false);form.open=true;});
  if(deleteButton)deleteButton.addEventListener('click',()=>{
   const record=(getBookings()||[]).find(x=>x.id===editing);if(!record)return;
   const paid=Math.max(0,Number(record.paidEUR||0)-Number(record.refundedEUR||0));
@@ -378,7 +415,7 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>n
   if(entry.status==='confirmed'&&!confirm('Bestätigung für „'+entry.title+'“ vom Anbieter/Host tatsächlich erhalten und selbst überprüft?'))return;
   storeBookings(others.concat(entry));onSaved();
  });
- reset();
+ reset();setWizard(false);
  if(fromStage)form.open=true;
  if(prefill&&routeLookup(prefill.stageId)&&['transport','lodging','volunteering','activity'].includes(prefill.type)){
   const existing=prefill.editId&&(getBookings()||[]).find(x=>x.id===prefill.editId&&x.type===prefill.type&&(x.stageId===prefill.stageId||(prefill.type==='transport'&&x.journeyReturn===true&&route.at(-1)?.isReturn===true)));
