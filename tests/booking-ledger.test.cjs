@@ -1,7 +1,7 @@
 const test=require('node:test'),assert=require('node:assert/strict');
 const {validate,reconcile}=require('../booking-ledger.js');
 const stops=[{i:0,name:'A',start:'2027-01-01',arrival:'2027-01-01',end:'2027-01-03',days:2,bed:20,food:10,leisure:5,other:0,stay:70,leg:0},
-{i:1,name:'B',start:'2027-01-03',arrival:'2027-01-03',end:'2027-01-06',days:3,bed:20,food:10,leisure:5,other:0,stay:105,leg:80}];
+{i:1,name:'B',start:'2027-01-03',arrival:'2027-01-03',end:'2027-01-06',days:3,daily:35,bed:20,food:10,leisure:5,other:0,stay:105,leg:80}];
 const booking=(v={})=>({id:'abc',type:'transport',stageId:1,fromStageId:0,title:'Bus A nach B',provider:'ExampleBus',reference:'ABC123',startDate:'2027-01-03',endDate:'',status:'confirmed',totalEUR:45,paidEUR:20,refundedEUR:0,recordedElsewhere:false,url:'https://example.com',...v});
 test('confirmed dated transfer replaces estimate, payment counted only once',()=>{
  const r=reconcile({items:stops,bookings:[booking()],legacyPaidByStop:{1:0}});
