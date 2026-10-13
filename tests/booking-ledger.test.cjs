@@ -19,7 +19,7 @@ test('changed origin, trip date or excluded stop makes a confirmed booking unsaf
 });
 test('lodging exact dates replace estimate without touching meals/activities',()=>{
  const r=reconcile({items:stops,bookings:[booking({type:'lodging',fromStageId:null,startDate:'2027-01-03',endDate:'2027-01-06',totalEUR:36})]});
- assert.equal(r.items[1].stay,81);assert.equal(r.items[1].bed,12);assert.equal(r.bookingIntegrity,true);
+ assert.equal(r.items[1].stay,81);assert.equal(r.items[1].bed,12);assert.equal(r.items[1].daily,35-8);assert.equal(r.bookingIntegrity,true);
 });
 test('partial lodging dates never overwrite full-stay estimates',()=>{
  const r=reconcile({items:stops,bookings:[booking({type:'lodging',startDate:'2027-01-04',endDate:'2027-01-06'})]});
@@ -54,4 +54,14 @@ test('duplicate booking ID, invalid amounts and insecure URL are rejected',()=>{
 test('no entries preserve original itinerary and payments',()=>{
  const r=reconcile({items:stops,bookings:[]});
  assert.deepEqual(r.items,stops);assert.equal(r.extraPaid,0);assert.equal(r.bookingIntegrity,true);
+});
+
+test('only matching confirmed host charges offset payments already included in itinerary',()=>{
+ const host={confirmed:true,night:0,from:'2027-01-03',to:'2027-01-06',extraCosts:35};
+ const current=[stops[0],{...stops[1],bed:0,hostExtras:35,stay:80}];
+ const b=booking({type:'volunteering',startDate:host.from,endDate:host.to,totalEUR:35,paidEUR:20});
+ const yes=reconcile({items:current,bookings:[b],vol:{1:true},volunteerDetails:{1:host}});
+ assert.equal(yes.bookingIntegrity,true);assert.equal(yes.paidByStop[1],20);
+ const no=reconcile({items:current,bookings:[{...b,startDate:'2027-02-03'}],vol:{1:true},volunteerDetails:{1:host}});
+ assert.equal(no.bookingIntegrity,false);assert.deepEqual(no.paidByStop,{});
 });
