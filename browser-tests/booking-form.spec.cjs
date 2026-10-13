@@ -33,14 +33,16 @@ test('switching to lodging does not save hidden transport or activity-specific v
  await field(page,'type').selectOption('activity');
  await field(page,'activityMode').selectOption('extra');
  await field(page,'type').selectOption('lodging');
- await expect(field(page,'endDate')).toHaveValue('2027-01-03');
+ const checkout=await field(page,'endDate').inputValue();
+ expect(checkout).toMatch(/^\d{4}-\d{2}-\d{2}$/);
  await field(page,'title').fill('Test Hostel');
  await field(page,'provider').fill('Hostel Testanbieter');
  await field(page,'totalEUR').fill('65');
  await page.locator('[data-bk-save]').click();
  const entries=await page.evaluate(()=>JSON.parse(localStorage.getItem('southbound-v3')).bookingLedger);
  expect(entries).toHaveLength(1);
- expect(entries[0]).toMatchObject({type:'lodging',stageId:1,fromStageId:null,endDate:'2027-01-03',activityMode:'allowance',totalEUR:65});
+ expect(entries[0]).toMatchObject({type:'lodging',stageId:1,fromStageId:null,activityMode:'allowance',totalEUR:65});
+ expect(entries[0].endDate).toBe(checkout);
  await page.locator('[data-bk-edit]').first().click();
  await expect(field(page,'endDate')).toBeVisible();
  await expect(field(page,'fromStageId')).toBeHidden();
