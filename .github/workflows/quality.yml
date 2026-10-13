@@ -1,7 +1,7 @@
 name: Southbound checks
 on:
   push:
-    branches: [feat/global-trip-foundations]
+    branches: [main, feat/global-trip-foundations]
   pull_request:
   workflow_dispatch:
 jobs:
@@ -24,6 +24,12 @@ jobs:
           node --check tests/volunteer-economics.test.cjs
           node --check itinerary.js
           node --check booking-ui.js
+          node --check state-backup.js
+          node --check tests/state-backup.test.cjs
+          node --check browser-tests/backup-beta.spec.cjs
+          node --check tests/beta-journey-fixture.cjs
+          node --check tests/beta-journey.test.cjs
+          node --check scripts/beta-cost-audit.cjs
           node --check currency-rates.js
           node --check tests/currency-rates.test.cjs
           node --check browser-tests/currency-base.spec.cjs
@@ -51,6 +57,15 @@ jobs:
         run: |
           set -o pipefail
           node --test --test-reporter=spec tests/*.test.cjs 2>&1 | tee node-test-results.log
+      - name: Produce independent synthetic beta budget audit
+        run: node scripts/beta-cost-audit.cjs > beta-budget-audit.json
+      - name: Save machine-readable beta audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: beta-budget-audit
+          path: beta-budget-audit.json
+          if-no-files-found: ignore
       - name: Publish failing test details to job summary
         if: failure()
         shell: bash
