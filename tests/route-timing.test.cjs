@@ -18,3 +18,10 @@ test('waiting for host uses normal food and lodging instead of confirmed free me
  const r=evaluate(opts);assert.equal(r.schedule.items[1].waitingDays,7);
  assert.equal(r.waiting.total,7*(22+10+2));
 });
+
+test('host waiting with booked lodging reprices only those nights using itinerary-provided entries',()=>{
+ const result=evaluate({start:'2027-01-01',stops:[['Host city','X',0,0,3,20,10,5,2]],items:[{i:0,days:3,regularBed:20,food:0,other:2,waitBookings:[{id:'hostel',startDate:'2027-01-01',endDate:'2027-01-03',totalEUR:25}]}],volunteerDetails:{0:{confirmed:true,from:'2027-01-04',to:'2027-01-07'}},isVolunteer:()=>true});
+ assert.equal(result.schedule.items[0].waitingDays,3);
+ assert.equal(result.waiting.total,25+20+3*(10+2));
+ assert.equal(result.waiting.complete,true);
+});
