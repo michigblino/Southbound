@@ -18,7 +18,7 @@ test('STH/BND visual theme supports persistent dark and light modes',()=>{assert
 
 test('stage card CSS and booking status UI are included in offline build',()=>{
  assert.ok(html.includes('href="./stage-card.css"'));
- assert.ok(sw.includes('stage-card.css'));
+ assert.ok(sw.includes('stage-card.css','design-system.css'));
  assert.ok(html.includes('SouthboundStageCard.summarize'));
  assert.ok(html.includes('data-stage-action'));
 });
