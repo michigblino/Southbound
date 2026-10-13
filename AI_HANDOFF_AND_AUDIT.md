@@ -303,3 +303,12 @@ Decision: DOCUMENT ONLY, DO NOT IMPLEMENT YET.
 - Alte `m.transportOffers[i]` bleiben unverändert gespeichert, sind ohne `fromId`/`toId` aber nicht mehr als belastbarer aktueller Preis gültig. Nutzer muss sie erneut prüfen. Keine Daten werden gelöscht.
 - Offene Hauptrisiken: tatsächliche Transferdauer und Zeitzonen, reale Hostel-Angebote und Angebotsverfall, Volunteering-Host-Freigabe, direkte Buchungs-API, unabhängige Bestätigung der Zahlung, vollständiger E2E-Buchungstest.
 - **CI und Browserstatus separat prüfen.** Kein Merge auf `main`, bevor Regressionstests und Browser-Checks erfolgreich sind. Keine Live-Tarife integriert.
+
+
+## 2026-10-13 – Booking-ledger v1 in development (not released until CI succeeds)
+
+- See [ROADMAP_BOOKINGS_AND_STAGE_CARDS.md](ROADMAP_BOOKINGS_AND_STAGE_CARDS.md) for exact scope, data model and deferred icon-based stage card. `booking-ledger.js`, `booking-ui.js` and `m.bookingLedger` are new, additive only. Stage, dates and payment evidence must match before reprice; `confirmed` means user-entered, never provider-verified.
+- The primary all-in budget now reconciles qualified booking payment/total information without double counting; volunteer budget preview can consume the same records. Unmatched confirmed bookings prevent false all-in completion. Do not remove `southbound-v3`, delete legacy ticket offers, auto-confirm hosts or claim a live checkout.
+- **30h preference** now soft: manual Host confirmation above the preference requires informed user confirmation; suggestions retain preferences. No hard ban on a legitimate 35-hour placement.
+- Planned UI: stage cards with small line icons + status chips; do not confuse this with the booking registry. Finish QA before enabling payments/provider integrations.
+- Run Node, inline syntax and Playwright via GitHub Actions before merge. Tests added to verify ledger pricing/payment/cancellation and form behavior.
