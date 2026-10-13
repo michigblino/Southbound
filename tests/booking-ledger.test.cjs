@@ -65,3 +65,73 @@ test('only matching confirmed host charges offset payments already included in i
  const no=reconcile({items:current,bookings:[{...b,startDate:'2027-02-03'}],vol:{1:true},volunteerDetails:{1:host}});
  assert.equal(no.bookingIntegrity,false);assert.deepEqual(no.paidByStop,{});
 });
+
+test('two non-overlapping hostels replace only reserved nights and leave gap estimated',()=>{
+ const first=booking({id:'hostel-a',type:'lodging',startDate:'2027-01-03',endDate:'2027-01-04',totalEUR:10,paidEUR:10});
+ const second=booking({id:'hostel-b',type:'lodging',startDate:'2027-01-05',endDate:'2027-01-06',totalEUR:35,paidEUR:20});
+ const r=reconcile({items:stops,bookings:[first,second]});
+ assert.equal(r.items[1].stay,110); // 105 - 2 estimated nights *20 + actual 10+35
+ assert.equal(r.items[1].bed,65/3); // replaced lodging subtotal = 10 + 20 (gap) + 35
+ assert.equal(r.items[1].bookingLodgings.length,2);
+ assert.deepEqual(r.matched,['hostel-a','hostel-b']);
+ assert.equal(r.paidByStop[1],30);
+ assert.equal(r.extraPaid,30);
+ assert.equal(r.bookingIntegrity,true);
+});
+test('overlapping hostels are both flagged without changing original projected stay',()=>{
+ const a=booking({id:'a',type:'lodging',startDate:'2027-01-03',endDate:'2027-01-05',totalEUR:30,paidEUR:10});
+ const b=booking({id:'b',type:'lodging',startDate:'2027-01-04',endDate:'2027-01-06',totalEUR:25,paidEUR:10});
+ const r=reconcile({items:stops,bookings:[a,b]});
+ assert.equal(r.items[1].stay,105);
+ assert.equal(r.extraPaid,20);
+ assert.equal(r.paidByStop[1],undefined);
+ assert.equal(r.bookingIntegrity,false);
+ assert.ok(r.warnings.some(x=>x.reason==='overlapping-lodging-bookings'));
+});
+test('one out-of-range booking blocks repricing of other entries in the same stage',()=>{
+ const a=booking({id:'a',type:'lodging',startDate:'2027-01-03',endDate:'2027-01-04',totalEUR:25,paidEUR:10});
+ const b=booking({id:'b',type:'lodging',startDate:'2027-01-06',endDate:'2027-01-07',totalEUR:25,paidEUR:10});
+ const r=reconcile({items:stops,bookings:[a,b]});
+ assert.equal(r.items[1].stay,105);
+ assert.equal(r.bookingIntegrity,false);
+ assert.equal(r.matched.length,0);
+});
+test('cancelled hostel and refund leave only non-refunded sunk spending',()=>{
+ const confirmed=booking({id:'confirmed',type:'lodging',startDate:'2027-01-03',endDate:'2027-01-04',totalEUR:12,paidEUR:7});
+ const cancelled=booking({id:'cancelled',type:'lodging',status:'cancelled',startDate:'2027-01-04',endDate:'2027-01-06',totalEUR:40,paidEUR:25,refundedEUR:20});
+ const r=reconcile({items:stops,bookings:[confirmed,cancelled]});
+ assert.equal(r.items[1].stay,97); // 105 - 20 estimated + 12
+ assert.equal(r.extraPaid,12); // 7 reservation + 5 non-refunded cancellation
+ assert.equal(r.paidByStop[1],7);
+ assert.equal(r.bookingIntegrity,true);
+});
+test('hostel nights before confirmed host are stored as waiting and never replace free host bed',()=>{
+ const host={confirmed:true,night:0,from:'2027-01-05',to:'2027-01-08',extraCosts:0,foodPerDay:10};
+ const stage={...stops[1],arrival:'2027-01-03',start:'2027-01-05',end:'2027-01-08',days:3,bed:0,regularBed:20,hostExtras:0,stay:51,waitingDays:2};
+ const a=booking({id:'wait-hostel',type:'lodging',startDate:'2027-01-03',endDate:'2027-01-05',totalEUR:26,paidEUR:10});
+ const r=reconcile({items:[stops[0],stage],bookings:[a],vol:{1:true},volunteerDetails:{1:host}});
+ assert.equal(r.bookingIntegrity,true);
+ assert.equal(r.items[1].stay,51);
+ assert.equal(r.items[1].bed,0);
+ assert.equal(r.items[1].waitBookings.length,1);
+ assert.equal(r.items[1].waitBookings[0].totalEUR,26);
+ assert.equal(r.paidByStop[1],undefined);
+ assert.equal(r.waitPaidByStop[1],10);
+ assert.equal(r.extraPaid,10);
+});
+test('hostel nights overlapping confirmed host are not billed as separate rooms silently',()=>{
+ const host={confirmed:true,night:0,from:'2027-01-05',to:'2027-01-08',extraCosts:0,foodPerDay:10};
+ const stage={...stops[1],arrival:'2027-01-03',start:'2027-01-05',end:'2027-01-08',days:3,bed:0,regularBed:20,hostExtras:0,stay:51,waitingDays:2};
+ const a=booking({id:'wait-hostel',type:'lodging',startDate:'2027-01-04',endDate:'2027-01-06',totalEUR:26,paidEUR:10});
+ const r=reconcile({items:[stops[0],stage],bookings:[a],vol:{1:true},volunteerDetails:{1:host}});
+ assert.equal(r.bookingIntegrity,false);
+ assert.equal(r.items[1].stay,51);
+ assert.equal(r.items[1].waitBookings,undefined);
+ assert.equal(r.extraPaid,10);
+});
+test('confirmed lodging needs a valid checkout date, but draft transfers stay unchanged',()=>{
+ const bad=validate(booking({type:'lodging',endDate:''}));
+ assert.equal(bad.ok,false);
+ assert.ok(bad.errors.includes('lodging-checkout-required'));
+ assert.equal(validate(booking({status:'planned',reference:''})).ok,true);
+});
