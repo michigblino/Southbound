@@ -57,12 +57,19 @@ function reconcile({items=[],bookings=[],vol={},volunteerDetails={},legacyPaidBy
   if(!item){warnings.push({id:b.id,reason:'missing-or-excluded-stage'});continue}
   if(!b.totalEUR && b.totalEUR!==0){warnings.push({id:b.id,reason:'unpriced-confirmed-booking'});continue}
   if(b.type==='volunteering'){
-   // The host-acceptance flow stays authoritative; a ledger note cannot create free beds.
+   // Host acceptance stays authoritative. Never create free accommodation from this entry.
    const host=volunteerDetails[b.stageId]||{};
    if(!(vol[b.stageId]===true&&host.confirmed===true)){
-    warnings.push({id:b.id,reason:'host-acceptance-not-confirmed'});
+    warnings.push({id:b.id,reason:'host-acceptance-not-confirmed'});continue;
    }
-   // Host nightly rates/fees are already priced by itinerary.js: never add again.
+   // Only attribute the payment to the already-priced host charge if it matches exactly.
+   // Otherwise keep the payment as sunk spending and mark the budget incomplete.
+   const hostCharge=num(item.hostExtras),nights=(Number(item.bed)||0)*item.days;
+   if(hostCharge===null||money(hostCharge+nights)!==b.totalEUR){
+    warnings.push({id:b.id,reason:'host-payment-differs-from-itinerary'});continue;
+   }
+   matched.push(b.id);
+   if(!b.recordedElsewhere)paidByStop[b.stageId]=money((paidByStop[b.stageId]||0)+b.paidEUR-b.refundedEUR);
    continue;
   }
   if(b.type!=='activity'&&groups.get(groupKey(b)).length>1){
