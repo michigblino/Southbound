@@ -8,7 +8,8 @@ const round=x=>Math.round((x+Number.EPSILON)*100)/100;
 const validDate=x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x)&&Number.isFinite(Date.parse(x+'T12:00:00Z'));
 function analyze({items=[],vol={},volunteerDetails={},bookings=[],completed={},visited={},preferences={}}={}){
  const requiredDays=21;
- const maxSingleHostDays=Math.max(requiredDays,Math.min(28,Math.floor(value(preferences.maxVolunteerWeeks)*7||28)));
+ const chosenWeeks=value(preferences.maxVolunteerWeeks);
+ const maxSingleHostDays=chosenWeeks===null?28:Math.min(28,Math.floor(chosenWeeks*7));
  const hourLimit=Math.min(30,value(preferences.maxVolunteerHours)??30);
  const all=Array.isArray(items)?items:[],records=Array.isArray(bookings)?bookings:[];
  const candidates=[],reasons=[],totalTravelDays=all.filter(x=>!x?.isReturn).reduce((s,x)=>s+(value(x.days)||0),0);
