@@ -44,6 +44,7 @@ test('manual BRL quote and BRL deposit use different exchange rates with evidenc
 });
 test('adding a dated EUR payment retains prior aggregate payments',async({page})=>{
  await page.goto('/',{waitUntil:'domcontentloaded'});
+ await expect.poll(()=>page.evaluate(()=>!!localStorage.getItem('southbound-v3'))).toBe(true);
  await page.evaluate(()=>{
   const m=JSON.parse(localStorage.getItem('southbound-v3'));
   m.bookingLedger=[{id:'legacy-1',type:'transport',stageId:1,fromStageId:0,status:'planned',title:'Earlier booking',provider:'Operator',startDate:'2026-12-31',endDate:'',totalEUR:90,paidEUR:25,refundedEUR:5,recordedElsewhere:false,reference:''}];
