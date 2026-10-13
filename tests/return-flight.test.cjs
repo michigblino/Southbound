@@ -84,3 +84,20 @@ test('already paid return fare never becomes an extra hotel advance',()=>{
  assert.equal(b.lines.find(x=>x.label==='Aufenthalt 1').amount,200);
  assert.equal(b.totalEstimate,1180);
 });
+
+test('return payment already logged in travel journal is not used to prepay the hostel as well',()=>{
+ const b={...returning,paidEUR:250,recordedElsewhere:true};
+ const r=reconcile({items:route,bookings:[b],legacyActualsByStop:{1:{transport:250}},
+  legacyPaidByStop:{1:250}});
+ assert.equal(r.bookingIntegrity,true,JSON.stringify(r.warnings));
+ assert.equal(r.extraPaid,0);
+ assert.equal(r.accountedPaidByStop[1],0);
+ assert.equal(r.returnPaymentEUR,250);
+ const budget=estimate(r,{paid:250});
+ assert.equal(budget.lines.find(x=>x.label==='Rückreise').amount,350);
+ assert.equal(budget.lines.find(x=>x.label==='Aufenthalt 1').amount,200);
+ assert.equal(budget.totalEstimate,1180);
+ const noSource=reconcile({items:route,bookings:[b],legacyActualsByStop:{},legacyPaidByStop:{}});
+ assert.equal(noSource.bookingIntegrity,false);
+ assert.ok(noSource.warnings.some(x=>x.reason==='return-journal-payment-not-verifiable'));
+});
