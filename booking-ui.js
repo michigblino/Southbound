@@ -42,21 +42,21 @@ function render({route=[],bookings=[],ledger}={}){
  '<label class="sb-booking-check"><input type="checkbox" data-bk="recordedElsewhere"> Zahlung bereits im Reisejournal erfasst (nicht doppelt zählen)</label>'+
  '<label class="sb-booking-notes">Notiz<textarea data-bk="notes" rows="2" maxlength="500" placeholder="Gepäck, Stornierung, enthaltene Leistungen ..."></textarea></label>'+
  '</div><p id="sb-booking-feedback" class="small" role="status"></p>'+
- '<div class="controls"><button type="button" data-bk-save>Eintrag speichern</button><button type="button" data-bk-reset>Neue Buchung</button></div>'+
+ '<div class="controls"><button type="button" data-bk-save>Eintrag speichern</button><button type="button" data-bk-reset>Neue Buchung</button><button type="button" data-bk-delete hidden>Eintrag löschen</button></div>'+
  '<p class="small">Nur vollständig passende bestätigte Tickets bzw. Unterkünfte ersetzen Schätzungen. Aktivitäten werden nach ihrer gewählten Budgetart verrechnet. Volunteering-Einträge sind hier nur Nachweise/Bewerbungsstatus; für kostenlose Host-Nächte ist weiterhin die separate Zusage nötig.</p>'+
  '</details>';
 }
-function bind(root,{route=[],getBookings,storeBookings,onSaved,confirmExtraHours}={}){
+function bind(root,{route=[],getBookings,storeBookings,onSaved,initialStageId=null}={}){
  const form=root.querySelector('#sb-bookings-editor');if(!form)return;
  const field=k=>form.querySelector('[data-bk="'+k+'"]'),feedback=form.querySelector('#sb-booking-feedback');
- let editing=null;
+ let editing=null;const deleteButton=root.querySelector('[data-bk-delete]');
  const routeLookup=i=>route.find(x=>x.i===i);
  const reset=()=>{
-  editing=null;for(const k of ['title','provider','reference','url','endDate','notes','totalEUR'])field(k).value='';
+  editing=null;if(deleteButton)deleteButton.hidden=true;for(const k of ['title','provider','reference','url','endDate','notes','totalEUR'])field(k).value='';
   for(const k of ['paidEUR','refundedEUR'])field(k).value='0';
   field('type').value='transport';field('status').value='planned';field('activityMode').value='allowance';
   field('recordedElsewhere').checked=false;
-  field('stageId').value=String(route[1]?.i??route[0]?.i??0);
+  field('stageId').value=String(route.some(x=>x.i===initialStageId)?initialStageId:route[1]?.i??route[0]?.i??0);
   dates();feedback.textContent='Neuer Eintrag – noch nicht gespeichert.';
  };
  const dates=()=>{
@@ -66,7 +66,7 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,confirmExtraHours
   field('fromStageId').value=at>0?String(route[at-1].i):'';
  };
  const fill=b=>{
-  editing=b.id;
+  editing=b.id;if(deleteButton)deleteButton.hidden=false;
   for(const k of ['type','status','stageId','fromStageId','title','provider','reference','url','startDate','endDate','totalEUR','paidEUR','refundedEUR','activityMode','notes']){
    if(field(k))field(k).value=b[k]??'';
   }
@@ -78,7 +78,15 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,confirmExtraHours
   const b=(getBookings()||[]).find(x=>x.id===button.dataset.bkEdit);if(b)fill(b);
  }));
  field('stageId').addEventListener('change',dates);
+ field('type').addEventListener('change',()=>{if(editing===null)dates()});
  root.querySelector('[data-bk-reset]').addEventListener('click',reset);
+ if(deleteButton)deleteButton.addEventListener('click',()=>{
+  const record=(getBookings()||[]).find(x=>x.id===editing);if(!record)return;
+  const paid=Math.max(0,Number(record.paidEUR||0)-Number(record.refundedEUR||0));
+  const message=paid>0?'Achtung: Für diese Buchung sind '+euro(paid)+' netto bezahlt erfasst. Der Eintrag und seine Zahlung würden aus Southbound verschwinden. Bitte einen tatsächlichen Storno/Refund stattdessen bearbeiten, sofern die Zahlung weiterhin besteht. Wirklich löschen?':'Eintrag „'+record.title+'“ dauerhaft aus Southbound entfernen?';
+  if(!confirm(message))return;
+  storeBookings((getBookings()||[]).filter(x=>x.id!==record.id));onSaved();
+ });
  root.querySelector('[data-bk-save]').addEventListener('click',()=>{
   const value=k=>field(k)?.value??'';
   const raw={
