@@ -176,6 +176,7 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>n
   const b=(getBookings()||[]).find(x=>x.id===button.dataset.bkEdit);if(b)fill(b);
  }));
  field('stageId').addEventListener('change',dates);
+ field('currency').addEventListener('input',changeFx);
  field('currency').addEventListener('change',()=>{
   if(!tx('amount').value){
    tx('currency').value=field('currency').value.toUpperCase();
