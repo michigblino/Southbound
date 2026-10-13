@@ -57,3 +57,12 @@ test('four budget shortcuts and scenario planning are connected to their real mo
  assert.match(html,/sbBudgetVariantsPanel\(booked.items,check.totalEstimate\)/);
  assert.match(html,/fixedPaymentEUR:booked.fixedPaymentEUR/);
 });
+
+test('savings hub uses one shared booked itinerary and no standalone second maximum',()=>{
+ assert.match(html,/function sbBudgetVariantsPanel\(items,total\)/);
+ assert.match(html,/const lodging=lo\(\{\.\.\.shared,visited:m\.visited\}\)/);
+ assert.match(html,/data-sb-variant-content/);
+ assert.match(html,/id="sb-savings-lodging"/);
+ assert.doesNotMatch(html,/function sbSavingsPotentialPanel\(/);
+ assert.doesNotMatch(html,/\+sbSavingsPotentialPanel\(original\)/);
+});

@@ -156,7 +156,36 @@ test('budget fixed-cost cards route to correct editor without erasing manually e
 test('all-in scenario options show gaps and preserve browser-owned trip data',async({page})=>{
  await page.goto('/',{waitUntil:'domcontentloaded'});
  const previous=await page.evaluate(()=>localStorage.getItem('southbound-v3'));
- await expect(page.locator('.sb-variant-card')).toHaveCount(4);
+ await expect(page.locator('.sb-variant-option')).toHaveCount(4);
  await expect(page.locator('.sb-budget-variants')).toContainText('Viel Volunteering');
  expect(await page.evaluate(()=>localStorage.getItem('southbound-v3'))).toBe(previous);
+});
+
+test('one savings center compares scenarios without double-counting isolated lodging',async({page})=>{
+ await page.setViewportSize({width:390,height:844});
+ await page.goto('/',{waitUntil:'domcontentloaded'});
+ const before=await page.evaluate(()=>localStorage.getItem('southbound-v3'));
+ const hub=page.locator('#sb-budget-variants');
+ await expect(hub).toBeVisible();
+ await expect(page.locator('#sb-savings-potential')).toHaveCount(0);
+ await expect(hub.locator('[data-sb-variant]')).toHaveCount(4);
+ await expect(hub.locator('[data-sb-variant-content]:visible')).toHaveCount(1);
+ const volunteer=hub.locator('[data-sb-variant="volunteer"]');
+ await expect(volunteer).toHaveAttribute('aria-pressed','true');
+ await expect(hub.locator('[data-sb-variant-content="volunteer"]')).toBeVisible();
+ await expect(hub.locator('.sb-variant-split')).toHaveCount(3);
+ await hub.locator('[data-sb-variant="aggressive"]').click();
+ await expect(hub.locator('[data-sb-variant="aggressive"]')).toHaveAttribute('aria-pressed','true');
+ await expect(volunteer).toHaveAttribute('aria-pressed','false');
+ await expect(hub.locator('[data-sb-variant-content="volunteer"]')).toBeHidden();
+ await expect(hub.locator('[data-sb-variant-content="aggressive"]')).toBeVisible();
+ await hub.locator('#sb-savings-lodging > summary').click();
+ await expect(hub.locator('#sb-savings-lodging .sb-hub-lodging-figure')).toBeVisible();
+ await expect(hub.locator('#sb-savings-lodging')).toContainText('nicht zusätzlich');
+ await hub.locator('#sb-savings-tips > summary').click();
+ await expect(hub.locator('#sb-savings-tips .sb-hub-tip').first()).toBeVisible();
+ await expect(hub.locator('#sb-savings-tips')).toContainText('nicht automatisch');
+ expect(await page.evaluate(()=>localStorage.getItem('southbound-v3'))).toBe(before);
+ const sizes=await page.evaluate(()=>({scroll:document.documentElement.scrollWidth,client:document.documentElement.clientWidth}));
+ expect(sizes.scroll).toBeLessThanOrEqual(sizes.client+2);
 });
