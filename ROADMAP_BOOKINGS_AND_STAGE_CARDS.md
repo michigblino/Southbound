@@ -56,3 +56,15 @@ Neue/angepasste Tests: Ticket-Routen-/Datumsbindung; Host-Kalender; Host-Gebühr
 - Für eine zukünftige Buchung **direkt in der App** brauchen wir Partner-APIs, Backend/Secret-Handling, Rechts-/Zahlungs-/Stornoabwicklung. Die jetzige UI ist ein Buchungsregister, **kein Buchungscheckout**.
 
 Aktuelle Priorität: diese MVP-Funktionen mit Unit- und Playwright-Tests gegen Preis-/Datums-/Zahlungs-Doppelerfassung, Mobile-Overflow, Backup und Browser-Reload absichern, erst danach PR mergen.
+
+## 2026-10-13 — Etappenkarten mit Buchungsstatus (Branch `feat/booking-stage-cards`)
+
+- Neu: `stage-card.js` (reine Statuslogik + sichere HTML-Ausgabe) und `stage-card.css` (responsive, Theme-Tokens, kleine SVG-Linien-Icons).
+- In jeder aufgeklappten Etappe: **Transfer / Unterkunft / Volunteering / Erlebnisse** mit kleinen Icons, Status und direkter Interaktion. Das Aussehen orientiert sich an der vom Nutzer positiv bewerteten Beispielkarte.
+- Die Zeilen öffnen bei offenen Einträgen den vorausgewählten Editor in **Buchungen**, inklusive richtiger Etappe/Art; bestehende Buchungseinträge werden zum Bearbeiten geladen. Eine bestätigte Host-Zusage öffnet direkt die bestehende Host-Verwaltung.
+- Status ist **ausschließlich aus dem lokalen Buchungsregister und der tatsächlich angewendeten Reconciliation abgeleitet**. Unpassende Datums- oder Routenbuchungen zeigen **Prüfen**, nicht `Bestätigt`. Bezahlung erfordert einen bestätigten positiven Betrag mit vollständiger Nettozahlung und ohne Erstattung. Unbestätigte manuelle Ticket-/Hostelpreise gelten nur als `Preis geprüft/notiert`.
+- Keine Anbieter-API, kein Checkout, kein automatischer Zahlungsnachweis. Status `Bestätigt` = vom Nutzer als Bestätigung gespeichert. `Host bestätigt` nur mit der separaten Zusage aus Etappen.
+- Bei bestätigtem Host über der persönlichen Wunschgrenze zeigt die Karte eine Stundenzahl-Warnung, **keine automatische Host-Ablehnung**.
+- Bestehende `localStorage['southbound-v3']`-Einträge werden nicht verändert, `sw.js`-Cache auf v62 erhöht.
+- Tests: Unit-Statusfälle, Browsernavigation einschließlich Buchungbearbeitung, veraltete Zuordnung, 360px-Mobilbreite. Vollständige GitHub-Actions-Unit- und Browserläufe **vor Merge** prüfen.
+- Grenzen für nächstes Release: gesamte Karte ist momentan nur bei aufgeklappter Etappe sichtbar; keine konkreten Anbieter-Angebote, keine Buchungszahlung im Browser; gesplittete Hostel-Nächte/Host-Stornos noch nicht abgebildet. Diese Grenzen dürfen nicht als erledigt dargestellt werden.
