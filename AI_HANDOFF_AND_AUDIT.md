@@ -312,3 +312,12 @@ Decision: DOCUMENT ONLY, DO NOT IMPLEMENT YET.
 - **30h preference** now soft: manual Host confirmation above the preference requires informed user confirmation; suggestions retain preferences. No hard ban on a legitimate 35-hour placement.
 - Planned UI: stage cards with small line icons + status chips; do not confuse this with the booking registry. Finish QA before enabling payments/provider integrations.
 - Run Node, inline syntax and Playwright via GitHub Actions before merge. Tests added to verify ledger pricing/payment/cancellation and form behavior.
+
+## 2026-10-13 — Category-specific booking entry (feature branch)
+
+- Branch: `feat/booking-type-specific-fields-20261013` based on main after booking stage cards PR #14. Do not merge until CI and mobile checks pass.
+- `booking-ui.js` now shows transfer origin only for transport; check-out/end dates for lodging or volunteering; activity-budget mode only for activities. Shared status, provider, date, payments, refunds, source, reference and notes remain available.
+- Context-sensitive field labels, placeholders and guidance distinguish transfer tickets, hotel bookings, volunteer applications (no implied host acceptance), and experiences. Existing booking editing and stage-card prefill use the same visibility logic.
+- Hidden category-specific controls are also disabled; saved records normalize unrelated `fromStageId`, `endDate` and `activityMode` instead of inheriting invisible data when switching categories. Existing `southbound-v3` state schema is unchanged.
+- Added Node markup guards and Playwright coverage for four category switches, staging prefill, save/edit normalization and 360px mobile width. CI syntax checks include new tests and `booking-ui.js`. Bumped offline PWA cache to v64.
+- Provider APIs, checkout and payments remain manual/unverified. Remaining budget priorities: split-stay lodging, transaction-level payment attribution, currency conversion, stale price provenance and provider integrations only with licensed access. CI results and real Android have not yet been confirmed.
