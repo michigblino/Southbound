@@ -65,3 +65,11 @@ Aktuelle Priorität: diese MVP-Funktionen mit Unit- und Playwright-Tests gegen P
 - Keine automatische Anbieterbuchung, kein Login, keine Zahlungsverarbeitung, keine Preisgarantie. Bereits gespeicherte `m.bookingLedger`-Einträge bleiben erhalten.
 - **Noch ausstehend:** Etappenkarte mit kleinen Icons und vier Statuszeilen (Screenshot), Anbieter-Integrationen, gemischte Unterkunftsbuchungen und lokal währungsgenaue Rechnungen, Buchungsstatus „paid“ nur mit Beleg, Zeitplankonflikte nach Änderungen.
 - 30 Wochenstunden bleiben eine **Präferenz**: Ein Host mit höheren Stunden kann nach ausdrücklicher Warnbestätigung als Zusage gespeichert werden; automatische Vorschläge priorisieren weiter passende Hosts.
+
+## 2026-10-13 — Etappenkarte mit Buchungsstatus (Neuer Branch)
+
+- `stage-card.js` + `stage-card.css`: kompakte responsive Karte mit kleinen SVG-Linien-Icons im bestehenden Hell-/Dunkel-Theme.
+- Jede geöffnete Reiseetappe zeigt Transfer, Unterkunft, Volunteering, Erlebnisse mit Status. Kein „Gebucht“ oder „Bezahlt“ ohne ausdrücklich gespeicherte Nutzerbestätigung/Zahlungsstand. Nicht zuordenbare Einträge erhalten **Prüfen**.
+- Klick führt direkt zum passenden Buchungseditor; bei bestätigter Host-Zusage zu deren Verwaltung. Altes Buchungsregister einschließlich Löschwarnung und Etappenvorauswahl bleibt erhalten.
+- Reine Anzeige aus `m.bookingLedger` und bestätigten Host-Daten; keine neuen Speicherfelder, keine Migration, keine Anbieter-API, kein Checkout. Warnung bei >30h/Woche statt automatischer Ablehnung.
+- Tests: Status/Quellen/Bezahlung, Bearbeitungs-Navigation, Routen-Konflikte, Mobile 360 px, Offline-Cache. Merge erst nach grüner GitHub Unit- und Browser-CI.
