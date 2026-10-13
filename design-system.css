@@ -389,3 +389,75 @@ html[data-sb-theme="light"] #sb2 .sb-booking-shortcuts button svg{color:var(--ac
  #sb2 .sb-currency-toolbar{grid-template-columns:max-content 79px minmax(0,1fr);gap:8px 6px}
  #sb2 .sb-currency-toolbar [data-sb-base-currency]{width:79px!important;max-width:79px}
 }
+
+/* The dashboard begins with the traveler’s route, not an accounting form. */
+#sb2 .sb-overview-hero{
+ position:relative;isolation:isolate;overflow:hidden;
+ margin:0 0 15px;
+ padding:clamp(20px,3vw,29px);
+ display:flex;flex-direction:column;gap:20px;
+ border:1px solid #56725f;
+ border-radius:24px;
+ background:linear-gradient(125deg,#365e48 0%,#2b4b39 65%,#243a2f 100%);
+ color:#f6faf4;
+ box-shadow:var(--sb-shadow);
+}
+#sb2 .sb-overview-hero::before{
+ content:"";position:absolute;right:-86px;top:-117px;z-index:-1;
+ width:330px;height:330px;border-radius:50%;
+ border:1px solid rgba(231,243,229,.16);
+ box-shadow:0 0 0 45px rgba(231,243,229,.035),0 0 0 89px rgba(231,243,229,.018);
+ pointer-events:none;
+}
+html[data-sb-theme="light"] #sb2 .sb-overview-hero{background:linear-gradient(125deg,#416e55,#315b47 65%,#284a3b);border-color:#456b56}
+#sb2 .sb-hero-intro{position:relative;z-index:1}
+#sb2 .sb-hero-kicker{
+ font-weight:800;letter-spacing:.18em;
+ color:#d1e9d5;font-size:10px;
+ margin:0 0 10px;
+}
+#sb2 .sb-overview-hero h2{
+ font-size:clamp(23px,3.65vw,34px);
+ letter-spacing:-.048em;
+ color:#fff;
+ line-height:1.17;
+ font-weight:810;
+ margin:0;
+ overflow-wrap:anywhere;
+ max-width:720px;
+}
+#sb2 .sb-overview-hero h2 span{color:#c5d9be;margin:0 .11em}
+#sb2 .sb-hero-copy{color:#e2eee1;font-size:13px;max-width:58ch;margin:11px 0 0;line-height:1.5}
+#sb2 .sb-hero-bottom{display:flex;align-items:end;justify-content:space-between;gap:15px;flex-wrap:wrap}
+#sb2 .sb-hero-stats{display:flex;align-items:stretch;flex-wrap:wrap;gap:7px;flex:1;min-width:0}
+#sb2 .sb-hero-stat{
+ display:flex;flex-direction:column;gap:2px;
+ padding:9px 12px;
+ min-width:79px;
+ background:rgba(255,255,255,.1);
+ border:1px solid rgba(255,255,255,.17);
+ border-radius:12px;
+}
+#sb2 .sb-hero-stat b{font-size:clamp(13px,2.4vw,17px);line-height:1.2;font-weight:770;letter-spacing:-.025em;color:#fff}
+#sb2 .sb-hero-stat span{font-size:10px;line-height:1.3;color:#dcebdd}
+#sb2 button.sb-hero-link{
+ display:inline-flex;align-items:center;justify-content:center;gap:9px;
+ background:#eef4ea!important;
+ color:#294634!important;
+ border:1px solid #eef4ea!important;
+ font-size:12px;font-weight:780;
+ min-height:42px;border-radius:11px;
+ padding:9px 13px;
+ white-space:nowrap;
+}
+#sb2 button.sb-hero-link svg{height:16px;width:16px;flex-shrink:0}
+#sb2 button.sb-hero-link:hover{background:#fff!important;box-shadow:0 4px 17px rgba(0,0,0,.13)!important}
+@media(max-width:500px){
+ #sb2 .sb-overview-hero{padding:20px 17px;gap:16px;border-radius:20px}
+ #sb2 .sb-overview-hero h2{font-size:clamp(22px,6.35vw,27px)}
+ #sb2 .sb-hero-copy{font-size:12px;margin-top:9px}
+ #sb2 .sb-hero-bottom{align-items:stretch;gap:10px}
+ #sb2 .sb-hero-stats{gap:6px}
+ #sb2 .sb-hero-stat{min-width:0;flex:1 1 80px;padding:9px 8px}
+ #sb2 button.sb-hero-link{width:100%;min-height:40px}
+}
