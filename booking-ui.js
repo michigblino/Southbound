@@ -1,6 +1,6 @@
 /* User-entered booking register. No provider API, checkout, or automatic booking confirmation. */
 (function(g){'use strict';
-const euro=n=>'€'+Number(n||0).toLocaleString('de-DE',{minimumFractionDigits:0,maximumFractionDigits:2});
+const euro=n=>g.SouthboundCurrencyDisplay?.(Number(n))||'€'+Number(n||0).toLocaleString('de-DE',{minimumFractionDigits:0,maximumFractionDigits:2});
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','"':'&quot;',"'":'&#39;'}[c]));
 const labels={transport:'Transfer',lodging:'Unterkunft',volunteering:'Volunteering',activity:'Erlebnis'};
 const statuses={planned:'Vorgemerkt',requested:'Angefragt',confirmed:'Bestätigt',cancelled:'Storniert'};
@@ -13,14 +13,14 @@ const typeCopy={
  activity:{hint:'Erlebnis: Erfasse den Veranstaltungstag und wähle, ob der Preis in der Aktivitätenpauschale enthalten oder zusätzlich einzuplanen ist.',captions:{stageId:'Ort / Etappe',title:'Erlebnis / Ausflug',provider:'Veranstalter',startDate:'Datum des Erlebnisses',reference:'Ticket- oder Buchungsnummer'},placeholders:{title:'z. B. Wanderung mit Guide',provider:'Name des Veranstalters',reference:'Ticketcode'}}
 };
 const baseCaptions={stageId:'Ziel / Etappe',title:'Bezeichnung',provider:'Anbieter / Host',startDate:'Beginn / Abfahrt',endDate:'Ende / Check-out',reference:'Referenz / Bestätigung'};
-function render({route=[],bookings=[],ledger}={}){
+function render({route=[],bookings=[],ledger,baseCurrency='EUR',fxQuotes=null}={}){
  const available=route.filter(x=>x&&x.i!==undefined),defaultId=available[0]?.i??0;
  const opts=available.map(x=>'<option value="'+x.i+'">'+esc(x.name)+'</option>').join('');
  const warnings=ledger?.warnings||[];
  const records=Array.isArray(bookings)?bookings:[];
  const total=ledger?.recordedPayment||0,real=ledger?.extraPaid||0;
  return '<div class="panel"><div class="eyebrow">Buchungen · Beta</div><h2>Deine Buchungszentrale</h2>'+
- '<p class="small">Tickets, Host-Anfragen, Unterkünfte und Ausflüge festhalten. Noch <b>keine Buchung und keine Zahlung innerhalb von Southbound</b>. Bestätigt bedeutet hier: von dir als bestätigt eingetragen, nicht unabhängig vom Anbieter verifiziert.</p>'+
+ '<p class="small">Tickets, Host-Anfragen, Unterkünfte und Ausflüge festhalten. Noch <b>keine Buchung und keine Zahlung innerhalb von Southbound</b>. Bestätigt bedeutet hier: von dir als bestätigt eingetragen, nicht unabhängig vom Anbieter verifiziert. Aktuelle Kurse sind Tages-Referenzwerte, nicht automatisch dein tatsächlicher Bankkurs.</p>'+
  '<div class="sb-booking-stats"><div><small>Gespeicherte Einträge</small><b>'+records.length+'</b></div><div><small>Als bestätigt erfasst</small><b>'+Number(ledger?.confirmed||0)+'</b></div><div><small>Zahlungen (netto) in Buchungen</small><b>'+euro(total)+'</b></div></div>'+
  '<p class="small">Davon '+euro(real)+' noch nicht im Reisejournal verbucht – nur dieser Teil wird zusätzlich als bereits bezahlt gezählt. Bereits anderswo erfasste Beträge werden nicht erneut addiert. Wechselkurse, Zahlungen und Journal-Referenzen sind von dir eingetragen und nicht automatisch überprüft.</p>'+
  (warnings.length?'<div class="note"><b>'+warnings.length+' Buchung(en) prüfen</b><p class="small">Unpassende Buchungen ändern deine Reisekosten nicht stillschweigend.</p>'+warnings.slice(0,8).map(w=>'<p class="small">'+esc(w.id)+': '+esc(w.reason)+'</p>').join('')+'</div>':'')+
@@ -43,9 +43,9 @@ function render({route=[],bookings=[],ledger}={}){
  '<label><span data-bk-caption="provider">Anbieter / Host</span><input data-bk="provider" maxlength="160" placeholder="Betreiber oder Hostel"></label>'+
  '<label><span data-bk-caption="startDate">Beginn / Abfahrt</span><input type="date" data-bk="startDate"></label>'+
  '<label data-bk-for="lodging volunteering" hidden style="display:none"><span data-bk-caption="endDate">Ende / Check-out</span><input type="date" data-bk="endDate"></label>'+
- '<label>Währung (ISO-Code)<input data-bk="currency" maxlength="3" value="EUR" placeholder="EUR, BRL, COP, USD ..."></label>'+
+ '<label>Preiswährung (ISO-Code)<input data-bk="currency" maxlength="3" value="'+esc(baseCurrency)+'" placeholder="EUR, BRL, COP, USD ..."></label>'+
  '<label>Gesamtpreis inkl. Gebühren (gewählte Währung)<input type="number" min="0" step="any" data-bk="totalEUR" placeholder="Leer = unbekannt"></label>'+
- '<div data-bk-fx hidden style="display:none"><p class="small">Manueller Kurs: <b>1 Einheit der Währung = wie viele EUR?</b> Quelle und Datum selbst prüfen; kein Live-Wechselkurs.</p>'+
+ '<div data-bk-fx hidden style="display:none"><p class="small">Southbound trägt den letzten verfügbaren Tages-Referenzkurs automatisch ein. <b>1 Einheit der Preiswährung = wie viele EUR?</b> Für tatsächlich gezahlte Beträge den Bank-/Kartenauszug bevorzugen. Kurs, Quelle und Datum bleiben editierbar.</p>'+
  '<label>EUR je Währungseinheit<input type="number" data-bk="rateEUR" min="0" step="any" placeholder="z. B. 0.16 (nur Beispiel)"></label>'+
  '<label>Kursdatum<input type="date" data-bk="rateCheckedAt"></label>'+
  '<label>Quelle des Kurses<input data-bk="rateSource" maxlength="160" placeholder="z. B. Bankabrechnung"></label></div>'+
@@ -55,7 +55,7 @@ function render({route=[],bookings=[],ledger}={}){
  '<label>HTTPS-Buchungslink<input type="url" data-bk="url" placeholder="https://..."></label>'+
  '<label data-bk-for="activity" hidden style="display:none">Aktivitäten im Budget<select data-bk="activityMode"><option value="allowance">Mit bestehendem Ausflugsbudget verrechnen</option><option value="extra">Zusätzliche Ausgabe</option></select></label>'+
  '<label class="sb-booking-check"><input type="checkbox" data-bk="recordedElsewhere"> Bisherige pauschale Zahlung bereits im Reisejournal erfasst</label>'+
- '<div class="sb-booking-notes"><h3>Zahlungen & Erstattungen</h3><p class="small">Jede neue Zahlung hat ein eigenes Datum, eine eigene Währung und einen zugeordneten Buchungseintrag. Bei Fremdwährungen den tatsächlichen Kurs je Zahlung eingeben. Neue Einträge werden erst mit „Eintrag speichern“ übernommen.</p><div data-bk-payment-list></div>'+
+ '<div class="sb-booking-notes"><h3>Zahlungen & Erstattungen</h3><p class="small">Für Fremdwährungen wird ein Tages-Referenzkurs automatisch vorgeschlagen. Der tatsächlich belastete Kartenkurs kann abweichen; überschreibe den Vorschlag mit dem Bankwert, falls vorhanden. Neue Einträge werden erst mit „Eintrag speichern“ übernommen.</p><div data-bk-payment-list></div>'+
  '<div class="sb-booking-form" role="group" aria-label="Zahlung hinzufügen">'+
  '<label>Art<select data-bk-tx="kind"><option value="payment">Zahlung</option><option value="refund">Erstattung</option></select></label>'+
  '<label>Buchungstag der Zahlung<input type="date" data-bk-tx="date"></label>'+
@@ -71,7 +71,7 @@ function render({route=[],bookings=[],ledger}={}){
  '<p class="small">Unterkünfte können pro Etappe auf mehrere Buchungen mit unterschiedlichen Check-in/Check-out-Daten aufgeteilt werden. Bestätigte, nicht überlappende Nächte ersetzen nur die zugehörigen Unterkunftsschätzungen. Vor einer Host-Zusage liegende Hostel-Nächte werden als Wartekosten angerechnet, nicht als kostenlose Host-Nächte. Aktivitäten werden nach ihrer Budgetart verrechnet; Bewerbungen sind keine Host-Zusagen.</p>'+
  '</details>';
 }
-function bind(root,{route=[],getBookings,storeBookings,onSaved,initialStageId=null,prefill=null}={}){
+function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>null,getBaseCurrency=()=> 'EUR',initialStageId=null,prefill=null}={}){
  const form=root.querySelector('#sb-bookings-editor');if(!form)return;
  const field=k=>form.querySelector('[data-bk="'+k+'"]'),feedback=form.querySelector('#sb-booking-feedback');
  let editing=null,events=[],legacyPaid=0,legacyRefunded=0,legacyJournal=false;
@@ -79,6 +79,21 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,initialStageId=nu
  const tx=k=>form.querySelector('[data-bk-tx="'+k+'"]');
  const fxPanel=form.querySelector('[data-bk-fx]'),txFx=form.querySelector('[data-bk-tx-fx]');
  const journalRow=form.querySelector('[data-bk-journal]'),legacyControls=['paidEUR','refundedEUR','recordedElsewhere'];
+ const autoRate=(code,prefix,{overwrite=false}={})=>{
+  const ccy=(code||'EUR').trim().toUpperCase();
+  if(ccy==='EUR')return;
+  const q=g.SouthboundFX?.eurPerUnit(getFxQuotes(),ccy);
+  if(!q)return;
+  const find=name=>prefix==='booking'?field(name):tx(name);
+  if(!overwrite&&find('rateEUR').value.trim()!=='')return; // respect bank-entered or earlier manually confirmed values
+  find('rateEUR').value=String(Number(q.rate.toPrecision(12)));
+  find('rateCheckedAt').value=q.date;
+  find('rateSource').value=q.source+' (täglicher Referenzkurs, keine Bankabrechnung)';
+ };
+ const autoBoth=()=>{
+  autoRate(field('currency').value,'booking');
+  autoRate(tx('currency').value,'tx');
+ };
  const changeFx=()=>{
   const foreign=field('currency').value.trim().toUpperCase()!=='EUR';
   fxPanel.hidden=!foreign;fxPanel.style.display=foreign?'':'none';
@@ -124,12 +139,12 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,initialStageId=nu
   editing=null;events=[];legacyPaid=0;legacyRefunded=0;legacyJournal=false;
   if(deleteButton)deleteButton.hidden=true;for(const k of ['title','provider','reference','url','endDate','notes','totalEUR','rateEUR','rateCheckedAt','rateSource'])field(k).value='';
   for(const k of ['paidEUR','refundedEUR'])field(k).value='0';
-  field('type').value='transport';field('status').value='planned';field('activityMode').value='allowance';field('currency').value='EUR';
+  field('type').value='transport';field('status').value='planned';field('activityMode').value='allowance';field('currency').value=getBaseCurrency();
   for(const k of ['date','amount','rateEUR','rateCheckedAt','rateSource','journalReference'])tx(k).value='';
-  tx('kind').value='payment';tx('currency').value='EUR';tx('recordedElsewhere').checked=false;
+  tx('kind').value='payment';tx('currency').value=getBaseCurrency();tx('recordedElsewhere').checked=false;
   field('recordedElsewhere').checked=false;
   field('stageId').value=String(route.some(x=>x.i===initialStageId)?initialStageId:route[1]?.i??route[0]?.i??0);
-  dates();syncType();changeFx();showEvents();feedback.textContent='Neuer Eintrag – noch nicht gespeichert.';
+  dates();syncType();changeFx();autoBoth();showEvents();feedback.textContent='Neuer Eintrag – noch nicht gespeichert.';
  };
  const dates=()=>{
   const id=Number(field('stageId').value),at=route.findIndex(x=>x.i===id),item=routeLookup(id);
@@ -161,11 +176,16 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,initialStageId=nu
   const b=(getBookings()||[]).find(x=>x.id===button.dataset.bkEdit);if(b)fill(b);
  }));
  field('stageId').addEventListener('change',dates);
- field('currency').addEventListener('input',()=>{
+ field('currency').addEventListener('change',()=>{
   if(!tx('amount').value)tx('currency').value=field('currency').value.toUpperCase();
-  changeFx();
+  for(const k of ['rateEUR','rateCheckedAt','rateSource'])field(k).value='';
+  changeFx();autoBoth();
  });
- tx('currency').addEventListener('input',changeFx);
+ tx('currency').addEventListener('change',()=>{
+  for(const k of ['rateEUR','rateCheckedAt','rateSource'])tx(k).value='';
+  changeFx();autoBoth();
+ });
+ root.addEventListener('southbound:fx-loaded',autoBoth);
  tx('recordedElsewhere').addEventListener('change',changeFx);
  root.querySelector('[data-bk-add-payment]').addEventListener('click',()=>{
   const value=k=>tx(k).value,amt=Number(value('amount'));
