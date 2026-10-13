@@ -33,7 +33,10 @@ test('replacing a trip with a version 3 backup clears stale bookings instead of 
  await page.locator('#sb-beta-backup summary').click();
  page.on('dialog',d=>d.accept());
  const restored={version:3,state:{goal:7400,cap:12000,reserve:1100,days:{1:5},actuals:{},vol:{},visited:{},excluded:{}}};
- await page.locator('#sb-import').setInputFiles({name:'southbound-backup.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(restored))});
+ await Promise.all([
+  page.waitForEvent('load'), // successful import triggers an intentional full reload
+  page.locator('#sb-import').setInputFiles({name:'southbound-backup.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(restored))})
+ ]);
  await expect.poll(()=>page.evaluate(()=>JSON.parse(localStorage.getItem('southbound-v3')||'{}').goal)).toBe(7400);
  const local=await page.evaluate(()=>JSON.parse(localStorage.getItem('southbound-v3')||'{}'));
  expect(local.days['1']).toBe(5);expect(local.reserve).toBe(1100);
