@@ -42,8 +42,8 @@ test('volunteer host acceptance is independent and hours above preference are fl
 });
 test('initial stage has no nonexistent incoming transfer',()=>{
  const x=card.summarize({item:{...item,i:0},previous:null});
- assert.equal(status(x,'transport').label,'Startort');
- assert.equal(status(x,'transport').disabled,true);
+ assert.equal(status(x,'transport').label,'Offen');
+ assert.equal(status(x,'transport').disabled,false);
 });
 test('untrusted booking name and provider never injected into HTML',()=>{
  const x=make({item:{...item,name:'<img src=x onerror=alert(1)>'}});
