@@ -44,8 +44,9 @@ function validateState(state){
  return state;
 }
 function parse(text){
- if(typeof text!=='string'||!text.trim())throw Error('Die Datei ist leer');
+ if(typeof text!=='string')throw Error('Die Datei ist leer');
  if(text.length>MAX_BYTES)throw Error('Backup zu groß: maximal 8 MB');
+ if(!text.trim())throw Error('Die Datei ist leer');
  let doc;
  try{doc=JSON.parse(text)}catch{throw Error('Kein gültiges JSON-Backup')}
  if(!isPlain(doc)||!Number.isInteger(doc.version)||doc.version<3||doc.version>4)
