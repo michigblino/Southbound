@@ -80,6 +80,8 @@ test('actual travel spending and fixed costs entered in BRL persist as canonical
  await page.locator('[data-sb-base-currency]').press('Enter');
  await expect(page.locator('[data-sb-base-currency]')).toHaveValue('BRL');
  await expect.poll(()=>page.evaluate(()=>JSON.parse(localStorage.getItem('southbound-v3')||'{}').baseCurrency)).toBe('BRL');
+ await page.locator('[data-sb-budget-details-jump]').click();
+ await expect(page.locator('#sb-budget-details')).toHaveAttribute('open');
  await page.locator('[data-sb-fixed="insurance"]').fill('600');
  await page.locator('[data-sb-fixed-save]').click();
  const insurance=await page.evaluate(()=>JSON.parse(localStorage.getItem('southbound-v3')).fixedCosts.insurance);
