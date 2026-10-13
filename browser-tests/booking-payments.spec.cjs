@@ -53,8 +53,8 @@ test('adding a dated EUR payment retains prior aggregate payments',async({page})
  });
  await page.reload({waitUntil:'domcontentloaded'});
  await page.locator('[data-view="bookings"]').click();
- await page.locator('[data-bk-payment-details] summary').click();
  await page.locator('[data-bk-edit]').first().click();
+ await page.locator('[data-bk-payment-details] summary').click();
  await expect(f(page,'paidEUR')).toHaveValue('25');
  await tx(page,'date').fill('2026-10-13');
  await tx(page,'currency').fill('EUR');
