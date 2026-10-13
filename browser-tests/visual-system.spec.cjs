@@ -95,6 +95,6 @@ test('overview opens with a meaningful real-trip summary before technical forms'
  }));
  expect(positions.hero).toBeLessThan(positions.preferences);
  expect(positions.scroll).toBeLessThanOrEqual(positions.viewport+2);
- await hero.locator('[data-view="stages"]').click();
+ await hero.locator('[data-sb-hero-open-stages]').click();
  await expect(page.locator('#sb2 .topnav [data-view="stages"]')).toHaveAttribute('aria-current','page');
 });
