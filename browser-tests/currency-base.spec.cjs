@@ -39,6 +39,7 @@ test('daily rates are prefilled for booking and payment in arbitrary user base',
  await page.locator('[data-sb-base-currency]').fill('COP');
  await page.locator('[data-sb-base-currency]').press('Enter');
  await page.locator('[data-view="bookings"]').click();
+ await page.locator('[data-bk-payment-details] summary').click();
  await expect(field(page,'currency')).toHaveValue('COP');
  await expect(field(page,'rateEUR')).toHaveValue(String(Number((1/4800).toPrecision(12))));
  await expect(field(page,'rateCheckedAt')).toHaveValue(date);
@@ -61,6 +62,7 @@ test('network outage does not invent exchange rate and EUR fallback is visibly i
  await expect(page.locator('[data-sb-all-in-total]')).toContainText('€');
  await expect(page.locator('[data-sb-currency-status]')).toContainText(/Kurs|EUR/);
  await page.locator('[data-view="bookings"]').click();
+ await page.locator('[data-bk-payment-details] summary').click();
  await expect(field(page,'rateEUR')).toHaveValue('');
 });
 
