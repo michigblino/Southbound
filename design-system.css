@@ -132,7 +132,8 @@ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line
  overflow-wrap:normal;
  white-space:nowrap;
  box-shadow:none!important;
- transition:background .18s ease,color .18s ease,transform .18s ease;
+ /* Keep foreground/background in sync during theme changes: no low-contrast tween. */
+ transition:transform .18s ease;
 }
 #sb2 .topnav button svg{width:17px;height:17px;flex:none}
 #sb2 .topnav button.active{
