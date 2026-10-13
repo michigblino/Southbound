@@ -896,3 +896,45 @@ html[data-sb-theme="light"] body::after{opacity:0}
  body::before,body::after{will-change:auto}
 }
 
+
+/* Stacked responsive STH/BND brand icon: image source never swaps abruptly. */
+#sb2 .sb-brand-icon{
+  grid-area:logo;display:inline-block;position:relative;isolation:isolate;
+  flex:0 0 54px;width:54px;height:54px;border-radius:16px;
+  box-shadow:var(--sb-shadow-small);overflow:hidden;
+}
+#sb2 .sb-brand .sb-brand-icon img{
+  display:block;position:absolute;inset:0;width:100%!important;height:100%!important;
+  max-width:100%;min-width:0;object-fit:cover;
+  margin:0;border:0;background:transparent!important;border-radius:inherit;
+  box-shadow:none!important;
+  transition:opacity .74s cubic-bezier(.25,.77,.22,1);
+  pointer-events:none;
+}
+#sb2 .sb-brand-icon--dark{opacity:1}
+#sb2 .sb-brand-icon--light{opacity:0}
+html[data-sb-theme="light"] #sb2 .sb-brand-icon--dark{opacity:0}
+html[data-sb-theme="light"] #sb2 .sb-brand-icon--light{opacity:1}
+
+/* Crossfade the HERO gradients rather than snapping when CSS variables change. */
+#sb2 .sb-overview-hero{
+  background:linear-gradient(126deg,#336B87 0%,#5686A0 54%,#90AFC5 100%)!important;
+}
+#sb2 .sb-overview-hero::after{
+  content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
+  background:linear-gradient(138deg,#763626 0%,#573A33 55%,#2A3132 100%);
+  opacity:1;
+  transition:opacity .76s cubic-bezier(.23,.75,.24,1);
+}
+html[data-sb-theme="light"] #sb2 .sb-overview-hero::after{opacity:0}
+#sb2 .sb-overview-hero::before{z-index:1}
+#sb2 .sb-overview-hero>*{z-index:2}
+@media(max-width:760px){
+ #sb2 .sb-brand-icon{flex-basis:45px;width:45px;height:45px;border-radius:13px}
+}
+@media(max-width:380px){
+ #sb2 .sb-brand-icon{flex-basis:40px;width:40px;height:40px;border-radius:11px}
+}
+@media(prefers-reduced-motion:reduce){
+ #sb2 .sb-brand .sb-brand-icon img,#sb2 .sb-overview-hero::after{transition:none!important}
+}
