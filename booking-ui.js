@@ -193,10 +193,10 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>n
  };
  const reset=()=>{
   editing=null;events=[];legacyPaid=0;legacyRefunded=0;legacyJournal=false;stopovers=[];showStopovers();
-  if(deleteButton)deleteButton.hidden=true;for(const k of ['title','provider','reference','url','endDate','notes','totalEUR','rateEUR','rateCheckedAt','rateSource','arrivalDate','destinationAirport'])field(k).value='';
+  if(deleteButton)deleteButton.hidden=true;for(const k of ['title','provider','reference','url','endDate','notes','totalEUR','rateEUR','rateCheckedAt','rateSource','arrivalDate','destinationAirport','destinationPlace'])field(k).value='';
   for(const k of ['paidEUR','refundedEUR'])field(k).value='0';
   field('type').value='transport';field('status').value='planned';field('activityMode').value='allowance';field('currency').value=getBaseCurrency();
-  field('journeyOrigin').value='route';field('travelMode').value='ground';field('originPlace').value=tripOrigin;
+  field('journeyOrigin').value='route';field('travelMode').value='ground';field('originPlace').value=tripOrigin;field('destinationPlace').value=tripOrigin;
   for(const k of ['date','amount','rateEUR','rateCheckedAt','rateSource','journalReference'])tx(k).value='';
   tx('kind').value='payment';tx('currency').value=getBaseCurrency();tx('recordedElsewhere').checked=false;
   field('recordedElsewhere').checked=false;
@@ -217,9 +217,9 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>n
   for(const k of ['type','status','stageId','fromStageId','title','provider','reference','url','startDate','endDate','totalEUR','paidEUR','refundedEUR','activityMode','notes']){
    if(field(k))field(k).value=b[k]??'';
   }
-  field('journeyOrigin').value=b.journeyOrigin===true?'inbound':'route';
+  field('journeyOrigin').value=b.journeyOrigin===true?'inbound':b.journeyReturn===true?'return':'route';
   field('travelMode').value=b.travelMode==='flight'?'flight':'ground';
-  field('originPlace').value=b.originPlace||tripOrigin;
+  field('originPlace').value=b.originPlace||tripOrigin;field('destinationPlace').value=b.destinationPlace||tripOrigin;
   field('arrivalDate').value=b.arrivalDate||'';
   field('destinationAirport').value=b.destinationAirport||'';
   stopovers=Array.isArray(b.stopovers)?b.stopovers.map(x=>({...x})):[];
@@ -242,10 +242,17 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>n
  }));
  field('stageId').addEventListener('change',()=>{dates();showTransportFields()});
  field('journeyOrigin').addEventListener('change',()=>{
-  if(field('journeyOrigin').value==='inbound'){
+  const direction=field('journeyOrigin').value;
+  if(direction==='inbound'){
    field('stageId').value=String(route[0]?.i??0);dates();field('startDate').value='';
    if(!field('originPlace').value.trim())field('originPlace').value=tripOrigin;
-  }
+  }else if(direction==='return'){
+   field('stageId').value=String(lastTravel?.i??route[0]?.i??0);dates();
+   field('startDate').value=lastTravel?.end||'';
+   field('arrivalDate').value=lastTravel?.end||'';
+   field('originPlace').value=lastTravel?.name||'';
+   field('destinationPlace').value=tripOrigin;
+  }else dates();
   showTransportFields();
  });
  field('travelMode').addEventListener('change',showTransportFields);
@@ -257,11 +264,19 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>n
  });
  root.querySelectorAll('[data-bk-preset]').forEach(btn=>btn.addEventListener('click',()=>{
   reset();const preset=btn.dataset.bkPreset;
-  field('type').value=preset==='inbound'?'transport':preset;
+  field('type').value=preset==='inbound'||preset==='return'?'transport':preset;
   if(preset==='inbound'){
    field('journeyOrigin').value='inbound';field('travelMode').value='flight';
    field('stageId').value=String(route[0]?.i??0);dates();field('startDate').value='';
    field('title').value='Flug '+tripOrigin+' → '+(route[0]?.name||'Reiseziel');
+  }else if(preset==='return'){
+   field('journeyOrigin').value='return';field('travelMode').value='flight';
+   field('stageId').value=String(lastTravel?.i??route[0]?.i??0);dates();
+   field('startDate').value=lastTravel?.end||'';
+   field('arrivalDate').value=lastTravel?.end||'';
+   field('originPlace').value=lastTravel?.name||'';
+   field('destinationPlace').value=tripOrigin;
+   field('title').value='Rückflug '+(lastTravel?.name||'Reiseziel')+' → '+tripOrigin;
   }
   syncType();form.open=true;form.scrollIntoView({behavior:'smooth',block:'start'});
  }));
@@ -317,10 +332,12 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>n
   const raw={
    id:editing||'booking-'+Date.now()+'-'+Math.random().toString(36).slice(2,10),
    type,status:value('status'),stageId:Number(value('stageId')),
-   fromStageId:type==='transport'&&value('journeyOrigin')!=='inbound'&&value('fromStageId')!==''?Number(value('fromStageId')):null,
+   fromStageId:type==='transport'&&value('journeyOrigin')==='route'&&value('fromStageId')!==''?Number(value('fromStageId')):null,
    journeyOrigin:type==='transport'&&value('journeyOrigin')==='inbound',
+   journeyReturn:type==='transport'&&value('journeyOrigin')==='return',
    travelMode:type==='transport'?value('travelMode'):'ground',
-   originPlace:type==='transport'&&value('journeyOrigin')==='inbound'?value('originPlace').trim():'',
+   originPlace:type==='transport'&&value('journeyOrigin')!=='route'?value('originPlace').trim():'',
+   destinationPlace:type==='transport'&&value('journeyOrigin')==='return'?value('destinationPlace').trim():'',
    arrivalDate:type==='transport'&&value('travelMode')==='flight'?value('arrivalDate'):'',
    destinationAirport:type==='transport'&&value('travelMode')==='flight'?value('destinationAirport').trim():'',
    stopovers:readStopovers(),
@@ -339,6 +356,7 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>n
   storeBookings(others.concat(entry));onSaved();
  });
  reset();
+ if(fromStage)form.open=true;
  if(prefill&&routeLookup(prefill.stageId)&&['transport','lodging','volunteering','activity'].includes(prefill.type)){
   const existing=prefill.editId&&(getBookings()||[]).find(x=>x.id===prefill.editId&&x.type===prefill.type&&x.stageId===prefill.stageId);
   if(existing)fill(existing);
@@ -346,7 +364,14 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>n
    field('type').value=prefill.type;
    field('stageId').value=String(prefill.stageId);
    dates();
-   if(prefill.type==='transport'&&prefill.stageId===route[0]?.i){
+   if(prefill.type==='transport'&&route.at(-1)?.isReturn&&prefill.stageId===route.at(-1)?.i){
+    field('stageId').value=String(lastTravel?.i??prefill.stageId);
+    field('journeyOrigin').value='return';field('travelMode').value='flight';
+    field('originPlace').value=lastTravel?.name||'';
+    field('destinationPlace').value=tripOrigin;
+    field('startDate').value=lastTravel?.end||'';
+    field('arrivalDate').value=lastTravel?.end||'';
+   }else if(prefill.type==='transport'&&prefill.stageId===route[0]?.i){
     field('journeyOrigin').value='inbound';field('travelMode').value='flight';
     field('originPlace').value=tripOrigin;field('startDate').value='';
    }
