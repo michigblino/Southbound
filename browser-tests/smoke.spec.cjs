@@ -211,6 +211,7 @@ test('stage card opens the correct lodging booking editor and reflects confirmat
 });
 test('stage card warns when a confirmed booking no longer matches its travel date',async({page})=>{
  await page.goto('/',{waitUntil:'domcontentloaded'});
+ await expect.poll(()=>page.evaluate(()=>!!localStorage.getItem('southbound-v3'))).toBe(true);
  await page.evaluate(()=>{
   const m=JSON.parse(localStorage.getItem('southbound-v3')||'{}');
   m.bookingLedger=[{id:'mismatch',type:'transport',status:'confirmed',stageId:1,fromStageId:0,title:'Altes Busticket',provider:'Bus Beispiel',startDate:'2027-03-01',endDate:'',totalEUR:42,paidEUR:42,refundedEUR:0,reference:'AB123',recordedElsewhere:false}];
