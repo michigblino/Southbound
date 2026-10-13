@@ -21,9 +21,11 @@ test('lodging exact dates replace estimate without touching meals/activities',()
  const r=reconcile({items:stops,bookings:[booking({type:'lodging',fromStageId:null,startDate:'2027-01-03',endDate:'2027-01-06',totalEUR:36})]});
  assert.equal(r.items[1].stay,81);assert.equal(r.items[1].bed,12);assert.equal(r.items[1].daily,35-8);assert.equal(r.bookingIntegrity,true);
 });
-test('partial lodging dates never overwrite full-stay estimates',()=>{
+test('partial lodging dates replace only their matching nights, preserving unbooked nights',()=>{
  const r=reconcile({items:stops,bookings:[booking({type:'lodging',startDate:'2027-01-04',endDate:'2027-01-06'})]});
- assert.equal(r.items[1].stay,105);assert.equal(r.bookingIntegrity,false);
+ assert.equal(r.items[1].stay,110); // two estimated nights 40 replaced by 45, first night still estimated
+ assert.equal(r.items[1].bookingLodgings.length,1);
+ assert.equal(r.bookingIntegrity,true);
 });
 test('confirmed volunteering log does not create a free host',()=>{
  const r=reconcile({items:stops,bookings:[booking({type:'volunteering',totalEUR:0,paidEUR:0})]});
