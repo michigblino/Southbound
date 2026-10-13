@@ -39,6 +39,7 @@ jobs:
           node --check tests/inbound-flight.test.cjs
           node --check tests/return-flight.test.cjs
           node --check browser-tests/return-flight.spec.cjs
+          node --check browser-tests/visual-system.spec.cjs
           node --check browser-tests/inbound-flight.spec.cjs
           node --check booking-ledger.js
           node --check wait-costs.js
