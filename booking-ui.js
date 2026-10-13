@@ -13,7 +13,7 @@ const typeCopy={
  activity:{hint:'Erlebnis: Erfasse den Veranstaltungstag und wähle, ob der Preis in der Aktivitätenpauschale enthalten oder zusätzlich einzuplanen ist.',captions:{stageId:'Ort / Etappe',title:'Erlebnis / Ausflug',provider:'Veranstalter',startDate:'Datum des Erlebnisses',reference:'Ticket- oder Buchungsnummer'},placeholders:{title:'z. B. Wanderung mit Guide',provider:'Name des Veranstalters',reference:'Ticketcode'}}
 };
 const baseCaptions={stageId:'Ziel / Etappe',title:'Bezeichnung',provider:'Anbieter / Host',startDate:'Beginn / Abfahrt',endDate:'Ende / Check-out',reference:'Referenz / Bestätigung'};
-function render({route=[],bookings=[],ledger,baseCurrency='EUR',fxQuotes=null}={}){
+function render({route=[],bookings=[],ledger,baseCurrency='EUR',fxQuotes=null,tripOrigin='München (MUC)'}={}){
  const available=route.filter(x=>x&&x.i!==undefined),defaultId=available[0]?.i??0;
  const opts=available.map(x=>'<option value="'+x.i+'">'+esc(x.name)+'</option>').join('');
  const warnings=ledger?.warnings||[];
@@ -27,22 +27,36 @@ function render({route=[],bookings=[],ledger,baseCurrency='EUR',fxQuotes=null}={
  '</div><div class="panel"><h2>Gespeicherte Buchungen</h2>'+
  (records.length?'<div class="sb-booking-list">'+records.map(b=>{
   const place=available.find(x=>x.i===b.stageId)?.name||'Etappe '+b.stageId;
+  const description=b.type==='transport'&&b.journeyOrigin?(b.originPlace||tripOrigin)+' → '+place:place;
+  const stopoverLabel=Array.isArray(b.stopovers)&&b.stopovers.length?' · via '+b.stopovers.map(x=>x.place+(x.departureDate>x.arrivalDate?' (Übernachtung)':'')).join(', '):'';
   const paid=Number(b.paidEUR||0)-Number(b.refundedEUR||0);
   const converted=String(b.currency||'EUR')!=='EUR'&&b.totalAmount!==null&&b.totalAmount!==undefined?
    esc(b.totalAmount)+' '+esc(b.currency)+' ≈ '+euro(b.totalEUR):b.totalEUR===null?'Preis unbekannt':euro(b.totalEUR);
-  return '<div class="sb-booking-card"><span class="sb-booking-symbol" aria-hidden="true">'+esc(icons[b.type]||'·')+'</span><div class="sb-booking-info"><b>'+esc(b.title||'Eintrag')+'</b><small>'+esc(labels[b.type]||b.type)+' · '+esc(place)+' · '+esc(b.startDate||'ohne Datum')+'</small><small>'+esc(b.provider||'')+' · '+esc(statuses[b.status]||'Unbekannt')+' · '+converted+' · '+euro(paid)+' netto bezahlt</small></div><button type="button" data-bk-edit="'+esc(b.id)+'" class="sb-booking-edit">Bearbeiten</button></div>'
+  return '<div class="sb-booking-card"><span class="sb-booking-symbol" aria-hidden="true">'+esc(icons[b.type]||'·')+'</span><div class="sb-booking-info"><b>'+esc(b.title||'Eintrag')+'</b><small>'+esc(b.type==='transport'&&b.journeyOrigin?'Anreiseflug':labels[b.type]||b.type)+' · '+esc(description)+esc(stopoverLabel)+' · '+esc(b.startDate||'ohne Datum')+'</small><small>'+esc(b.provider||'')+' · '+esc(statuses[b.status]||'Unbekannt')+' · '+converted+' · '+euro(paid)+' netto bezahlt</small></div><button type="button" data-bk-edit="'+esc(b.id)+'" class="sb-booking-edit">Bearbeiten</button></div>'
  }).join('')+'</div>':'<p class="small">Noch keine Buchungen hinterlegt. Du kannst jetzt die erste Reiseleistung erfassen.</p>')+
- '</div><details class="panel" id="sb-bookings-editor"'+(records.length?'':' open')+'><summary><b>Buchung erfassen oder bearbeiten</b></summary>'+
+ '</div><div class="panel sb-booking-choose"><h2>Neue Buchung erfassen</h2><p class="small">Wähle den Buchungstyp. Die Felder passen sich an – bestätigte Buchungen musst du weiterhin selbst überprüfen.</p><div class="sb-booking-shortcuts">'+
+ '<button type="button" data-bk-preset="inbound"><span aria-hidden="true">✈</span><b>Anreiseflug</b><small>'+esc(tripOrigin)+' → '+esc(available[0]?.name||'Reiseziel')+'</small></button>'+
+ '<button type="button" data-bk-preset="transport"><span aria-hidden="true">🚌</span><b>Transfer</b><small>Bus, Bahn, Flug</small></button>'+
+ '<button type="button" data-bk-preset="lodging"><span aria-hidden="true">⌂</span><b>Unterkunft</b><small>Hostel, Hotel</small></button>'+
+ '<button type="button" data-bk-preset="volunteering"><span aria-hidden="true">♡</span><b>Volunteering</b><small>Host-Zusage</small></button>'+
+ '<button type="button" data-bk-preset="activity"><span aria-hidden="true">◇</span><b>Erlebnis</b><small>Tour, Ticket</small></button>'+
+ '</div></div><details class="panel" id="sb-bookings-editor"'+(records.length?'':' open')+'><summary><b data-bk-editor-title>Buchung erfassen oder bearbeiten</b></summary>'+
  '<p class="small">Nur tatsächlich erhaltene Buchungsbestätigungen als „Bestätigt“ markieren. Bei Volunteering erfolgt die eigentliche Host-Zusage weiterhin über „Etappen“.</p>'+
  '<p class="small" data-bk-context role="note"></p><div class="sb-booking-form" role="group" aria-label="Buchungseintrag">'+
  '<label>Art<select data-bk="type"><option value="transport">Transfer</option><option value="lodging">Unterkunft</option><option value="volunteering">Volunteering</option><option value="activity">Erlebnis</option></select></label>'+
  '<label>Status<select data-bk="status"><option value="planned">Vorgemerkt</option><option value="requested">Angefragt / reserviert</option><option value="confirmed">Bestätigt (selbst eingetragen)</option><option value="cancelled">Storniert</option></select></label>'+
  '<label><span data-bk-caption="stageId">Ziel / Etappe</span><select data-bk="stageId">'+opts+'</select></label>'+
- '<label data-bk-for="transport">Startort<select data-bk="fromStageId"><option value="">Noch auswählen</option>'+opts+'</select></label>'+
+ '<label data-bk-for="transport">Verbindung<select data-bk="journeyOrigin"><option value="route">Zwischen Reiseetappen</option><option value="inbound">Anreise von außerhalb der Route</option></select></label>'+
+ '<label data-bk-for="transport" data-bk-conditional="route-origin">Startetappe<select data-bk="fromStageId"><option value="">Noch auswählen</option>'+opts+'</select></label>'+
+ '<label data-bk-for="transport" data-bk-conditional="inbound-origin" hidden style="display:none">Startflughafen / Startort<input data-bk="originPlace" maxlength="160" value="'+esc(tripOrigin)+'" placeholder="z. B. München (MUC)"></label>'+
+ '<label data-bk-for="transport">Transportmittel<select data-bk="travelMode"><option value="ground">Bus / Bahn / Sonstiges</option><option value="flight">Flug</option></select></label>'+
  '<label><span data-bk-caption="title">Bezeichnung</span><input data-bk="title" maxlength="160" placeholder="z. B. Bus Medellín → Salento"></label>'+
  '<label><span data-bk-caption="provider">Anbieter / Host</span><input data-bk="provider" maxlength="160" placeholder="Betreiber oder Hostel"></label>'+
  '<label><span data-bk-caption="startDate">Beginn / Abfahrt</span><input type="date" data-bk="startDate"></label>'+
  '<label data-bk-for="lodging volunteering" hidden style="display:none"><span data-bk-caption="endDate">Ende / Check-out</span><input type="date" data-bk="endDate"></label>'+
+ '<label data-bk-for="transport" data-bk-conditional="flight" hidden style="display:none">Ankunftstag am Ziel<input type="date" data-bk="arrivalDate"></label>'+
+ '<label data-bk-for="transport" data-bk-conditional="flight" hidden style="display:none">Zielflughafen (optional)<input data-bk="destinationAirport" maxlength="120" placeholder="z. B. São Paulo GRU"></label>'+
+ '<div class="sb-booking-stopovers" data-bk-for="transport" data-bk-conditional="flight" hidden style="display:none"><h3>Zwischenstopps / Layover</h3><p class="small">Übernachtungen im Ticket sind abgedeckt; separate oder unbekannte Hotelkosten bleiben im All-in-Budget offen, bis sie separat erfasst sind.</p><div data-bk-stopover-list></div><button type="button" data-bk-add-stopover>+ Zwischenstopp hinzufügen</button></div>'+
  '<label>Preiswährung (ISO-Code)<input data-bk="currency" maxlength="3" value="'+esc(baseCurrency)+'" placeholder="EUR, BRL, COP, USD ..."></label>'+
  '<label>Gesamtpreis inkl. Gebühren (gewählte Währung)<input type="number" min="0" step="any" data-bk="totalEUR" placeholder="Leer = unbekannt"></label>'+
  '<div data-bk-fx hidden style="display:none"><p class="small">Southbound trägt den letzten verfügbaren Tages-Referenzkurs automatisch ein. <b>1 Einheit der Preiswährung = wie viele EUR?</b> Für tatsächlich gezahlte Beträge den Bank-/Kartenauszug bevorzugen. Kurs, Quelle und Datum bleiben editierbar.</p>'+
@@ -55,7 +69,7 @@ function render({route=[],bookings=[],ledger,baseCurrency='EUR',fxQuotes=null}={
  '<label>HTTPS-Buchungslink<input type="url" data-bk="url" placeholder="https://..."></label>'+
  '<label data-bk-for="activity" hidden style="display:none">Aktivitäten im Budget<select data-bk="activityMode"><option value="allowance">Mit bestehendem Ausflugsbudget verrechnen</option><option value="extra">Zusätzliche Ausgabe</option></select></label>'+
  '<label class="sb-booking-check"><input type="checkbox" data-bk="recordedElsewhere"> Bisherige pauschale Zahlung bereits im Reisejournal erfasst</label>'+
- '<div class="sb-booking-notes"><h3>Zahlungen & Erstattungen</h3><p class="small">Für Fremdwährungen wird ein Tages-Referenzkurs automatisch vorgeschlagen. Der tatsächlich belastete Kartenkurs kann abweichen; überschreibe den Vorschlag mit dem Bankwert, falls vorhanden. Neue Einträge werden erst mit „Eintrag speichern“ übernommen.</p><div data-bk-payment-list></div>'+
+ '<details class="sb-booking-notes" data-bk-payment-details><summary><b>Einzelzahlungen & Erstattungen (optional)</b></summary><h3>Zahlungen & Erstattungen</h3><p class="small">Für Fremdwährungen wird ein Tages-Referenzkurs automatisch vorgeschlagen. Der tatsächlich belastete Kartenkurs kann abweichen; überschreibe den Vorschlag mit dem Bankwert, falls vorhanden. Neue Einträge werden erst mit „Eintrag speichern“ übernommen.</p><div data-bk-payment-list></div>'+
  '<div class="sb-booking-form" role="group" aria-label="Zahlung hinzufügen">'+
  '<label>Art<select data-bk-tx="kind"><option value="payment">Zahlung</option><option value="refund">Erstattung</option></select></label>'+
  '<label>Buchungstag der Zahlung<input type="date" data-bk-tx="date"></label>'+
@@ -64,7 +78,7 @@ function render({route=[],bookings=[],ledger,baseCurrency='EUR',fxQuotes=null}={
  '<div data-bk-tx-fx hidden style="display:none"><label>EUR je Währungseinheit<input type="number" step="any" min="0" data-bk-tx="rateEUR" placeholder="Tatsächlicher Kurs"></label><label>Datum des Zahlungskurses<input type="date" data-bk-tx="rateCheckedAt"></label><label>Quelle der Umrechnung<input data-bk-tx="rateSource" maxlength="160" placeholder="Bank / Kartenabrechnung"></label></div>'+
  '<label class="sb-booking-check"><input type="checkbox" data-bk-tx="recordedElsewhere"> Bereits im Reisejournal erfasst</label>'+
  '<label data-bk-journal hidden style="display:none">Journal-Referenz zur manuellen Zuordnung<input data-bk-tx="journalReference" maxlength="160" placeholder="z. B. Kartenzahlung im Reisejournal"></label>'+
- '</div><button type="button" data-bk-add-payment>Zahlung / Erstattung vormerken</button><p data-bk-payment-feedback class="small" role="status"></p></div>'+
+ '</div><button type="button" data-bk-add-payment>Zahlung / Erstattung vormerken</button><p data-bk-payment-feedback class="small" role="status"></p></details>'+
  '<label class="sb-booking-notes">Notiz<textarea data-bk="notes" rows="2" maxlength="500" placeholder="Gepäck, Stornierung, enthaltene Leistungen ..."></textarea></label>'+
  '</div><p id="sb-booking-feedback" class="small" role="status"></p>'+
  '<div class="controls"><button type="button" data-bk-save>Eintrag speichern</button><button type="button" data-bk-reset>Neue Buchung</button><button type="button" data-bk-delete hidden>Eintrag löschen</button></div>'+
