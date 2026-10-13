@@ -8,7 +8,7 @@ const icons={transport:'↗',lodging:'⌂',volunteering:'♡',activity:'◇'};
 
 const typeCopy={
  transport:{hint:'Transfer: Startort, Ziel und Abfahrt müssen mit deiner Route übereinstimmen. Nur eine bestätigte passende Verbindung ersetzt den geschätzten Fahrpreis.',captions:{stageId:'Ziel / Etappe',title:'Verbindung / Ticket',provider:'Verkehrsanbieter',startDate:'Abfahrt / Reisetag',reference:'Ticket- oder Buchungsnummer'},placeholders:{title:'z. B. Bus Medellín → Salento',provider:'z. B. Busunternehmen',reference:'Ticket- oder Buchungsnummer'}},
- lodging:{hint:'Unterkunft: Check-in und Check-out müssen den gesamten Aufenthalt abdecken, damit der bestätigte Gesamtpreis die Unterkunftsschätzung ersetzt.',captions:{stageId:'Ort / Etappe',title:'Unterkunft / Zimmer',provider:'Hostel / Unterkunftsanbieter',startDate:'Check-in',endDate:'Check-out',reference:'Reservierungs- oder Buchungsnummer'},placeholders:{title:'z. B. Hostel Paraty',provider:'Name des Hostels',reference:'Reservierungscode'}},
+ lodging:{hint:'Unterkunft: Auch einzelne oder mehrere nicht überlappende Nächte sind möglich. Bestätigte Teilbuchungen ersetzen nur ihre Nächte; der Rest bleibt eine Schätzung. Vor Host-Beginn zählen Hostelbuchungen zu den Wartekosten.',captions:{stageId:'Ort / Etappe',title:'Unterkunft / Zimmer',provider:'Hostel / Unterkunftsanbieter',startDate:'Check-in',endDate:'Check-out',reference:'Reservierungs- oder Buchungsnummer'},placeholders:{title:'z. B. Hostel Paraty',provider:'Name des Hostels',reference:'Reservierungscode'}},
  volunteering:{hint:'Volunteering: Hier erfasst du Bewerbung, Host und gegebenenfalls Gebühren. Kostenlose Unterkunft entsteht erst durch die separat erfasste Host-Zusage in der Etappe.',captions:{stageId:'Ort / Etappe',title:'Host / Projekt',provider:'Plattform / Host',startDate:'Geplanter Beginn',endDate:'Geplantes Ende',reference:'Bewerbungs- oder Bestätigungsreferenz'},placeholders:{title:'z. B. Farmstay in Salento',provider:'z. B. Workaway / Gastgeber',reference:'Bewerbungs-ID oder Nachricht'}},
  activity:{hint:'Erlebnis: Erfasse den Veranstaltungstag und wähle, ob der Preis in der Aktivitätenpauschale enthalten oder zusätzlich einzuplanen ist.',captions:{stageId:'Ort / Etappe',title:'Erlebnis / Ausflug',provider:'Veranstalter',startDate:'Datum des Erlebnisses',reference:'Ticket- oder Buchungsnummer'},placeholders:{title:'z. B. Wanderung mit Guide',provider:'Name des Veranstalters',reference:'Ticketcode'}}
 };
@@ -51,7 +51,7 @@ function render({route=[],bookings=[],ledger}={}){
  '<label class="sb-booking-notes">Notiz<textarea data-bk="notes" rows="2" maxlength="500" placeholder="Gepäck, Stornierung, enthaltene Leistungen ..."></textarea></label>'+
  '</div><p id="sb-booking-feedback" class="small" role="status"></p>'+
  '<div class="controls"><button type="button" data-bk-save>Eintrag speichern</button><button type="button" data-bk-reset>Neue Buchung</button><button type="button" data-bk-delete hidden>Eintrag löschen</button></div>'+
- '<p class="small">Nur vollständig passende bestätigte Tickets bzw. Unterkünfte ersetzen Schätzungen. Aktivitäten werden nach ihrer gewählten Budgetart verrechnet. Volunteering-Einträge sind hier nur Nachweise/Bewerbungsstatus; für kostenlose Host-Nächte ist weiterhin die separate Zusage nötig.</p>'+
+ '<p class="small">Unterkünfte können pro Etappe auf mehrere Buchungen mit unterschiedlichen Check-in/Check-out-Daten aufgeteilt werden. Bestätigte, nicht überlappende Nächte ersetzen nur die zugehörigen Unterkunftsschätzungen. Vor einer Host-Zusage liegende Hostel-Nächte werden als Wartekosten angerechnet, nicht als kostenlose Host-Nächte. Aktivitäten werden nach ihrer Budgetart verrechnet; Bewerbungen sind keine Host-Zusagen.</p>'+
  '</details>';
 }
 function bind(root,{route=[],getBookings,storeBookings,onSaved,initialStageId=null,prefill=null}={}){
@@ -85,8 +85,10 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,initialStageId=nu
  };
  const dates=()=>{
   const id=Number(field('stageId').value),at=route.findIndex(x=>x.i===id),item=routeLookup(id);
-  field('startDate').value=item?.arrival||item?.start||'';
-  field('endDate').value=item?.end||'';
+  // Pre-fill a host's waiting days for lodging, not nights already allocated to the host.
+  const waitingLodging=field('type').value==='lodging'&&Number(item?.waitingDays)>0;
+  field('startDate').value=waitingLodging?(item?.arrival||''):(item?.arrival||item?.start||'');
+  field('endDate').value=waitingLodging?(item?.start||''):(item?.end||'');
   field('fromStageId').value=at>0?String(route[at-1].i):'';
  };
  const fill=b=>{
