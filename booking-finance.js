@@ -54,6 +54,13 @@ function normalize(raw){
   else freshNet=eur(freshNet+sign*converted);
  }
  if(transactions.length){
+  const previousPaid=value(raw.legacyPaidEUR??0),previousRefunded=value(raw.legacyRefundedEUR??0);
+  if(previousPaid===null||previousRefunded===null||previousRefunded>previousPaid)errors.push('invalid-legacy-payment');
+  const previousNet=eur((previousPaid||0)-(previousRefunded||0));
+  totalPaid=eur(totalPaid+(previousPaid||0));
+  totalRefunded=eur(totalRefunded+(previousRefunded||0));
+  if(raw.legacyRecordedElsewhere===true)journalNet=eur(journalNet+previousNet);
+  else freshNet=eur(freshNet+previousNet);
   if(totalRefunded>totalPaid+0.005)errors.push('refund-exceeds-payments');
   if(totalEUR!==null&&totalPaid-totalRefunded>totalEUR+0.01)errors.push('payments-exceed-converted-total');
  }else{
@@ -63,7 +70,7 @@ function normalize(raw){
   if(raw.recordedElsewhere===true)journalNet=eur(totalPaid-totalRefunded);
   else freshNet=eur(totalPaid-totalRefunded);
  }
- return {ok:errors.length===0,errors,currency,totalAmount:amount,rateEUR:conversion,rateCheckedAt:foreign?checkedAt:'',rateSource:foreign?source:'',totalEUR,transactions,paidEUR:totalPaid,refundedEUR:totalRefunded,freshNet,journalNet};
+ return {ok:errors.length===0,errors,currency,totalAmount:amount,rateEUR:conversion,rateCheckedAt:foreign?checkedAt:'',rateSource:foreign?source:'',totalEUR,transactions,paidEUR:totalPaid,refundedEUR:totalRefunded,freshNet,journalNet,legacyPaidEUR:transactions.length?(value(raw.legacyPaidEUR??0)||0):null,legacyRefundedEUR:transactions.length?(value(raw.legacyRefundedEUR??0)||0):null,legacyRecordedElsewhere:transactions.length?raw.legacyRecordedElsewhere===true:false};
 }
 g.SouthboundBookingFinance={normalize,validDate};
 if(typeof module!=='undefined'&&module.exports)module.exports=g.SouthboundBookingFinance;
