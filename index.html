@@ -172,31 +172,58 @@ function sbReturnCosts(booked,items){
  else if(returnMarker)fixed.return=0; // The explicit homecoming stage already has a transfer liability
  return {fixedCosts:fixed,returnPaymentEUR:booked.returnBooking?booked.returnPaymentEUR:0};
 }
+let sbSavingsVariantChoice='volunteer';
 function sbBudgetVariantsPanel(items,total){
- const fn=window.SouthboundBudgetVariants?.optimize;
- if(!fn)return '';
- const comparison=fn({items,bookings:m.bookingLedger,vol:m.vol,volunteerDetails:m.volunteerDetails,
-   completed:Object.fromEntries(items.map(x=>[x.i,isCompletedStop(x.i)||!!m.visited?.[x.i]])),
-   preferences:m.travelPreferences,goal:Number(m.goal)||8000,baselineTotal:total});
- const cards=[{name:'Deine aktuelle Route',forecast:total,actions:[],daysDelta:0,hostNights:0,mode:'current'},
-   ...comparison.options];
- const rows=cards.map((c,index)=>'<article class="sb-variant-card'+(index===0?' sb-variant-card--current':'')+'">'+
-   '<div class="sb-variant-card__top"><b>'+safe(c.name)+'</b><span>'+(index===0?'Ausgangslage':'Bedingtes Modell')+'</span></div>'+
-   '<div class="sb-variant-card__price">'+E(c.forecast)+'</div>'+
-   '<p class="small">'+(index===0?'Unvollständige Prognose einschließlich Reserve':c.daysDelta+' Tage gegenüber der bisherigen Route · '+c.hostNights+' mögliche Host-Nächte')+'</p>'+
-   (index>0?'<p class="small">Rechnerischer Rückgang '+E(Math.max(0,c.modelSaving||0))+'; Kostenänderungen der Verbindungen sind nicht berücksichtigt.</p>':'')+
-   '<p class="sb-variant-card__gap">'+(c.forecast===null?'Nicht berechenbar':c.forecast<=comparison.goal?'Unter dem Zielbetrag – nur theoretisch':E(c.remainingToGoal??Math.max(0,total-comparison.goal))+' über dem Wunschbudget')+'</p>'+
-   (c.actions?.length?'<details><summary>Änderungen ansehen ('+c.actions.length+')</summary><div class="sb-variant-card__changes">'+c.actions.map(a=>'<div><span>'+safe(a.name)+'</span><small>'+a.from+' → '+a.to+' Tage'+(a.hostNights?' · '+a.hostNights+' hypothetische Host-Nächte':'')+'</small></div>').join('')+'</div></details>':'')+
-   '</article>').join('');
- const targetHit=comparison.options.some(x=>x.forecast!==null&&x.forecast<=comparison.goal);
- return '<section class="panel sb-budget-variants" id="sb-budget-variants"><div class="eyebrow">DEINE SPARVARIANTEN</div>'+
-  '<h2>Welche Route bringt dich näher an '+E(comparison.goal)+'?</h2>'+
-  '<p class="small">Wir vergleichen kompaktere Aufenthalte und hypothetische Volunteering-Einsätze auf Basis deiner lokal gespeicherten Reisedaten. Deine Buchungen und Reise bleiben unverändert.</p>'+
-  '<div class="sb-budget-variants__grid">'+rows+'</div>'+
-  '<p class="small">'+(targetHit?'Das Wunschbudget wird in mindestens einem optimistischen Rechenmodell unterschritten, aber noch nicht zuverlässig erreicht.':
-   'Unter den verwendeten Tageskosten und Einschränkungen erreicht keine dieser Varianten das Wunschbudget. Dafür müssten weitere Hebel wie Dauer, belegte Unterkunfts- und Transportkosten oder der Reiseumfang verändert werden.')+'</p>'+
-  '<p class="small"><b>Keine Buchungs- oder Preisgarantie:</b> Die Modelle rechnen ohne neue Transferpreise, echte Host-Zusagen, Anbietergebühren und automatisch bestätigte Saisontermine. '+comparison.constraints.unknownFareCount+' Transfers haben keinen belastbaren Fahrpreis. Bitte die Prognosen nicht als endgültige Reisekosten oder garantiertes Sparmaximum verwenden.</p>'+
- '</section>';
+ const optimizer=window.SouthboundBudgetVariants?.optimize,lo=window.SouthboundSavingsPotential?.analyze;
+ if(!optimizer||!lo)return '';
+ const shared={items,bookings:m.bookingLedger,vol:m.vol,volunteerDetails:m.volunteerDetails,
+  completed:Object.fromEntries(items.map(x=>[x.i,isCompletedStop(x.i)||!!m.visited?.[x.i]])),
+  preferences:m.travelPreferences};
+ const output=optimizer({...shared,goal:Number(m.goal)||8000,baselineTotal:total});
+ const lodging=lo({...shared,visited:m.visited});
+ const variants=[{mode:'current',name:'Aktuelle Route',forecast:total,modelSaving:0,daysDelta:0,hostNights:0,actions:[],durationSaving:0,hostSaving:0},...output.options];
+ const active=variants.some(x=>x.mode===sbSavingsVariantChoice)?sbSavingsVariantChoice:'volunteer';
+ const best=output.options.reduce((x,y)=>!x||y.modelSaving>x.modelSaving?y:x,null);
+ const fmt=x=>Number.isFinite(Number(x))?E(Number(x)):'Noch unbekannt';
+ const picks=variants.map((v,i)=>'<button type="button" class="sb-variant-option'+(v.mode===active?' is-active':'')+'" data-sb-variant="'+v.mode+'" aria-pressed="'+(v.mode===active)+'" aria-controls="sb-variant-detail-'+v.mode+'">'+
+  '<span class="sb-variant-option__index" aria-hidden="true">'+(i===0?'●':i)+'</span><span class="sb-variant-option__copy"><b>'+safe(v.name)+'</b>'+
+  '<small>'+(i===0?'Unvollständiger Ist-Stand':v.hostNights?v.hostNights+' potenzielle Host-Nächte':'Kürzere Aufenthalte')+'</small></span>'+
+  '<strong>'+fmt(v.forecast)+'</strong></button>').join('');
+ const details=variants.map(v=>'<div class="sb-variant-detail" id="sb-variant-detail-'+v.mode+'" data-sb-variant-content="'+v.mode+'"'+(v.mode!==active?' hidden':'')+'>'+
+  '<div class="sb-variant-detail__heading"><b>'+safe(v.name)+'</b><span>'+(v.mode==='current'?'Ausgangslage':'Bedingtes Rechenmodell')+'</span></div>'+
+  '<div class="sb-variant-detail__stats"><div><small>Gesamtbetrag inklusive Reserve</small><strong>'+fmt(v.forecast)+'</strong></div>'+
+  '<div><small>Noch über Wunschbudget</small><strong>'+fmt(Math.max(0,(v.forecast||0)-output.goal))+'</strong></div></div>'+
+  (v.mode!=='current'?'<p class="small">'+v.daysDelta+' Tage Änderung · '+v.hostNights+' hypothetische Host-Nächte. Ungeprüfte Reiseverbindungen und Host-Zusagen.</p>'+
+   '<div class="sb-variant-split"><div><span>Änderung durch Aufenthaltsdauer</span><b>'+fmt(v.durationSaving)+'</b></div>'+
+   '<div><span>Volunteering-Unterkunftsanteil</span><b>'+fmt(v.hostSaving)+'</b></div>'+
+   '<div class="sb-variant-split__total"><span>Modellierte Gesamtdifferenz</span><b>'+fmt(v.modelSaving)+'</b></div></div>':
+   '<p class="small">Die vorläufige All-in-Kalkulation ist unvollständig; fehlende Ticket- und Fixkosten können sie erhöhen.</p>')+
+  (v.actions?.length?'<details class="sb-variant-changes"><summary>Geplante Änderungen aufklappen <span>'+v.actions.length+' Etappen</span></summary>'+
+   '<div class="sb-variant-changes__list">'+v.actions.map(a=>'<div><span><b>'+safe(a.name)+'</b><small>'+a.from+' → '+a.to+' Tage'+(a.hostNights?' · '+a.hostNights+' geplante Host-Nächte':'')+'</small></span><strong>'+fmt(a.delta)+'</strong></div>').join('')+'</div></details>':'')+
+  '</div>').join('');
+ const bedRows=lodging.candidates.slice().sort((a,b)=>items.findIndex(x=>x.i===a.i)-items.findIndex(x=>x.i===b.i));
+ const advice=allSavingAdvice();
+ const tips=advice.length?advice.slice(0,5).map(a=>'<button type="button" class="sb-saving-tip sb-hub-tip" data-saving="'+safe(a.id)+'">'+
+  '<span class="sb-hub-tip__icon" aria-hidden="true">↗</span><span class="sb-saving-main"><b>'+safe(a.title)+'</b>'+
+  '<small>'+safe(a.confidence)+' · Einzelmaßnahme, nicht addieren</small></span><span class="sb-hub-tip__price">bis '+fmt(a.saving)+'</span></button>').join(''):
+  '<p class="small">Aktuell keine weiteren passenden Einzelmaßnahmen vorhanden.</p>';
+ return '<section class="panel sb-budget-variants sb-savings-hub" id="sb-budget-variants">'+
+  '<div class="eyebrow">DEINE SPARZENTRALE</div><div class="sb-savings-hub__header"><div><h2>Was bringt deine Route näher ans Budget?</h2>'+
+  '<p class="small">Ein gemeinsamer Vergleich. Keine pauschal addierten Ersparnisse; die Reisedaten bleiben unverändert.</p></div>'+
+  '<div class="sb-savings-hub__best"><small>Höchste Differenz der drei getesteten Modelle</small><strong>'+fmt(best?.modelSaving||0)+'</strong><span>Kein garantiertes Sparmaximum</span></div></div>'+
+  '<div class="sb-variant-picker" role="group" aria-label="Reisevariante auswählen">'+picks+'</div>'+
+  '<div class="sb-variant-results">'+details+'</div>'+
+  '<p class="sb-savings-hub__note"><b>Nicht addieren:</b> Varianten, Unterkunftspotenzial und Einzeltipps können dieselben Tage betreffen. Neue Transportkosten, Saisonbedingungen und Hosts sind noch nicht verifiziert.</p>'+
+  '<details class="sb-hub-detail" id="sb-savings-lodging"><summary><span><b>Unterkunft allein: unveränderte Route</b><small>Nur ein Bestandteil der Szenarien – keine zusätzliche Ersparnis</small></span><span aria-hidden="true">⌄</span></summary>'+
+  '<div class="sb-hub-detail__body"><div class="sb-hub-lodging-figure"><strong>'+fmt(lodging.grossAccommodationCeiling)+'</strong>'+
+  '<span>rechnerische Brutto-Unterkunftskosten für '+lodging.eligibleNights+' hypothetische Host-Nächte · Ø '+fmt(lodging.averagedPerVolunteerNight)+' pro Nacht</span></div>'+
+  '<p class="small">In Varianten mit Volunteering können diese Host-Nächte bereits enthalten sein. Nur 21–28-tägige Blöcke und maximal '+lodging.assumptions.hourLimit+' h/Woche. Weder Host-Zusagen noch Verpflegung, Gebühren oder Anschlussfahrten bestätigt.</p>'+
+  '<div class="sb-savings-ceiling__rows">'+bedRows.map(x=>'<div><span>'+safe(x.name)+' · '+x.nights+' Nächte</span><b>'+fmt(x.gross)+'</b></div>').join('')+'</div></div></details>'+
+  '<details class="sb-hub-detail" id="sb-savings-tips"><summary><span><b>Weitere einzelne Spartipps</b><small>Chancen, Kompromisse und mögliche Überschneidungen</small></span><span aria-hidden="true">⌄</span></summary>'+
+  '<div class="sb-hub-detail__body"><p class="small">Diese Einzelmaßnahmen nutzen teilweise andere Modellannahmen. Öffne einen Tipp für die Nachteile; seine Ersparnis wird nicht automatisch zu den Varianten addiert.</p>'+
+  '<div class="sb-hub-tips">'+tips+'</div></div></details>'+
+  '<p class="small sb-savings-hub__footer">Ohne echte Anbieterpreise und Host-Zusagen ist noch kein optimales All-in-Budget nachgewiesen. '+output.constraints.unknownFareCount+' Transferpreispositionen sind ungeklärt.</p>'+
+  '</section>'+savingDialogMarkup();
 }
 function sbBudgetIntegrityPanel(plan){
  const engine=window.SouthboundBudgetEngine,calendar=window.SouthboundTripCalendar,waitEngine=window.SouthboundWaitCosts;
@@ -281,29 +308,7 @@ function bindSbFixedCosts(){
  const btn=root.querySelector('[data-sb-fixed-save]');if(!btn)return;
  btn.onclick=()=>{const next={...(m.fixedCosts||{})};for(const el of root.querySelectorAll('[data-sb-fixed]')){if(el.disabled)continue;if(el.value.trim()===''){delete next[el.dataset.sbFixed];continue;}const n=Number(el.value);if(!Number.isFinite(n)||n<0){alert('Bitte gültige, nichtnegative Fixkosten eingeben.');return;}next[el.dataset.sbFixed]=storedMoney(n);}m.fixedCosts=next;save();};
 }
-function sbSavingsPotentialPanel(plan){
- const calc=window.SouthboundSavingsPotential;if(!calc)return '';
- const result=calc.analyze({items:plan.items,vol:m.vol,volunteerDetails:m.volunteerDetails,
-   bookings:m.bookingLedger,completed:Object.fromEntries(plan.items.map(x=>[x.i,isCompletedStop(x.i)])),
-   visited:m.visited,preferences:m.travelPreferences});
- const rows=result.candidates.slice().sort((a,b)=>plan.items.findIndex(x=>x.i===a.i)-plan.items.findIndex(x=>x.i===b.i));
- const headline=result.candidateCount
-   ?'<strong>'+E(result.grossAccommodationCeiling)+'</strong><span> theoretische Brutto-Unterkunftsobergrenze</span>'
-   :'<strong>0 €</strong><span> in den aktuellen Aufenthaltsdauern unter der 21-Tage-Regel</span>';
- return '<details class="panel sb-savings-ceiling" id="sb-savings-potential">'+
-  '<summary><span><span class="eyebrow">VOLUNTEERING / OPTIMIERUNG</span><b>Wie viel könntest du höchstens sparen?</b>'+
-  '<small>Rechnerisches Unterkunftspotenzial – keine Nettoersparnis</small></span><span aria-hidden="true">⌄</span></summary>'+
-  '<div class="sb-savings-ceiling__number">'+headline+'</div>'+
-  '<div class="sb-savings-ceiling__metrics"><div><small>Hypothetische Host-Nächte</small><b>'+result.eligibleNights+'</b></div>'+
-  '<div><small>Ø je geplanter Host-Nacht</small><b>'+E(result.averagedPerVolunteerNight)+'</b></div>'+
-  '<div><small>Ø je Reisetag</small><b>'+E(result.averagedPerTravelDay)+'</b></div></div>'+
-  '<p class="small">Nur aus den aktuell eingeplanten Aufenthalten, ohne Verlängerung der Reise. Maximal ein 21–28-Tage-Block je Etappe und nur bei höchstens '+result.assumptions.hourLimit+' Arbeitsstunden/Woche. Für mögliche neue Hosts sind Stunden, Termine und Zusagen noch ungeprüft. Bestätigte Unterkünfte und bereits geplantes Volunteering werden nicht erneut als Ersparnis gezählt.</p>'+
-  (rows.length?'<div class="sb-savings-ceiling__rows">'+rows.map(x=>'<div><span>'+safe(x.name)+' · '+x.nights+' Nächte</span><b>bis '+E(x.gross)+'</b></div>').join('')+'</div>':
-   '<p class="small">Für neue Hosts fehlen in der aktuellen Route ausreichende zusammenhängende Aufenthalte oder es bestehen bereits Buchungen. Um drei bis vier Wochen zu volontieren, müssten Aufenthalte bewusst umverteilt oder verlängert und anschließend vollständig neu kalkuliert werden.</p>')+
-  '<p class="small"><b>Routenoptimierung:</b> Eine maximale Ersparnis ist ohne datierte, verfügbare Tickets, Fahrtzeiten, Sicherheitsprüfung und Saisonabgleich nicht berechenbar. Der gegenwärtige Tarifspielraum zwischen mittleren und unteren Distanzmodell-Werten beträgt '+E(result.priceSpreadIndicator)+'; das ist <b>keine belegte Routenoptimierung</b> und wird nicht zur Volunteer-Summe addiert.</p>'+
-  '<p class="small"><b>Wichtig:</b> Das ist eine optimistische Brutto-Obergrenze, keine garantierte Einsparung. Hostgebühren, Essen, Freizeit, zusätzlich nötige Tage, Wartezeiten, Anbieter-Verfügbarkeit und Transfers können die reale Nettoersparnis erheblich reduzieren oder vollständig aufheben. Die Summe darf nicht einfach von der All-in-Zwischensumme abgezogen werden.</p>'+
- '</details>';
-} function sbOverviewHero(plan){
+function sbOverviewHero(plan){
  const stops=(plan?.items||[]).filter(x=>!x.isReturn&&Number(x.days)>0);
  const first=stops[0]?.name||'Dein Start',last=stops.at(-1)?.name||'Dein Ziel';
  const length=stops.reduce((sum,x)=>sum+Math.max(0,Number(x.days)||0),0);
@@ -316,7 +321,7 @@ function sbSavingsPotentialPanel(plan){
  badge(String(length),'Reisetage')+badge(E(Number(m.goal)||0),'Zielbudget')+'</div>'+
  '<button type="button" class="sb-hero-link" data-sb-hero-open-stages aria-label="Alle Etappen ansehen">Etappen ansehen <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></button></div></div>';
 }
-function overview(){const original=window.SouthboundItinerary.plan({stops:STOPS,start:m.tripStart,fx:Number(m.fx?.usdEur)||0,quotes:m.hostelQuotes,transportOffers:m.transportOffers,vol:m.vol,volunteerDetails:m.volunteerDetails,excluded:m.excluded,days:m.days,order:m.routeOrder}),ledger=sbLedger(original),p={...original,items:ledger.items},risk=window.SouthboundDynamicRisk,parts=[{amount:Math.max(0,Number(m.reserve)||0),confirmed:true}],rate=Number(m.fx?.usdEur);let missing=0;for(const x of p.items){const i=x.i,ref=window.SouthboundCostReferences.sample(i),quoted=m.hostelQuotes[i],source=ref&&Number.isFinite(rate)&&rate>0?'city-reference':'estimate',spent=paid(i)+(ledger.paidByStop[i]||0),estimatedLeg=x.leg===null?Math.max(40,STOPS[i][10]||0):x.leg,planned=x.stay+estimatedLeg,future=isCompletedStop(i)?0:Math.max(0,planned-spent),factor=planned>0?future/planned:0;if(x.leg===null)missing++;parts.push({amount:x.days*x.bed*factor,kind:'lodging',travelDate:x.start,source:quoted?.checkedAt?'city-reference':'estimate',confirmed:vol(i)});parts.push({amount:x.days*x.food*factor,kind:'food',travelDate:x.start,source});parts.push({amount:x.days*x.leisure*factor,kind:'activities',travelDate:x.start,source});parts.push({amount:x.days*x.other*factor,kind:'other',travelDate:x.start,source});parts.push({amount:estimatedLeg*factor,kind:'transport',travelDate:x.start,source:'estimate'})}parts.push({amount:spentTotal()+ledger.extraPaid,confirmed:true});const t=risk.total(parts),count=p.items.length,unrecorded=unrecordedCompleted(),spent=spentTotal()+ledger.extraPaid,reserve=Math.max(0,Number(m.reserve)||0);return sbOverviewHero(p)+sbBudgetIntegrityPanel(original)+sbSavingsPotentialPanel(original)+travelPreferencesPanel()+'<details class="panel"><summary><b>Zusätzliche Preisrisiko-Simulation (kein All-in-Budget)</b></summary><p class="small">Nur ein ergänzendes Szenario mit geschätzten und teils ersetzten Transferpreisen. Für Budgetentscheidungen gilt die All-in-Zwischensumme oben.</p><h3>'+E(t.mid)+'</h3><p><b>'+E(t.low)+' bis '+E(t.high)+'</b> · dynamischer Preiskorridor</p><p class="small">'+count+' Etappen · '+p.items.reduce((n,x)=>n+x.days,0)+' Tage · '+(missing?missing+' Verbindungen ohne belastbaren Preis; Platzhalter im Korridor.':'Transportpreise überwiegend modelliert.')+' Bereits erfasste Ausgaben berücksichtigt. Korridor ist kein statistisches Konfidenzintervall.</p><p class="small"><b>Im Szenario erfasst:</b> '+E(spent)+' · <b>Reserve:</b> '+E(reserve)+'. Für Budgetentscheidungen gilt die All-in-Zwischensumme oben.</p>'+(unrecorded.length?'<p class="small" style="color:#f6cb85">Achtung: '+unrecorded.length+' bereits abgeschlossene Etappen ohne erfasste Ausgaben. Die tatsächlichen Gesamtkosten können höher sein.</p>':'')+'<p class="small" style="color:#f6cb85">Nicht automatisch enthalten: Rückflug, Visagebühren, Versicherungen, Einreiseformalitäten und größere Sonderausgaben, sofern sie nicht separat erfasst sind. Der bereits bezahlte Hinflug zählt nicht als zukünftige Ausgabe.</p></details><div class="panel"><div class="row"><div><div class="eyebrow">Deine Route</div><h2>Reiseglobus</h2></div><div class="globe-controls"><button id="sb-turn">Drehen</button><button id="sb-plus">+</button><button id="sb-minus">−</button><button id="sb-reset">Reset</button></div></div>'+mapMarkup()+'</div>'+volunteerRecommendations()+topSavingsMarkup()+volunteerDialogMarkup()}
+function overview(){const original=window.SouthboundItinerary.plan({stops:STOPS,start:m.tripStart,fx:Number(m.fx?.usdEur)||0,quotes:m.hostelQuotes,transportOffers:m.transportOffers,vol:m.vol,volunteerDetails:m.volunteerDetails,excluded:m.excluded,days:m.days,order:m.routeOrder}),ledger=sbLedger(original),p={...original,items:ledger.items},risk=window.SouthboundDynamicRisk,parts=[{amount:Math.max(0,Number(m.reserve)||0),confirmed:true}],rate=Number(m.fx?.usdEur);let missing=0;for(const x of p.items){const i=x.i,ref=window.SouthboundCostReferences.sample(i),quoted=m.hostelQuotes[i],source=ref&&Number.isFinite(rate)&&rate>0?'city-reference':'estimate',spent=paid(i)+(ledger.paidByStop[i]||0),estimatedLeg=x.leg===null?Math.max(40,STOPS[i][10]||0):x.leg,planned=x.stay+estimatedLeg,future=isCompletedStop(i)?0:Math.max(0,planned-spent),factor=planned>0?future/planned:0;if(x.leg===null)missing++;parts.push({amount:x.days*x.bed*factor,kind:'lodging',travelDate:x.start,source:quoted?.checkedAt?'city-reference':'estimate',confirmed:vol(i)});parts.push({amount:x.days*x.food*factor,kind:'food',travelDate:x.start,source});parts.push({amount:x.days*x.leisure*factor,kind:'activities',travelDate:x.start,source});parts.push({amount:x.days*x.other*factor,kind:'other',travelDate:x.start,source});parts.push({amount:estimatedLeg*factor,kind:'transport',travelDate:x.start,source:'estimate'})}parts.push({amount:spentTotal()+ledger.extraPaid,confirmed:true});const t=risk.total(parts),count=p.items.length,unrecorded=unrecordedCompleted(),spent=spentTotal()+ledger.extraPaid,reserve=Math.max(0,Number(m.reserve)||0);return sbOverviewHero(p)+sbBudgetIntegrityPanel(original)+travelPreferencesPanel()+'<details class="panel"><summary><b>Zusätzliche Preisrisiko-Simulation (kein All-in-Budget)</b></summary><p class="small">Nur ein ergänzendes Szenario mit geschätzten und teils ersetzten Transferpreisen. Für Budgetentscheidungen gilt die All-in-Zwischensumme oben.</p><h3>'+E(t.mid)+'</h3><p><b>'+E(t.low)+' bis '+E(t.high)+'</b> · dynamischer Preiskorridor</p><p class="small">'+count+' Etappen · '+p.items.reduce((n,x)=>n+x.days,0)+' Tage · '+(missing?missing+' Verbindungen ohne belastbaren Preis; Platzhalter im Korridor.':'Transportpreise überwiegend modelliert.')+' Bereits erfasste Ausgaben berücksichtigt. Korridor ist kein statistisches Konfidenzintervall.</p><p class="small"><b>Im Szenario erfasst:</b> '+E(spent)+' · <b>Reserve:</b> '+E(reserve)+'. Für Budgetentscheidungen gilt die All-in-Zwischensumme oben.</p>'+(unrecorded.length?'<p class="small" style="color:#f6cb85">Achtung: '+unrecorded.length+' bereits abgeschlossene Etappen ohne erfasste Ausgaben. Die tatsächlichen Gesamtkosten können höher sein.</p>':'')+'<p class="small" style="color:#f6cb85">Nicht automatisch enthalten: Rückflug, Visagebühren, Versicherungen, Einreiseformalitäten und größere Sonderausgaben, sofern sie nicht separat erfasst sind. Der bereits bezahlte Hinflug zählt nicht als zukünftige Ausgabe.</p></details><div class="panel"><div class="row"><div><div class="eyebrow">Deine Route</div><h2>Reiseglobus</h2></div><div class="globe-controls"><button id="sb-turn">Drehen</button><button id="sb-plus">+</button><button id="sb-minus">−</button><button id="sb-reset">Reset</button></div></div>'+mapMarkup()+'</div>'+volunteerRecommendations()+volunteerDialogMarkup()}
 function hostelFinder(i){const s=STOPS[i],q=m.hostelQuotes[i]||{},name=encodeURIComponent(s[0]+' '+s[1]+' hostel'),destination=encodeURIComponent(s[0]+' '+s[1]);return '<div class="reason"><h3>Günstige Hostels vergleichen</h3><p class="small">Kostenlose Suche bei Anbietern. Preise und Verfügbarkeit erscheinen erst auf deren Seiten, nicht automatisch hier.</p><div class="route-options"><a target="_blank" rel="noopener" href="https://www.google.com/search?q='+name+'+site%3Ahostelworld.com">Hostelworld-Hostels finden</a><a target="_blank" rel="noopener" href="https://www.booking.com/searchresults.de.html?ss='+destination+'">Booking.com suchen</a></div><p class="small">Gefundenes Angebot speichern: Erst dann fließt der konkrete Hostelpreis in die Reiseprognose ein. Bewertung und Rezensionen sind eine Orientierung, keine Sicherheitsgarantie.</p><div class="controls"><label>'+currencyShown()+' pro Nacht <input type="number" min="0" step="any" data-quote-night="'+i+'" value="'+safe(inputMoney(q.night))+'" placeholder="z. B. 14"></label><label>Bewertung / 10 <input type="number" min="0" max="10" step="0.1" data-quote-rating="'+i+'" value="'+safe(q.rating??'')+'" placeholder="z. B. 8.8"></label><label>Anzahl Bewertungen <input type="number" min="0" step="1" data-quote-reviews="'+i+'" value="'+safe(q.reviews??'')+'" placeholder="z. B. 230"></label></div><label>Link zum Angebot <input type="url" data-quote-url="'+i+'" value="'+safe(q.url??'')+'" placeholder="https://..."></label><button data-save-quote="'+i+'">Angebot in Kalkulation übernehmen</button>'+(q.night?'<p class="small">Gespeicherter Preis: '+E(Number(q.night))+'/Nacht · '+(Number(q.rating)>=8.5&&Number(q.reviews)>=50?'Gute Bewertungsbasis':'Bewertungen/Lage genauer prüfen')+' · manuell erfasst, nicht live bestätigt</p>':'')+'</div>'}
 function transportMapMarkup(a,b){const x=STOPS[a],y=STOPS[b],mode=window.SouthboundTransportEstimate.estimate(x,y).mode;return '<div class="sb-route-map" data-route-from="'+a+'" data-route-to="'+b+'" data-route-mode="'+safe(mode)+'"><div class="sb-route-map-canvas" role="img" aria-label="Karte zwischen '+safe(x[0])+' und '+safe(y[0])+'"></div><p class="small sb-route-map-status">Karte wird beim Öffnen geladen.</p></div><p class="small">Bus: Straßenverlauf nur, falls der kostenlose Routingdienst eine Route liefert. Straßenpunkte sind keine bestätigten Bushaltestellen. Flug: schematische Luftlinie.</p>'}
 let sbLeafletPromise;
@@ -446,6 +451,13 @@ function bind(){
   const details=root.querySelector('#sb-route-optimizer');if(!details)return;
   details.open=true;details.scrollIntoView({behavior:'smooth',block:'start'});
  };
+ root.querySelectorAll('[data-sb-variant]').forEach(button=>button.addEventListener('click',()=>{
+  const mode=button.dataset.sbVariant;sbSavingsVariantChoice=mode;
+  root.querySelectorAll('[data-sb-variant]').forEach(b=>{
+   const current=b.dataset.sbVariant===mode;b.classList.toggle('is-active',current);b.setAttribute('aria-pressed',String(current));
+  });
+  root.querySelectorAll('[data-sb-variant-content]').forEach(x=>{x.hidden=x.dataset.sbVariantContent!==mode;});
+ }));
  const jumpToBudgetDetails=root.querySelector('[data-sb-budget-details-jump]');
  if(jumpToBudgetDetails)jumpToBudgetDetails.onclick=()=>{
   const details=root.querySelector('#sb-budget-details');if(!details)return;
