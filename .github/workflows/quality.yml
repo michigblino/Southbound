@@ -36,6 +36,8 @@ jobs:
           node --check booking-finance.js
           node --check tests/booking-finance.test.cjs
           node --check browser-tests/booking-payments.spec.cjs
+          node --check tests/inbound-flight.test.cjs
+          node --check browser-tests/inbound-flight.spec.cjs
           node --check booking-ledger.js
           node --check wait-costs.js
           node --check stage-card.js
