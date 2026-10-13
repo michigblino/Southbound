@@ -214,7 +214,7 @@ function sbBudgetVariantsPanel(items,total,riskMarkup=''){
   '<div class="sb-variant-picker" role="group" aria-label="Reisevariante auswählen">'+picks+'</div>'+
   '<div class="sb-variant-results">'+details+'</div>'+
   '<p class="sb-savings-hub__note"><b>Nicht addieren:</b> Varianten, Unterkunftspotenzial und Einzeltipps können dieselben Tage betreffen. Neue Transportkosten, Saisonbedingungen und Hosts sind noch nicht verifiziert.</p>'+
-  '<details class="sb-hub-detail" id="sb-savings-lodging"><summary><span><b>Unterkunft allein: unveränderte Route</b><small>Nur ein Bestandteil der Szenarien – keine zusätzliche Ersparnis</small></span><span aria-hidden="true">⌄</span></summary>'+
+  '<details class="sb-hub-detail" id="sb-savings-lodging"><summary><span><b>Unterkunft allein: unveränderte Route</b><small>Nur ein Bestandteil der Szenarien – nicht zusätzlich abziehen</small></span><span aria-hidden="true">⌄</span></summary>'+
   '<div class="sb-hub-detail__body"><div class="sb-hub-lodging-figure"><strong>'+fmt(lodging.grossAccommodationCeiling)+'</strong>'+
   '<span>rechnerische Brutto-Unterkunftskosten für '+lodging.eligibleNights+' hypothetische Host-Nächte · Ø '+fmt(lodging.averagedPerVolunteerNight)+' pro Nacht</span></div>'+
   '<p class="small">In Varianten mit Volunteering können diese Host-Nächte bereits enthalten sein. Nur 21–28-tägige Blöcke und maximal '+lodging.assumptions.hourLimit+' h/Woche. Weder Host-Zusagen noch Verpflegung, Gebühren oder Anschlussfahrten bestätigt.</p>'+
