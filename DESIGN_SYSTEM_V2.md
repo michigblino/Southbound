@@ -45,3 +45,13 @@ Separater Entwicklungsbranch `feat/modern-visual-system-20261013` basiert auf de
 - [ ] Erneute Prüfung der Leinwand-/Kartenansicht (Leaflet, Globus) und echter Geräteperformance
 
 **Technischer Hinweis:** Die Browser-Tests für Theme-Persistenz und schmale Geräte sind kein Ersatz für ein vollständiges manuelles mobiles UX-Audit. Screenshots und gezielte Kritik aus dem echten Android-Gerät sind für den nächsten Iterationsschritt entscheidend.
+
+## Folgeiteration – Dashboard und Etappenkarten (2026-10-13)
+
+- **Priorität:** Reisende sollen die Route und eine vorsichtige Budgeteinschätzung sehen, bevor sie Formulare ausfüllen.
+- `sbOverviewHero()` bleibt als erster visueller Einstieg erhalten. Die All-in-Kosten sind nun eine eigenständige, große, verständliche `.sb-budget-summary` direkt danach, vor Reiseprofileinstellungen. Der tatsächliche Rechenkern `SouthboundRouteBudget.snapshot` ist unverändert.
+- Gesamtbetrag, Zielbudget, Obergrenze, bereits erfasste Ausgaben, Reserve und fehlende Kostenpositionen sind ohne Aufklappen sichtbar. **Unvollständigkeit wird ausdrücklich angezeigt**; ein Fortschrittsbalken illustriert nur den Anteil der kalkulierten Zwischensumme am Ziel, keine garantierte Buchbarkeit.
+- Die bisher prominent platzierten Fixkosteneingaben und Budgetwarnungen liegen in `details#sb-budget-details`. Der Button „Fixkosten & fehlende Angaben prüfen“ klappt sie auf und scrollt dorthin. Das Verhalten ist auch per Tastatur und bei reduziertem Bewegungsmodus nutzbar.
+- Etappenkarten erhalten ein Bildfeld mit Etappennummer, Länder-/Datumszeile, gewichteten Ortsnamen, Aufenthaltsdetails und einen getrennten Gesamtpreis. Wenn ein Transferpreis unbekannt ist, wird **„Preis offen“ statt einer erfundenen Summe** dargestellt. Das beeinflusst keine Buchungs- oder Berechnungswerte.
+- Zusätzliche Browserprüfungen in `browser-tests/budget-stage-design.spec.cjs` kontrollieren Reihenfolge, aufklappbare Kostenfelder, Datenintegrität und Breiten von 320–430 Pixeln. Die visuelle Screenshot-Pipeline enthält jetzt auch `stages-light.png` und `stages-dark.png`.
+- Diese Iteration ist Teil des **unveröffentlichten PR #21**, der auf **unveröffentlichtem PR #20** basiert. Vor einer Veröffentlichung beide PRs in Reihenfolge zusammenführen und GitHub Actions sowie einen Android-Praxistest wiederholen.
