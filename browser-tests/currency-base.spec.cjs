@@ -63,3 +63,27 @@ test('network outage does not invent exchange rate and EUR fallback is visibly i
  await page.locator('[data-view="bookings"]').click();
  await expect(field(page,'rateEUR')).toHaveValue('');
 });
+
+test('actual travel spending and fixed costs entered in BRL persist as canonical EUR',async({page})=>{
+ const date=await fakeDailyFx(page);
+ await page.goto('/',{waitUntil:'domcontentloaded'});
+ await expect(page.locator('[data-sb-currency-status]')).toContainText(date);
+ await page.locator('[data-sb-base-currency]').fill('BRL');
+ await page.locator('[data-sb-base-currency]').press('Enter');
+ await page.locator('[data-sb-fixed="insurance"]').fill('600');
+ await page.locator('[data-sb-fixed-save]').click();
+ const insurance=await page.evaluate(()=>JSON.parse(localStorage.getItem('southbound-v3')).fixedCosts.insurance);
+ expect(insurance).toBe(100);
+ await page.locator('[data-view="underway"]').click();
+ await page.locator('#sb-act-lodging').fill('120');
+ await page.locator('#sb-act-lodging').press('Tab');
+ const journal=await page.evaluate(()=>{
+  const m=JSON.parse(localStorage.getItem('southbound-v3'));
+  return m.actuals[m.current]?.lodging;
+ });
+ expect(journal).toBe(20);
+ await page.locator('[data-sb-base-currency]').fill('EUR');
+ await page.locator('[data-sb-base-currency]').press('Enter');
+ await page.locator('[data-view="underway"]').click();
+ await expect(page.locator('#sb-act-lodging')).toHaveValue('20');
+});
