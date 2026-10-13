@@ -1,7 +1,7 @@
 /* Waiting-night costs: confirmed host waiting is never assumed free. */
 (function(g){'use strict';
 const DAY=86400000;
-const validDate=s=>typeof s==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(s)&&new Date(s+'T12:00:00Z').toISOString().slice(0,10)===s;
+const validDate=s=>{if(typeof s!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(s))return false;const t=Date.parse(s+'T12:00:00Z');return Number.isFinite(t)&&new Date(t).toISOString().slice(0,10)===s;};
 const days=(from,to)=>Math.round((Date.parse(to+'T12:00:00Z')-Date.parse(from+'T12:00:00Z'))/DAY);
 function estimate({calendarItems=[],stages=[]}={}){
  const lines=[],issues=[];let total=0;
