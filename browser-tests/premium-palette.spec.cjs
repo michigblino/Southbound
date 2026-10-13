@@ -18,25 +18,25 @@ test('the four requested brand swatches power actual UI tokens, not an unrelated
   await mode(page,selected);
   await expect.poll(()=>page.evaluate(()=>getComputedStyle(document.body).color),{timeout:3000})
    .toBe(selected==='light'?'rgb(23, 56, 76)':'rgb(247, 240, 236)');
-  const computed=await page.evaluate(()=>{
+  const base=await page.evaluate(()=>{
    const sheet=getComputedStyle(document.documentElement);
-   const surface=document.querySelector('.sb-budget-summary');
-   const nav=document.querySelector('#sb2 .topnav');
    return {
-    mist:sheet.getPropertyValue('--sb-mist').trim(),
-    stone:sheet.getPropertyValue('--sb-stone').trim(),
-    shadow:sheet.getPropertyValue('--sb-shadow-color').trim(),
-    autumn:sheet.getPropertyValue('--sb-autumn').trim(),
-    accent:sheet.getPropertyValue('--accent').trim(),
-    bg:sheet.getPropertyValue('--bg').trim(),
-    glass:getComputedStyle(surface).backdropFilter,
-    navGlass:getComputedStyle(nav).backdropFilter,
-    heroWoodcut:getComputedStyle(document.querySelector('.sb-overview-hero'),'::before').backgroundImage,
-    woodcutOpacity:Number(getComputedStyle(document.querySelector('.sb-overview-hero'),'::before').opacity),
-    visibleIcon:Number(getComputedStyle(document.querySelector('.sb-brand-icon--'+selected)).opacity),
-    hiddenIcon:Number(getComputedStyle(document.querySelector('.sb-brand-icon--'+(selected==='light'?'dark':'light'))).opacity)
+    mist:sheet.getPropertyValue('--sb-mist').trim(),stone:sheet.getPropertyValue('--sb-stone').trim(),
+    shadow:sheet.getPropertyValue('--sb-shadow-color').trim(),autumn:sheet.getPropertyValue('--sb-autumn').trim(),
+    accent:sheet.getPropertyValue('--accent').trim(),bg:sheet.getPropertyValue('--bg').trim()
    };
   });
+  const [glass,navGlass,hero,visibleIcon,hiddenIcon]=await Promise.all([
+   page.locator('.sb-budget-summary').evaluate(el=>getComputedStyle(el).backdropFilter),
+   page.locator('#sb2 .topnav').evaluate(el=>getComputedStyle(el).backdropFilter),
+   page.locator('#sb2 .sb-overview-hero').evaluate(el=>({
+    woodcut:getComputedStyle(el,'::before').backgroundImage,
+    opacity:Number(getComputedStyle(el,'::before').opacity)
+   })),
+   page.locator('.sb-brand-icon--'+selected).evaluate(el=>Number(getComputedStyle(el).opacity)),
+   page.locator('.sb-brand-icon--'+(selected==='light'?'dark':'light')).evaluate(el=>Number(getComputedStyle(el).opacity))
+  ]);
+  const computed={...base,glass,navGlass,heroWoodcut:hero.woodcut,woodcutOpacity:hero.opacity,visibleIcon,hiddenIcon};
   expect(computed.mist).toBe('#90AFC5');expect(computed.stone).toBe('#336B87');
   expect(computed.shadow).toBe('#2A3132');expect(computed.autumn).toBe('#763626');
   expect(computed.accent).toBe(ACCENT[selected].primary);
