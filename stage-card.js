@@ -32,7 +32,7 @@ function summarize({item,previous=null,bookings=[],ledger={},hostConfirmed=false
   else if(type==='volunteering'&&hostConfirmed){label='Host bestätigt';kind='positive'}
   else if(confirmed){
    const net=Number(confirmed.paidEUR||0)-Number(confirmed.refundedEUR||0);
-   const paid=confirmed.totalEUR!==null&&Number.isFinite(Number(confirmed.totalEUR))&&net>=Number(confirmed.totalEUR)&&Number(confirmed.refundedEUR||0)===0;
+   const paid=confirmed.totalEUR!==null&&Number(confirmed.totalEUR)>0&&Number.isFinite(Number(confirmed.totalEUR))&&net>=Number(confirmed.totalEUR)&&Number(confirmed.refundedEUR||0)===0;
    label=paid?'Bezahlt':'Bestätigt';kind='positive';
   }else if(requested){label='Angefragt';kind='neutral'}
   else if(planned){label='Vorgemerkt';kind='neutral'}
