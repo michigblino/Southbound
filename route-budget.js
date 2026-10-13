@@ -1,7 +1,7 @@
 /* Shared, conservative route budget snapshot for UI and volunteer scenarios. */
 (function(g){'use strict';
 const amount=v=>v===null||v===undefined||v===''?null:Number.isFinite(Number(v))&&Number(v)>=0?Number(v):null;
-function snapshot({items=[],paid=0,reserve=0,goal=0,cap=null,fixedCosts={},completed={},paidByStop={},paymentAllocationsByStop={},waitingCost=0,waitingComplete=true,waitingPaid=0,unrecorded=0,timingFeasible=true,bookingIntegrity=true,additionalCosts=0}={}){
+function snapshot({items=[],paid=0,reserve=0,goal=0,cap=null,fixedCosts={},completed={},paidByStop={},paymentAllocationsByStop={},waitingCost=0,waitingComplete=true,waitingPaid=0,returnPaymentEUR=0,unrecorded=0,timingFeasible=true,bookingIntegrity=true,additionalCosts=0}={}){
  const engine=g.SouthboundBudgetEngine;if(!engine)throw Error('Budget engine unavailable');
  const lines=[],unknownTransfers=[],unknownPrepayments=[],invalidPrepayments=[],invalidTypedPayments=[],unknownHostCosts=[],unknownHostMeals=[];
  for(const item of items){
@@ -31,7 +31,13 @@ function snapshot({items=[],paid=0,reserve=0,goal=0,cap=null,fixedCosts={},compl
   if(stay===null&&already>0)unknownPrepayments.push(i);
  }
  const categories=[['return','Rückreise'],['insurance','Versicherung'],['visas','Visa'],['equipment','Ausrüstung']];
- for(const [key,label] of categories)lines.push({label,amount:amount(fixedCosts[key]),status:'estimate'});
+ const paidReturn=amount(returnPaymentEUR),quotedReturn=amount(fixedCosts.return);
+ const invalidReturnPayment=paidReturn===null||(quotedReturn!==null&&paidReturn>quotedReturn+0.005);
+ for(const [key,label] of categories){
+  const value=amount(fixedCosts[key]);
+  lines.push({label,amount:key==='return'&&value!==null&&paidReturn!==null&&!invalidReturnPayment?
+   Math.max(0,Math.round((value-paidReturn)*100)/100):value,status:'estimate'});
+ }
  const parsedWaitCost=amount(waitingCost),parsedWaitPaid=amount(waitingPaid);
  const invalidWaitPayment=parsedWaitPaid===null||(waitingComplete&&parsedWaitCost!==null&&parsedWaitPaid>parsedWaitCost+0.005);
  const waitRemainder=waitingComplete&&parsedWaitCost!==null&&!invalidWaitPayment?
@@ -49,6 +55,7 @@ function snapshot({items=[],paid=0,reserve=0,goal=0,cap=null,fixedCosts={},compl
  if(categories.some(([key])=>amount(fixedCosts[key])===null))incompleteReasons.push('missing-fixed-costs');
  if(!waitingComplete||waitRemainder===null)incompleteReasons.push('unknown-waiting-costs');
  if(invalidWaitPayment)incompleteReasons.push('unallocated-wait-prepayments');
+ if(invalidReturnPayment)incompleteReasons.push('invalid-return-prepayments');
  if(unrecorded>0)incompleteReasons.push('unrecorded-completed-stops');
  if(!timingFeasible)incompleteReasons.push('unverified-route-dates');
  if(!bookingIntegrity)incompleteReasons.push('booking-records-need-review');
