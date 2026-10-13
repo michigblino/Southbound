@@ -145,3 +145,36 @@ test('booking center fits mobile viewport',async({page})=>{
  const width=await page.evaluate(()=>({scroll:document.documentElement.scrollWidth,client:document.documentElement.clientWidth}));
  expect(width.scroll).toBeLessThanOrEqual(width.client+2);
 });
+
+
+test('stage shortcut opens booking editor with correct stop and deletion needs confirmation',async({page})=>{
+ await page.goto('/',{waitUntil:'domcontentloaded'});
+ await page.locator('[data-view="stages"]').click();
+ await page.locator('#sb-stage-2 summary').click();
+ await page.locator('#sb-stage-2 [data-open-booking="2"]').click();
+ await expect(page.locator('[data-view="bookings"].active')).toBeVisible();
+ await expect(page.locator('[data-bk="stageId"]')).toHaveValue('2');
+ await page.locator('[data-bk="title"]').fill('Test booking');
+ await page.locator('[data-bk="provider"]').fill('Test provider');
+ await page.locator('[data-bk-save]').click();
+ await page.locator('[data-bk-edit]').first().click();
+ await expect(page.locator('[data-bk-delete]')).toBeVisible();
+ page.once('dialog',dialog=>dialog.dismiss());
+ await page.locator('[data-bk-delete]').click();
+ expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('southbound-v3')).bookingLedger.length)).toBe(1);
+ page.once('dialog',dialog=>dialog.accept());
+ await page.locator('[data-bk-delete]').click();
+ expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('southbound-v3')).bookingLedger.length)).toBe(0);
+});
+test('deleting a paid booking warns that its payment history would be lost',async({page})=>{
+ await page.goto('/',{waitUntil:'domcontentloaded'});
+ await page.locator('[data-view="bookings"]').click();
+ await page.locator('[data-bk="title"]').fill('Deposit');
+ await page.locator('[data-bk="provider"]').fill('Test provider');
+ await page.locator('[data-bk="paidEUR"]').fill('25');
+ await page.locator('[data-bk-save]').click();
+ await page.locator('[data-bk-edit]').first().click();
+ page.once('dialog',dialog=>{expect(dialog.message()).toContain('25');dialog.dismiss()});
+ await page.locator('[data-bk-delete]').click();
+ expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('southbound-v3')).bookingLedger.length)).toBe(1);
+});
