@@ -65,7 +65,7 @@ function reconcile({items=[],bookings=[],vol={},volunteerDetails={},legacyPaidBy
    // Only attribute the payment to the already-priced host charge if it matches exactly.
    // Otherwise keep the payment as sunk spending and mark the budget incomplete.
    const hostCharge=num(item.hostExtras),nights=(Number(item.bed)||0)*item.days;
-   if(hostCharge===null||money(hostCharge+nights)!==b.totalEUR){
+   if(b.startDate!==host.from||b.endDate!==host.to||hostCharge===null||money(hostCharge+nights)!==b.totalEUR){
     warnings.push({id:b.id,reason:'host-payment-differs-from-itinerary'});continue;
    }
    matched.push(b.id);
