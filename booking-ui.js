@@ -177,7 +177,10 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>n
  }));
  field('stageId').addEventListener('change',dates);
  field('currency').addEventListener('change',()=>{
-  if(!tx('amount').value)tx('currency').value=field('currency').value.toUpperCase();
+  if(!tx('amount').value){
+   tx('currency').value=field('currency').value.toUpperCase();
+   for(const k of ['rateEUR','rateCheckedAt','rateSource'])tx(k).value='';
+  }
   for(const k of ['rateEUR','rateCheckedAt','rateSource'])field(k).value='';
   changeFx();autoBoth();
  });
