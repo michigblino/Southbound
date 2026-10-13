@@ -10,6 +10,7 @@ const num=v=>v===null||v===undefined||v===''?null:Number.isFinite(Number(v))&&Nu
 const date=v=>{if(typeof v!=='string'||!ISO.test(v))return false;const t=Date.parse(v+'T12:00:00Z');return Number.isFinite(t)&&new Date(t).toISOString().slice(0,10)===v};
 const money=n=>Math.round((n+Number.EPSILON)*100)/100;
 const integer=n=>Number.isInteger(n)&&n>=0;
+const nights=(start,end)=>Math.round((Date.parse(end+'T12:00:00Z')-Date.parse(start+'T12:00:00Z'))/86400000);
 function validate(raw){
  const errors=[];
  if(!raw||typeof raw!=='object'||Array.isArray(raw))return {ok:false,errors:['invalid-record'],record:null};
@@ -24,6 +25,7 @@ function validate(raw){
  if(raw.endDate&&!date(raw.endDate))errors.push('invalid-end-date');
  if(date(raw.startDate)&&date(raw.endDate)&&raw.endDate<=raw.startDate)errors.push('invalid-date-range');
  if(type==='transport'&&!integer(raw.fromStageId))errors.push('invalid-origin');
+ if(type==='lodging'&&!date(raw.endDate))errors.push('lodging-checkout-required');
  if(raw.url){try{const u=new URL(raw.url);if(u.protocol!=='https:'||!u.hostname)errors.push('invalid-source')}catch{errors.push('invalid-source')}}
  if(raw.totalEUR!==null&&raw.totalEUR!==undefined&&raw.totalEUR!==''&&total===null)errors.push('invalid-price');
  if(paid===null||refunded===null||refunded>paid||total!==null&&paid>total)errors.push('invalid-payment');
@@ -34,7 +36,7 @@ function validate(raw){
  return {ok:false,errors,record:null};
 }
 function reconcile({items=[],bookings=[],vol={},volunteerDetails={},legacyPaidByStop={}}={}){
- const output=items.map(item=>({...item})),index=new Map(output.map((item,i)=>[item.i,i])),warnings=[],matched=[],paidByStop={},records=[],active=[];
+ const output=items.map(item=>({...item})),index=new Map(output.map((item,i)=>[item.i,i])),warnings=[],matched=[],paidByStop={},waitPaidByStop={},journalWaitPaidByStop={},records=[],active=[];
  let extraPaid=0;
  const seen=new Set();
  const raw=Array.isArray(bookings)?bookings:[];
@@ -72,7 +74,7 @@ function reconcile({items=[],bookings=[],vol={},volunteerDetails={},legacyPaidBy
    if(!b.recordedElsewhere)paidByStop[b.stageId]=money((paidByStop[b.stageId]||0)+b.paidEUR-b.refundedEUR);
    continue;
   }
-  if(b.type!=='activity'&&groups.get(groupKey(b)).length>1){
+  if(b.type!=='activity'&&b.type!=='lodging'&&groups.get(groupKey(b)).length>1){
    warnings.push({id:b.id,reason:'multiple-confirmed-bookings-for-stage'});continue;
   }
   if(b.type==='transport'){
@@ -83,18 +85,9 @@ function reconcile({items=[],bookings=[],vol={},volunteerDetails={},legacyPaidBy
    item.leg=b.totalEUR;item.legMin=b.totalEUR;item.legMax=b.totalEUR;
    item.bookingTransport={id:b.id,provider:b.provider,reference:b.reference};
   }else if(b.type==='lodging'){
-   const host=volunteerDetails[b.stageId]||{};
-   if(vol[b.stageId]===true&&host.confirmed===true){
-    warnings.push({id:b.id,reason:'host-conflicts-with-lodging'});continue;
-   }
-   if(b.startDate!==item.start||b.endDate!==item.end||!item.days){
-    warnings.push({id:b.id,reason:'lodging-dates-do-not-cover-stage'});continue;
-   }
-   const estimatedNights=item.days*(Number(item.bed)||0);
-   item.stay=money(item.stay-estimatedNights+b.totalEUR);
-   if(Number.isFinite(Number(item.daily)))item.daily=money(Number(item.daily)+(b.totalEUR-estimatedNights)/item.days);
-   item.bed=money(b.totalEUR/item.days);
-   item.bookingLodging={id:b.id,provider:b.provider,reference:b.reference};
+   // A stop can contain multiple non-overlapping lodging bookings.
+   // All lodging dates are validated as a group below, before any prices are applied.
+   continue;
   }else if(b.type==='activity'){
    if(b.startDate<item.start||b.startDate>=item.end){
     warnings.push({id:b.id,reason:'activity-date-outside-stage'});continue;
@@ -105,6 +98,65 @@ function reconcile({items=[],bookings=[],vol={},volunteerDetails={},legacyPaidBy
   matched.push(b.id);
   if(!b.recordedElsewhere){
    paidByStop[b.stageId]=money((paidByStop[b.stageId]||0)+b.paidEUR-b.refundedEUR);
+  }
+ }
+ // Reconcile accommodation per booked NIGHT, not per entire stage.
+ // The remaining (unbooked) nights retain the ordinary budget estimate.
+ for(const [stageId,at] of index){
+  const item=output[at];
+  const stayBookings=groups.get('lodging:'+stageId)||[];
+  if(!stayBookings.length)continue;
+  const host=volunteerDetails[stageId]||{};
+  const hasHost=vol[stageId]===true&&host.confirmed===true;
+  const normalStart=item.start,normalEnd=item.end;
+  const waitStart=item.arrival,waitEnd=item.start;
+  const normalBed=num(hasHost?item.regularBed:item.bed);
+  const boundsValid=date(normalStart)&&date(normalEnd)&&nights(normalStart,normalEnd)===item.days;
+  const waitDays=hasHost&&date(waitStart)&&date(waitEnd)?nights(waitStart,waitEnd):0;
+  const prepared=[];
+  let bad=false;
+  for(const b of stayBookings){
+   const insideRegular=!hasHost&&boundsValid&&b.startDate>=normalStart&&b.endDate<=normalEnd;
+   const insideWait=hasHost&&waitDays>0&&b.startDate>=waitStart&&b.endDate<=waitEnd;
+   if(!insideRegular&&!insideWait){
+    warnings.push({id:b.id,reason:hasHost?'lodging-overlaps-host-or-outside-wait':'lodging-dates-outside-stage'});
+    bad=true;continue;
+   }
+   prepared.push({...b,allocation:insideWait?'wait':'stay'});
+  }
+  prepared.sort((a,b)=>a.startDate.localeCompare(b.startDate)||a.endDate.localeCompare(b.endDate));
+  for(let n=1;n<prepared.length;n++){
+   if(prepared[n].startDate<prepared[n-1].endDate){
+    bad=true;warnings.push({id:prepared[n-1].id,reason:'overlapping-lodging-bookings'});
+    warnings.push({id:prepared[n].id,reason:'overlapping-lodging-bookings'});
+   }
+  }
+  if(bad||prepared.length!==stayBookings.length)continue; // atomic: no partial replacement after an invalid combination
+  if(normalBed===null||!Number.isFinite(item.stay)){
+   for(const b of prepared)warnings.push({id:b.id,reason:'missing-normal-night-price'});
+   continue;
+  }
+  let stageNightCount=0,stageNightTotal=0;const waitSegments=[];
+  for(const b of prepared){
+   const count=nights(b.startDate,b.endDate);
+   if(b.allocation==='stay'){stageNightCount+=count;stageNightTotal+=b.totalEUR;}
+   else waitSegments.push({id:b.id,startDate:b.startDate,endDate:b.endDate,totalEUR:b.totalEUR});
+  }
+  if(stageNightCount){
+   const estimated=stageNightCount*normalBed;
+   item.stay=money(item.stay-estimated+stageNightTotal);
+   if(Number.isFinite(Number(item.daily)))item.daily=money(Number(item.daily)+(stageNightTotal-estimated)/item.days);
+   item.bed=money(((item.days-stageNightCount)*normalBed+stageNightTotal)/item.days);
+  }
+  if(waitSegments.length)item.waitBookings=waitSegments;
+  item.bookingLodgings=prepared.map(b=>({id:b.id,provider:b.provider,startDate:b.startDate,endDate:b.endDate,amount:b.totalEUR,category:b.allocation}));
+  if(prepared.length===1)item.bookingLodging={id:prepared[0].id,provider:prepared[0].provider,reference:prepared[0].reference};
+  for(const b of prepared){
+   matched.push(b.id);
+   const net=money(b.paidEUR-b.refundedEUR);
+   const target=b.allocation==='wait'?(b.recordedElsewhere?journalWaitPaidByStop:waitPaidByStop):b.recordedElsewhere?null:paidByStop;
+   if(target)target[stageId]=money((target[stageId]||0)+net);
+
   }
  }
  for(const [stageId,at] of index){
@@ -127,12 +179,18 @@ function reconcile({items=[],bookings=[],vol={},volunteerDetails={},legacyPaidBy
    warnings.push({id:b.id,reason:'confirmed-booking-not-reconciled'});
   }
  }
+ // Existing journal spending may include hostel waiting-night deposits. Reallocate those
+ // amounts from generic stay prepayments to the waiting-night liability exactly once.
+ for(const [id,waitPaid] of Object.entries(journalWaitPaidByStop)){
+  if((num(legacyPaidByStop[id])||0)+0.005<waitPaid)
+   warnings.push({id:'journal-wait-'+id,reason:'wait-prepayment-not-attributed-to-stage'});
+ }
  const knownPayment=records.reduce((sum,b)=>sum+b.paidEUR-b.refundedEUR,0);
- return {items:output,extraPaid,paidByStop,matched,records,warnings,
+ return {items:output,extraPaid,paidByStop,waitPaidByStop:Object.fromEntries([...new Set([...Object.keys(waitPaidByStop),...Object.keys(journalWaitPaidByStop)])].map(i=>[i,money((waitPaidByStop[i]||0)+(journalWaitPaidByStop[i]||0))])),matched,records,warnings,
   confirmed:active.length,recordedPayment:money(knownPayment),
   bookingIntegrity:warnings.length===0,
   // Warning: payments for unmatched bookings remain sunk expenditure, NOT a future prepayment.
-  accountedPaidByStop:Object.fromEntries(output.map(item=>[item.i,money((num(legacyPaidByStop[item.i])||0)+(paidByStop[item.i]||0))]))
+  accountedPaidByStop:Object.fromEntries(output.map(item=>[item.i,money(Math.max(0,(num(legacyPaidByStop[item.i])||0)-(journalWaitPaidByStop[item.i]||0))+(paidByStop[item.i]||0))]))
  };
 }
 g.SouthboundBookingLedger={validate,reconcile,types:TYPES.slice(),statuses:STATES.slice()};

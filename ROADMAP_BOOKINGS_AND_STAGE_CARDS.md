@@ -73,3 +73,16 @@ Aktuelle Priorität: diese MVP-Funktionen mit Unit- und Playwright-Tests gegen P
 - Klick führt direkt zum passenden Buchungseditor; bei bestätigter Host-Zusage zu deren Verwaltung. Altes Buchungsregister einschließlich Löschwarnung und Etappenvorauswahl bleibt erhalten.
 - Reine Anzeige aus `m.bookingLedger` und bestätigten Host-Daten; keine neuen Speicherfelder, keine Migration, keine Anbieter-API, kein Checkout. Warnung bei >30h/Woche statt automatischer Ablehnung.
 - Tests: Status/Quellen/Bezahlung, Bearbeitungs-Navigation, Routen-Konflikte, Mobile 360 px, Offline-Cache. Merge erst nach grüner GitHub Unit- und Browser-CI.
+
+## Product backlog — Erlebnis- und Saisonoptimierung (2026-10-13; dokumentieren, NICHT jetzt implementieren)
+
+**Nutzerwunsch:** Southbound soll mit möglichst geringem All-in-Budget möglichst viele hochwertige Erlebnisse ermöglichen. Lokale Ereignisse sind Bestandteil der Routenplanung, z. B. Karneval in Rio de Janeiro **und** Salvador (Brasilien), nicht nur berühmte Großstadt-Festivals. Die Saison- und Wetterfenster der Regionen sind ebenso wichtig wie Veranstaltungen. Dieser Wunsch gilt weltweit, nicht nur in Südamerika.
+
+**Spätere Produktanforderungen:**
+1. Datierte, ortsbezogene Events (Festivals, lokale Feste, Märkte, Feiertage) mit überprüfbarer offizieller Quelle, Ausgabeort/Geokoordinaten, Uhrzeit, Jahr, Gültigkeit, Eintrittspreis, Verfügbarkeit und überprüft-am-Datum. Bei beweglichen Terminen **das konkrete Reisejahr nachprüfen**, nicht fixe Karnevalsdaten annehmen.
+2. Klima-/Saisonfenster je Region: Regen-/Trockenzeit, hohe/niedrige Temperaturen, Naturereignisse, Wander-/Park-/Pass-Zugänglichkeit, Hochsaison/Schulferien, Sicherheits-/Gesundheitsinformationen mit Herkunft und Zeitstempel. Klimamittelwerte ausdrücklich nicht als Tageswetterprognose ausgeben.
+3. Vorschläge für kleine Datumsverschiebungen oder alternative Aufenthaltsorte nur nach einem **Vorher-nachher-Vergleich**: zusätzlicher Erlebnisnutzen vs. echte Änderungen an Unterkunft, Verkehr, Essen, Eventtickets, Volunteering-Termin, Umbuchung/Stornierung, Zeitpuffer und Gesamtbudget. Kein Auto-Rescheduling bestätigter Buchungen, Gastgeberzusagen oder persönlicher Must-visit-Prioritäten.
+4. Transparente Abwägung bei stark erhöhten Karnevals-/Ferienpreisen: günstige Nebenevents, alternative Städte/Termine, lokale kostenlose Angebote und Neben-/Schultersaison darstellen; hohe Erlebnisqualität zu geringem Budget priorisieren, nicht bloß viele Eventtreffer.
+5. Kein erfundenes Angebot oder scheinbar verifizierter Eventtermin. Veraltete/unbestätigte Quellen markieren und nicht als buchbar deklarieren. Datenlizenzen/API-Zugriffe vor Anbindung klären.
+
+**Status:** Nur Backlog/Anforderung erfasst. Keine Events-, Wetter- oder Saisondaten-API angeschlossen; keine Änderungen an UI, Route oder Reisekosten durch diesen Punkt. Nächste laufende Implementierung bleibt Split-Unterkünfte und All-in-Reconciliation.

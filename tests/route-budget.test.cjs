@@ -61,3 +61,15 @@ test('unmatched confirmed booking blocks verified total even if all other costs 
  assert.equal(r.complete,false);assert.equal(r.goalStatus,'unverified');
  assert.ok(r.incompleteReasons.includes('booking-records-need-review'));
 });
+
+test('host waiting-nights paid deposits reduce only waiting liability, not stage stay twice',()=>{
+ const r=snapshot({...base,paid:125,waitingCost:64,waitingPaid:25});
+ assert.equal(r.totalEstimate,564); // paid +25 while waiting-cost total rises +24, deposit is offset once
+ assert.equal(r.lines.find(x=>x.label==='Wartekosten').amount,39);
+});
+test('waiting prepayment larger than total nights flags unreconciled budget rather than negative liability',()=>{
+ const r=snapshot({...base,waitingCost:20,waitingPaid:25});
+ assert.equal(r.complete,false);
+ assert.ok(r.incompleteReasons.includes('unallocated-wait-prepayments'));
+ assert.equal(r.lines.find(x=>x.label==='Wartekosten').amount,null);
+});

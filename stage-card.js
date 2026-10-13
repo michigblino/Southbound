@@ -31,16 +31,38 @@ function summarize({item,previous=null,bookings=[],ledger={},hostConfirmed=false
   else if(warning){label='Prüfen';kind='warning';selected=warning}
   else if(type==='volunteering'&&hostConfirmed){label='Host bestätigt';kind='positive'}
   else if(confirmed){
-   const net=Number(confirmed.paidEUR||0)-Number(confirmed.refundedEUR||0);
-   const paid=confirmed.totalEUR!==null&&Number(confirmed.totalEUR)>0&&Number.isFinite(Number(confirmed.totalEUR))&&net>=Number(confirmed.totalEUR)&&Number(confirmed.refundedEUR||0)===0;
-   label=paid?'Bezahlt':'Bestätigt';kind='positive';
+   if(type==='lodging'){
+    const assigned=options.filter(b=>b.status==='confirmed'&&matched.has(b.id));
+    const nights=assigned.reduce((sum,b)=>{
+     const start=Date.parse(b.startDate+'T12:00:00Z'),end=Date.parse(b.endDate+'T12:00:00Z');
+     return sum+(Number.isFinite(start)&&Number.isFinite(end)&&end>start?Math.round((end-start)/86400000):0);
+    },0);
+    const total=hostConfirmed?Math.max(0,Number(item.waitingDays)||0):Math.max(0,Number(item.days)||0);
+    const fullyCovered=total>0&&nights>=total;
+    const paid=fullyCovered&&assigned.every(b=>b.totalEUR!==null&&Number(b.totalEUR)>0&&
+     Number(b.paidEUR||0)-Number(b.refundedEUR||0)>=Number(b.totalEUR)&&Number(b.refundedEUR||0)===0);
+    label=hostConfirmed?'Vor Host gebucht':!fullyCovered?'Teilweise gebucht':paid?'Bezahlt':'Bestätigt';
+   }else{
+    const net=Number(confirmed.paidEUR||0)-Number(confirmed.refundedEUR||0);
+    const paid=confirmed.totalEUR!==null&&Number(confirmed.totalEUR)>0&&Number.isFinite(Number(confirmed.totalEUR))&&net>=Number(confirmed.totalEUR)&&Number(confirmed.refundedEUR||0)===0;
+    label=paid?'Bezahlt':'Bestätigt';
+   }
+   kind='positive';
   }else if(requested){label='Angefragt';kind='neutral'}
   else if(planned){label='Vorgemerkt';kind='neutral'}
   else if(cancelled){label='Storniert';kind='muted'}
   else if(type==='transport'&&(manualTicket||item.transportOffer)){label='Preis geprüft';kind='neutral'}
   else if(type==='lodging'&&hostelQuote){label='Preis notiert';kind='neutral'}
   const exceed=type==='volunteering'&&Number.isFinite(Number(hostHours))&&hostHours!==null&&Number(hostHours)>Number(maxVolunteerHours);
-  const subtitle=exceed?'Achtung: '+hostHours+' Std./Woche über Wunschlimit ('+maxVolunteerHours+')':subs[type];
+  const lodgingConfirmed=type==='lodging'?options.filter(b=>b.status==='confirmed'&&matched.has(b.id)):[];
+  const lodgingNights=lodgingConfirmed.reduce((sum,b)=>{
+   const from=Date.parse(b.startDate+'T12:00:00Z'),to=Date.parse(b.endDate+'T12:00:00Z');
+   return sum+(Number.isFinite(from)&&Number.isFinite(to)&&to>from?Math.round((to-from)/86400000):0);
+  },0);
+  const lodgingTotal=hostConfirmed?Number(item.waitingDays)||0:Number(item.days)||0;
+  const lodgingSubtitle=lodgingConfirmed.length?hostConfirmed?
+   lodgingNights+' Wartetage vor Host gebucht':lodgingNights+' von '+lodgingTotal+' Nächten bestätigt; Rest geschätzt':subs[type];
+  const subtitle=exceed?'Achtung: '+hostHours+' Std./Woche über Wunschlimit ('+maxVolunteerHours+')':type==='lodging'?lodgingSubtitle:subs[type];
   result.rows.push({type,title:titles[type],subtitle,label,kind,disabled,editId:selected?.id||'',exceedsHourPreference:exceed});
  }
  return result;

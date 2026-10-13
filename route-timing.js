@@ -13,7 +13,7 @@ function evaluate({items=[],start,stops=[],quotes={},volunteerDetails={},isVolun
   const stopFood=Number(stop[6]),normalFood=stop[6]!==null&&stop[6]!==undefined&&stop[6]!==''&&Number.isFinite(stopFood)&&stopFood>=0?stopFood:x.food;
   const raw=transferDaysByStop[i];const explicit=raw!==null&&raw!==undefined&&raw!==''&&Number.isInteger(Number(raw))&&Number(raw)>=0;
   if(index>0&&!explicit)unknownTransferDays.push(i);
-  return {name:x.name||stop[0]||'',days:x.days,transferDays:index===0?0:explicit?Number(raw):0,waitBed:normalBed,waitFood:normalFood,waitOther:x.other,confirmedHost:isVolunteer(i)&&host.from&&host.to?{from:host.from,to:host.to}:null};
+  return {name:x.name||stop[0]||'',days:x.days,transferDays:index===0?0:explicit?Number(raw):0,waitBed:normalBed,waitFood:normalFood,waitOther:x.other,waitBookings:x.waitBookings||[],confirmedHost:isVolunteer(i)&&host.from&&host.to?{from:host.from,to:host.to}:null};
  });
  const schedule=calendar.schedule({start,stops:stages});
  const waiting=wait.estimate({calendarItems:schedule.items,stages});

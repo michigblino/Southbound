@@ -52,3 +52,24 @@ test('untrusted booking name and provider never injected into HTML',()=>{
  assert.match(markup,/&lt;img src=x/);
  assert.doesNotMatch(markup,/<img src=x/);
 });
+
+test('a partial hostel booking shows a partial state instead of claiming the entire stay',()=>{
+ const b={id:'hostel',stageId:1,type:'lodging',status:'confirmed',startDate:'2027-01-03',endDate:'2027-01-04',totalEUR:15,paidEUR:15,refundedEUR:0};
+ const x=make({bookings:[b],ledger:{matched:['hostel'],warnings:[]}});
+ assert.equal(status(x,'lodging').label,'Teilweise gebucht');
+ assert.match(status(x,'lodging').subtitle,/1 von 3 Nächten/);
+});
+test('multiple hostels covering all nights become fully confirmed, but do not claim payment if deposit pending',()=>{
+ const b={id:'a',stageId:1,type:'lodging',status:'confirmed',startDate:'2027-01-03',endDate:'2027-01-05',totalEUR:30,paidEUR:30,refundedEUR:0};
+ const c={...b,id:'b',startDate:'2027-01-05',endDate:'2027-01-06',totalEUR:20,paidEUR:0};
+ const x=make({bookings:[b,c],ledger:{matched:['a','b'],warnings:[]}});
+ assert.equal(status(x,'lodging').label,'Bestätigt');
+ const allPaid=make({bookings:[b,{...c,paidEUR:20}],ledger:{matched:['a','b'],warnings:[]}});
+ assert.equal(status(allPaid,'lodging').label,'Bezahlt');
+});
+test('hostel booked before a confirmed host is named as waiting night, not a host bed',()=>{
+ const b={id:'w',stageId:1,type:'lodging',status:'confirmed',startDate:'2027-01-01',endDate:'2027-01-03',totalEUR:30,paidEUR:30,refundedEUR:0};
+ const x=make({item:{...item,arrival:'2027-01-01',waitingDays:2},hostConfirmed:true,bookings:[b],ledger:{matched:['w'],warnings:[]}});
+ assert.equal(status(x,'lodging').label,'Vor Host gebucht');
+ assert.match(status(x,'lodging').subtitle,/2 Wartetage/);
+});

@@ -24,6 +24,11 @@ jobs:
           node --check tests/volunteer-economics.test.cjs
           node --check itinerary.js
           node --check booking-ui.js
+          node --check booking-ledger.js
+          node --check wait-costs.js
+          node --check stage-card.js
+          node --check tests/split-lodging-integration.test.cjs
+          node --check browser-tests/split-lodging.spec.cjs
           node --check tests/booking-ui.test.cjs
           node --check browser-tests/booking-form.spec.cjs
           node --check tests/budget-engine.test.cjs
