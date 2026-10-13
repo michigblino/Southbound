@@ -43,3 +43,11 @@ test('booking cards expose a return flight and saved bookings are grouped',()=>{
  for(const key of ['inbound','return','transport','lodging','volunteering','activity'])assert.ok(booking.includes("key:'"+key+"'"));
  assert.match(css,/\.sb-booking-groups/);
 });
+
+test('guided editor only changes presentation, not booking record fields',()=>{
+ const code=fs.readFileSync(path.join(root,'booking-ui.js'),'utf8');
+ assert.match(code,/data-bk-wizard/);
+ assert.match(code,/setWizard\(true,1\)/);
+ assert.match(code,/data-bk-all/);
+ assert.match(code,/setWizard\(false\)/);
+});

@@ -8,7 +8,7 @@ test('direct booking tab offers exactly six contextual choices and keeps editor 
  await expect(page.locator('[data-bk-preset="return"]')).toBeVisible();await expect(page.locator('[data-bk-preset="return"]')).toContainText('Rückflug');
  await expect(page.locator('[data-bk-preset="inbound"]')).toBeVisible();
  await expect(page.locator('#sb-bookings-editor')).not.toHaveAttribute('open');
- await page.locator('[data-bk-preset="return"]').click();
+ await page.locator('[data-bk-preset="return"]').click();await page.locator('[data-bk-all]').click();
  await expect(page.locator('#sb-bookings-editor')).toHaveAttribute('open');
  await expect(field(page,'journeyOrigin')).toHaveValue('return');
  await expect(field(page,'travelMode')).toHaveValue('flight');
@@ -20,7 +20,7 @@ test('direct booking tab offers exactly six contextual choices and keeps editor 
 test('return flight can be saved with a layover, edited and reconciled without counting twice',async({page})=>{
  await page.goto('/',{waitUntil:'domcontentloaded'});
  await page.locator('[data-view="bookings"]').click();
- await page.locator('[data-bk-preset="return"]').click();
+ await page.locator('[data-bk-preset="return"]').click();await page.locator('[data-bk-all]').click();
  const date=await field(page,'startDate').inputValue();
  expect(date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
  await field(page,'arrivalDate').fill(date);
@@ -84,4 +84,31 @@ test('booking hub has two columns and the favicon follows light/dark theme',asyn
   await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href',mode==='light'?'./icon.svg':'./icon-dark.svg');
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(322);
  }
+});
+
+test('guided booking wizard separates dates, price, and confirmation without saving early',async({page})=>{
+ await page.setViewportSize({width:360,height:780});
+ await page.goto('/',{waitUntil:'domcontentloaded'});
+ await page.locator('[data-view="bookings"]').click();
+ await page.locator('[data-bk-preset="inbound"]').click();
+ const editor=page.locator('#sb-bookings-editor');
+ await expect(editor).toHaveAttribute('data-bk-guided','true');
+ await expect(page.locator('[data-bk="startDate"]')).toBeVisible();
+ await expect(page.locator('[data-bk="totalEUR"]')).toBeHidden();
+ await expect(page.locator('[data-bk-save]')).toBeHidden();
+ await page.locator('[data-bk-next]').click();
+ await expect(page.locator('[data-bk="totalEUR"]')).toBeVisible();
+ await expect(page.locator('[data-bk="status"]')).toBeHidden();
+ await page.locator('[data-bk-next]').click();
+ await expect(page.locator('[data-bk="status"]')).toBeVisible();
+ await expect(page.locator('[data-bk="reference"]')).toBeVisible();
+ await expect(page.locator('[data-bk-save]')).toBeVisible();
+ await page.locator('[data-bk-prev]').click();
+ await expect(page.locator('[data-bk="totalEUR"]')).toBeVisible();
+ await page.locator('[data-bk-all]').click();
+ await expect(editor).toHaveAttribute('data-bk-guided','false');
+ await expect(page.locator('[data-bk="startDate"]')).toBeVisible();
+ await expect(page.locator('[data-bk="totalEUR"]')).toBeVisible();
+ await expect(page.locator('[data-bk="status"]')).toBeVisible();
+ expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('southbound-v3')).bookingLedger.length)).toBe(0);
 });
