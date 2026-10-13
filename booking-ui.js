@@ -2,16 +2,20 @@
 (function(g){'use strict';
 const euro=n=>g.SouthboundCurrencyDisplay?.(Number(n))||'€'+Number(n||0).toLocaleString('de-DE',{minimumFractionDigits:0,maximumFractionDigits:2});
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','"':'&quot;',"'":'&#39;'}[c]));
-const labels={transport:'Transfer',lodging:'Unterkunft',volunteering:'Volunteering',activity:'Erlebnis'};
+const fixedLabels={insurance:'Versicherung',equipment:'Ausrüstung',visas:'Visa / Einreise'};
+const labels={transport:'Transfer',lodging:'Unterkunft',volunteering:'Volunteering',activity:'Erlebnis',fixed:'Fixkosten'};
 const statuses={planned:'Vorgemerkt',requested:'Angefragt',confirmed:'Bestätigt',cancelled:'Storniert'};
-const icons={transport:'↗',lodging:'⌂',volunteering:'♡',activity:'◇'};
+const icons={transport:'↗',lodging:'⌂',volunteering:'♡',activity:'◇',fixed:'▣'};
 const shortcutPaths={
  inbound:'<path d="m21 3-8 18-3-8-8-3 19-7Z"/><path d="m10 13 4-4"/>',
  return:'<path d="m20 4-6 12-3-5-7-1 16-6Z"/><path d="M18 20H7m0 0 4-4m-4 4 4 3"/>',
  transport:'<rect x="4" y="3" width="16" height="17" rx="2"/><path d="M4 12h16M8 20v2m8-2v2M8 7h.01M16 7h.01"/>',
  lodging:'<path d="M3 4v17M3 16h18v5M3 10h15a3 3 0 0 1 3 3v3"/><path d="M7 10V7h5v3"/>',
  volunteering:'<path d="M20.8 8.6c0 4.2-8.8 10.1-8.8 10.1S3.2 12.8 3.2 8.6a4.3 4.3 0 0 1 8.8-1 4.3 4.3 0 0 1 8.8 1Z"/>',
- activity:'<path d="m2 20 7-13 4 7 3-5 6 11H2Z"/>'
+ activity:'<path d="m2 20 7-13 4 7 3-5 6 11H2Z"/>',
+ insurance:'<path d="M12 2 4 5v6c0 6 3 9 8 11 5-2 8-5 8-11V5l-8-3Z"/><path d="m8 12 3 3 5-6"/>',
+ equipment:'<rect x="5" y="4" width="14" height="18" rx="3"/><path d="M9 4V2h6v2M5 11h14M10 16h4"/>',
+ visas:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 12h8M8 17h4"/>'
 };
 const bookingGroups=[
  {key:'inbound',title:'Anreise',subtitle:'Flüge zum Reisebeginn'},
@@ -19,15 +23,19 @@ const bookingGroups=[
  {key:'transport',title:'Transfers',subtitle:'Verbindungen zwischen Etappen'},
  {key:'lodging',title:'Unterkünfte',subtitle:'Hostels und Hotels'},
  {key:'volunteering',title:'Volunteering',subtitle:'Hosts und Zusagen'},
- {key:'activity',title:'Erlebnisse',subtitle:'Touren und Tickets'}
+ {key:'activity',title:'Erlebnisse',subtitle:'Touren und Tickets'},
+ {key:'insurance',title:'Versicherung',subtitle:'Reise- und Auslandsschutz'},
+ {key:'equipment',title:'Ausrüstung',subtitle:'Rucksack und Reisebedarf'},
+ {key:'visas',title:'Visa / Einreise',subtitle:'Einreiseunterlagen und Gebühren'}
 ];
-const bookingCategory=b=>b?.type==='transport'?(b.journeyOrigin?'inbound':b.journeyReturn?'return':'transport'):b?.type==='lodging'?'lodging':b?.type==='volunteering'?'volunteering':'activity';
+const bookingCategory=b=>b?.type==='fixed'?(b.fixedKind||'visas'):b?.type==='transport'?(b.journeyOrigin?'inbound':b.journeyReturn?'return':'transport'):b?.type==='lodging'?'lodging':b?.type==='volunteering'?'volunteering':'activity';
 const shortcutIcon=kind=>'<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"'+''+'>'+shortcutPaths[kind]+'</svg>';
 
 const typeCopy={
  transport:{hint:'Transfer: Startort, Ziel und Abfahrt müssen mit deiner Route übereinstimmen. Nur eine bestätigte passende Verbindung ersetzt den geschätzten Fahrpreis.',captions:{stageId:'Ziel / Etappe',title:'Verbindung / Ticket',provider:'Verkehrsanbieter',startDate:'Abfahrt / Reisetag',reference:'Ticket- oder Buchungsnummer'},placeholders:{title:'z. B. Bus Medellín → Salento',provider:'z. B. Busunternehmen',reference:'Ticket- oder Buchungsnummer'}},
  lodging:{hint:'Unterkunft: Auch einzelne oder mehrere nicht überlappende Nächte sind möglich. Bestätigte Teilbuchungen ersetzen nur ihre Nächte; der Rest bleibt eine Schätzung. Vor Host-Beginn zählen Hostelbuchungen zu den Wartekosten.',captions:{stageId:'Ort / Etappe',title:'Unterkunft / Zimmer',provider:'Hostel / Unterkunftsanbieter',startDate:'Check-in',endDate:'Check-out',reference:'Reservierungs- oder Buchungsnummer'},placeholders:{title:'z. B. Hostel Paraty',provider:'Name des Hostels',reference:'Reservierungscode'}},
  volunteering:{hint:'Volunteering: Hier erfasst du Bewerbung, Host und gegebenenfalls Gebühren. Kostenlose Unterkunft entsteht erst durch die separat erfasste Host-Zusage in der Etappe.',captions:{stageId:'Ort / Etappe',title:'Host / Projekt',provider:'Plattform / Host',startDate:'Geplanter Beginn',endDate:'Geplantes Ende',reference:'Bewerbungs- oder Bestätigungsreferenz'},placeholders:{title:'z. B. Farmstay in Salento',provider:'z. B. Workaway / Gastgeber',reference:'Bewerbungs-ID oder Nachricht'}},
+ fixed:{hint:'Versicherung, Ausrüstung und Visa mit Anbieter, Beleg und Zahlung erfassen. Bestätigte Beträge ersetzen die bisherigen Fixkostenschätzungen.',captions:{stageId:'Reise',title:'Leistung / Produkt',provider:'Anbieter / Händler',startDate:'Kauf- oder Buchungsdatum',reference:'Bestell-/Policennummer'},placeholders:{title:'z. B. Auslandskrankenversicherung',provider:'Anbieter oder Händler',reference:'Bestätigung oder Rechnung'}},
  activity:{hint:'Erlebnis: Erfasse den Veranstaltungstag und wähle, ob der Preis in der Aktivitätenpauschale enthalten oder zusätzlich einzuplanen ist.',captions:{stageId:'Ort / Etappe',title:'Erlebnis / Ausflug',provider:'Veranstalter',startDate:'Datum des Erlebnisses',reference:'Ticket- oder Buchungsnummer'},placeholders:{title:'z. B. Wanderung mit Guide',provider:'Name des Veranstalters',reference:'Ticketcode'}}
 };
 const baseCaptions={stageId:'Ziel / Etappe',title:'Bezeichnung',provider:'Anbieter / Host',startDate:'Beginn / Abfahrt',endDate:'Ende / Check-out',reference:'Referenz / Bestätigung'};
@@ -46,7 +54,9 @@ function render({route=[],bookings=[],ledger,baseCurrency='EUR',fxQuotes=null,tr
  '<button type="button" data-bk-preset="lodging">'+shortcutIcon('lodging')+'<b>Unterkunft</b><small>Hostel oder Hotel</small></button>'+
  '<button type="button" data-bk-preset="volunteering">'+shortcutIcon('volunteering')+'<b>Volunteering</b><small>Host und Zusage</small></button>'+
  '<button type="button" data-bk-preset="activity">'+shortcutIcon('activity')+'<b>Erlebnis</b><small>Tour oder Ticket</small></button>'+
- '</div></div>');
+ '</div><details class="sb-booking-extra-shortcuts"><summary>Versicherung, Ausrüstung & Einreise</summary><div class="sb-booking-shortcuts">'+
+ ['insurance','equipment','visas'].map(k=>'<button type="button" data-bk-fixed-preset="'+k+'">'+shortcutIcon(k)+'<b>'+fixedLabels[k]+'</b><small>Fixkosten erfassen</small></button>').join('')+
+ '</div></details></div>');
  return chooser+'<div class="panel"><div class="eyebrow">Buchungen · Beta</div><h2>Deine Buchungszentrale</h2>'+
  '<p class="small">Tickets, Host-Anfragen, Unterkünfte und Ausflüge festhalten. Noch <b>keine Buchung und keine Zahlung innerhalb von Southbound</b>. Bestätigt bedeutet hier: von dir als bestätigt eingetragen, nicht unabhängig vom Anbieter verifiziert. Aktuelle Kurse sind Tages-Referenzwerte, nicht automatisch dein tatsächlicher Bankkurs.</p>'+
  '<div class="sb-booking-stats"><div><small>Gespeicherte Einträge</small><b>'+records.length+'</b></div><div><small>Als bestätigt erfasst</small><b>'+Number(ledger?.confirmed||0)+'</b></div><div><small>Zahlungen (netto) in Buchungen</small><b>'+euro(total)+'</b></div></div>'+
@@ -63,7 +73,7 @@ function render({route=[],bookings=[],ledger,baseCurrency='EUR',fxQuotes=null,tr
   const paid=Number(b.paidEUR||0)-Number(b.refundedEUR||0);
   const converted=String(b.currency||'EUR')!=='EUR'&&b.totalAmount!==null&&b.totalAmount!==undefined?
    esc(b.totalAmount)+' '+esc(b.currency)+' ≈ '+euro(b.totalEUR):b.totalEUR===null?'Preis unbekannt':euro(b.totalEUR);
-  return '<div class="sb-booking-card"><span class="sb-booking-symbol" aria-hidden="true">'+esc(icons[b.type]||'·')+'</span><div class="sb-booking-info"><b>'+esc(b.title||'Eintrag')+'</b><small>'+esc(b.type==='transport'&&b.journeyOrigin?'Anreiseflug':b.type==='transport'&&b.journeyReturn?'Rückflug':labels[b.type]||b.type)+' · '+esc(description)+esc(stopoverLabel)+' · '+esc(b.startDate||'ohne Datum')+'</small><small>'+esc(b.provider||'')+' · '+esc(statuses[b.status]||'Unbekannt')+' · '+converted+' · '+euro(paid)+' netto bezahlt</small></div><button type="button" data-bk-edit="'+esc(b.id)+'" class="sb-booking-edit">Bearbeiten</button></div>'
+  return '<div class="sb-booking-card"><span class="sb-booking-symbol" aria-hidden="true">'+esc(icons[b.type]||'·')+'</span><div class="sb-booking-info"><b>'+esc(b.title||'Eintrag')+'</b><small>'+esc(b.type==='transport'&&b.journeyOrigin?'Anreiseflug':b.type==='transport'&&b.journeyReturn?'Rückflug':b.type==='fixed'?fixedLabels[b.fixedKind]||'Fixkosten':labels[b.type]||b.type)+' · '+esc(description)+esc(stopoverLabel)+' · '+esc(b.startDate||'ohne Datum')+'</small><small>'+esc(b.provider||'')+' · '+esc(statuses[b.status]||'Unbekannt')+' · '+converted+' · '+euro(paid)+' netto bezahlt</small></div><button type="button" data-bk-edit="'+esc(b.id)+'" class="sb-booking-edit">Bearbeiten</button></div>'
  }).join('')+'</div></details>';
  }).join('')+'</div>':'<p class="small">Noch keine Buchungen hinterlegt. Du kannst jetzt die erste Reiseleistung erfassen.</p>')+
  '</div>'+'<details class="panel" id="sb-bookings-editor"'+(fromStage?' open':'')+'><summary><b data-bk-editor-title>Buchung erfassen oder bearbeiten</b></summary>'+
@@ -73,9 +83,10 @@ function render({route=[],bookings=[],ledger,baseCurrency='EUR',fxQuotes=null,tr
  '<button type="button" data-bk-step-go="2"><span>2</span> Preis & Zahlung</button>'+
  '<button type="button" data-bk-step-go="3"><span>3</span> Bestätigung</button></div>'+
  '<div class="sb-booking-form" role="group" aria-label="Buchungseintrag">'+
- '<label>Art<select data-bk="type"><option value="transport">Transfer</option><option value="lodging">Unterkunft</option><option value="volunteering">Volunteering</option><option value="activity">Erlebnis</option></select></label>'+
+ '<label>Art<select data-bk="type"><option value="transport">Transfer</option><option value="lodging">Unterkunft</option><option value="volunteering">Volunteering</option><option value="activity">Erlebnis</option><option value="fixed">Fixkosten</option></select></label>'+
  '<label>Status<select data-bk="status"><option value="planned">Vorgemerkt</option><option value="requested">Angefragt / reserviert</option><option value="confirmed">Bestätigt (selbst eingetragen)</option><option value="cancelled">Storniert</option></select></label>'+
- '<label><span data-bk-caption="stageId">Ziel / Etappe</span><select data-bk="stageId">'+opts+'</select></label>'+
+ '<label data-bk-stage><span data-bk-caption="stageId">Ziel / Etappe</span><select data-bk="stageId">'+opts+'</select></label>'+
+ '<label data-bk-for="fixed" hidden style="display:none">Fixkostenkategorie<select data-bk="fixedKind"><option value="insurance">Versicherung</option><option value="equipment">Ausrüstung</option><option value="visas">Visa / Einreise</option></select></label>'+
  '<label data-bk-for="transport">Verbindung<select data-bk="journeyOrigin"><option value="route">Zwischen Reiseetappen</option><option value="inbound">Anreise von außerhalb der Route</option><option value="return">Rückreise zum Heimatort</option></select></label>'+
  '<label data-bk-for="transport" data-bk-conditional="route-origin">Startetappe<select data-bk="fromStageId"><option value="">Noch auswählen</option>'+opts+'</select></label>'+
  '<label data-bk-for="transport" data-bk-conditional="inbound-origin" hidden style="display:none"><span data-bk-origin-caption>Startflughafen / Startort</span><input data-bk="originPlace" maxlength="160" value="'+esc(tripOrigin)+'" placeholder="z. B. München (MUC)"></label>'+
