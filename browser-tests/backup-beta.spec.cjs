@@ -2,6 +2,7 @@ const {test,expect}=require('@playwright/test');
 const fs=require('node:fs');
 test('active beta cockpit exports a complete, versioned backup of saved bookings and FX preferences',async({page})=>{
  await page.goto('/',{waitUntil:'domcontentloaded'});
+ await expect.poll(()=>page.evaluate(()=>!!localStorage.getItem('southbound-v3'))).toBe(true);
  await expect(page.locator('#sb-beta-backup')).toHaveCount(1);
  await page.evaluate(()=>{
   const m=JSON.parse(localStorage.getItem('southbound-v3')||'{}');
@@ -24,6 +25,7 @@ test('active beta cockpit exports a complete, versioned backup of saved bookings
 });
 test('replacing a trip with a version 3 backup clears stale bookings instead of secretly merging them',async({page})=>{
  await page.goto('/',{waitUntil:'domcontentloaded'});
+ await expect.poll(()=>page.evaluate(()=>!!localStorage.getItem('southbound-v3'))).toBe(true);
  await page.evaluate(()=>{
   const m=JSON.parse(localStorage.getItem('southbound-v3')||'{}');
   m.goal=9000;m.cap=12000;m.bookingLedger=[{id:'old-payment',type:'transport',stageId:1}];
@@ -44,6 +46,7 @@ test('replacing a trip with a version 3 backup clears stale bookings instead of 
 });
 test('corrupt user uploads leave existing booking/payment data untouched',async({page})=>{
  await page.goto('/',{waitUntil:'domcontentloaded'});
+ await expect.poll(()=>page.evaluate(()=>!!localStorage.getItem('southbound-v3'))).toBe(true);
  await page.evaluate(()=>{
   const m=JSON.parse(localStorage.getItem('southbound-v3')||'{}');
   m.goal=8000;m.bookingLedger=[{id:'keep-this-booking',type:'lodging'}];
