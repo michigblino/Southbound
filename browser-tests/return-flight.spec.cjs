@@ -139,14 +139,17 @@ test('budget fixed-cost cards route to correct editor without erasing manually e
  await expect(page.locator('[data-sb-fixed-book]')).toHaveCount(5);
  const labels=await page.locator('.sb-fixed-book-tile small').allTextContents();
  expect(labels).toEqual(['Versicherung','Ausrüstung','Anreise','Abreise']);
+ await page.locator('[data-sb-budget-details-jump]').click();
  await page.locator('[data-sb-fixed-book="insurance"]').click();
  await expect(page.locator('#sb-bookings-editor')).toHaveAttribute('open');
  await expect(page.locator('[data-bk="type"]')).toHaveValue('fixed');
  await expect(page.locator('[data-bk="fixedKind"]')).toHaveValue('insurance');
  await page.locator('[data-view="overview"]').click();
+ await page.locator('[data-sb-budget-details-jump]').click();
  await page.locator('[data-sb-fixed-book="inbound"]').click();
  await expect(page.locator('[data-bk="journeyOrigin"]')).toHaveValue('inbound');
  await page.locator('[data-view="overview"]').click();
+ await page.locator('[data-sb-budget-details-jump]').click();
  await page.locator('[data-sb-fixed-book="return"]').click();
  await expect(page.locator('[data-bk="journeyOrigin"]')).toHaveValue('return');
 });

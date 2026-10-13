@@ -22,6 +22,9 @@ test('home budget displays key decision information before accounting inputs',as
  expect(order.docWidth).toBeLessThanOrEqual(order.viewport+2);
  await budget.locator('[data-sb-budget-details-jump]').click();
  await expect(details).toHaveAttribute('open');
+ await expect(details.locator('.sb-fixed-book-grid')).toBeVisible();
+ await expect(details.locator('[data-sb-fixed="insurance"]')).toBeHidden();
+ await details.locator('.sb-fixed-manual > summary').click();
  await expect(details.locator('[data-sb-fixed="insurance"]')).toBeVisible();
 });
 test('modern stages show card photograph, dates and honest transfer status',async({page})=>{
@@ -60,7 +63,7 @@ test('budget data and route order do not change when opening design disclosures'
  await expect(page.locator('.sb-overview-hero')).toBeVisible();
  const before=await page.evaluate(()=>JSON.stringify(JSON.parse(localStorage.getItem('southbound-v3')||'{}')));
  await page.locator('[data-sb-budget-details-jump]').click();
- await page.locator('#sb-budget-details summary').click();
+ await page.locator('#sb-budget-details > summary').click();
  await page.locator('#sb-travel-settings summary').click();
  await page.locator('#sb-travel-settings summary').click();
  const after=await page.evaluate(()=>JSON.stringify(JSON.parse(localStorage.getItem('southbound-v3')||'{}')));
