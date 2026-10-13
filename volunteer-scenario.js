@@ -26,9 +26,9 @@ function compare({stops=[],start,stopId,proposedDays,host={},options={},budget={
  const beforeTiming=timing.evaluate({...timingOpts,items:baselineBookings.items,volunteerDetails:options.volunteerDetails||{},isVolunteer:i=>options.vol?.[i]===true&&options.volunteerDetails?.[i]?.confirmed===true});
  const afterTiming=timing.evaluate({...timingOpts,items:proposedBookings.items,volunteerDetails,isVolunteer:i=>vol[i]===true&&volunteerDetails[i]?.confirmed===true});
  const shared={...budget};
- const beforeBudget=snapshot({...shared,items:baselineBookings.items,paid:Number(shared.paid||0)+baselineBookings.extraPaid,paidByStop:baselineBookings.accountedPaidByStop,bookingIntegrity:baselineBookings.bookingIntegrity,waitingCost:beforeTiming.waiting.total,waitingComplete:beforeTiming.waiting.complete,timingFeasible:beforeTiming.feasible});
+ const beforeBudget=snapshot({...shared,items:baselineBookings.items,paid:Number(shared.paid||0)+baselineBookings.extraPaid,paidByStop:baselineBookings.accountedPaidByStop,bookingIntegrity:baselineBookings.bookingIntegrity,waitingCost:beforeTiming.waiting.total,waitingComplete:beforeTiming.waiting.complete,waitingPaid:Object.values(baselineBookings.waitPaidByStop||{}).reduce((n,x)=>n+x,0),timingFeasible:beforeTiming.feasible});
  // Candidate host fees are already included in candidate.items[].stay; do not count them twice.
- const afterBudget=snapshot({...shared,items:proposedBookings.items,paid:Number(shared.paid||0)+proposedBookings.extraPaid,paidByStop:proposedBookings.accountedPaidByStop,bookingIntegrity:proposedBookings.bookingIntegrity,waitingCost:afterTiming.waiting.total,waitingComplete:afterTiming.waiting.complete,timingFeasible:afterTiming.feasible});
+ const afterBudget=snapshot({...shared,items:proposedBookings.items,paid:Number(shared.paid||0)+proposedBookings.extraPaid,paidByStop:proposedBookings.accountedPaidByStop,bookingIntegrity:proposedBookings.bookingIntegrity,waitingCost:afterTiming.waiting.total,waitingComplete:afterTiming.waiting.complete,waitingPaid:Object.values(proposedBookings.waitPaidByStop||{}).reduce((n,x)=>n+x,0),timingFeasible:afterTiming.feasible});
  const extraDays=Math.max(0,n-target.days);
  const dateShift=afterTiming.schedule.finish!==beforeTiming.schedule.finish;
  const extraCosts=amount(host.extraCosts);
