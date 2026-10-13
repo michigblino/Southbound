@@ -73,3 +73,24 @@ test('waiting prepayment larger than total nights flags unreconciled budget rath
  assert.ok(r.incompleteReasons.includes('unallocated-wait-prepayments'));
  assert.equal(r.lines.find(x=>x.label==='Wartekosten').amount,null);
 });
+
+test('typed bus payment reduces only its transfer, not hostel nights',()=>{
+ const r=snapshot({...base,paid:160,paidByStop:{0:10},paymentAllocationsByStop:{0:{transfer:60}}});
+ assert.equal(r.lines.find(x=>x.label==='Aufenthalt 0').amount,190);
+ assert.equal(r.lines.find(x=>x.label==='Transfer 0').amount,0);
+ // The 60 euro exceeds a 20 euro leg; marked incomplete instead of silently making it free.
+ assert.equal(r.complete,false);
+ assert.ok(r.incompleteReasons.includes('invalid-booking-allocations'));
+});
+test('valid separate lodging and bus deposits are credited to their correct liability',()=>{
+ const r=snapshot({...base,paid:130,paidByStop:{0:0},paymentAllocationsByStop:{0:{stay:10,transfer:20}}});
+ assert.equal(r.lines.find(x=>x.label==='Aufenthalt 0').amount,190);
+ assert.equal(r.lines.find(x=>x.label==='Transfer 0').amount,0);
+ assert.equal(r.totalEstimate,540);
+ assert.equal(r.complete,true);
+});
+test('an unknown transfer cannot absorb a typed paid fare',()=>{
+ const r=snapshot({...base,items:[{i:0,stay:200,leg:null}],paymentAllocationsByStop:{0:{transfer:20}}});
+ assert.equal(r.complete,false);
+ assert.ok(r.incompleteReasons.includes('unallocated-prepayments'));
+});

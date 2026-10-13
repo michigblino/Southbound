@@ -149,3 +149,50 @@ test('wait-hostel payment in the journal is attributed to wait liability instead
  assert.equal(bad.bookingIntegrity,false);
  assert.ok(bad.warnings.some(x=>x.reason==='wait-prepayment-not-attributed-to-stage'));
 });
+
+const tx=(id,amount,opts={})=>({id,kind:'payment',date:'2026-10-13',currency:'EUR',amount,...opts});
+test('confirmed foreign-currency transfer has a typed payment allocation and uses actual FX at payment',()=>{
+ const b=booking({currency:'BRL',totalAmount:500,rateEUR:0.16,rateCheckedAt:'2026-10-13',rateSource:'Quoted price',
+   paidEUR:0,refundedEUR:0,transactions:[
+     tx('deposit',200,{currency:'BRL',rateEUR:0.15,rateCheckedAt:'2026-10-13',rateSource:'Card statement'})]});
+ const r=reconcile({items:stops,bookings:[b]});
+ assert.equal(r.bookingIntegrity,true);assert.equal(r.items[1].leg,80);
+ assert.equal(r.records[0].currency,'BRL');assert.equal(r.records[0].totalEUR,80);
+ assert.equal(r.extraPaid,30);assert.equal(r.typedPaidByStop[1].transfer,30);
+ assert.equal(r.paidByStop[1],undefined);
+ assert.equal(r.accountedPaidByStop[1],0);
+});
+test('transport deposit no longer reduces stay estimate when typed allocation is used',()=>{
+ const b=booking({paidEUR:0,refundedEUR:0,totalEUR:45,transactions:[tx('bus-deposit',20)]});
+ const r=reconcile({items:stops,bookings:[b],legacyPaidByStop:{1:10}});
+ assert.equal(r.extraPaid,20);assert.equal(r.typedPaidByStop[1].transfer,20);
+ assert.equal(r.accountedPaidByStop[1],10);
+});
+test('recorded journal transaction is not added to new expenditure and is removed from generic stage prepayment',()=>{
+ const b=booking({paidEUR:0,refundedEUR:0,totalEUR:45,
+   transactions:[tx('existing',20,{recordedElsewhere:true,journalReference:'Transport stage ledger entry'})]});
+ const r=reconcile({items:stops,bookings:[b],legacyPaidByStop:{1:20},legacyActualsByStop:{1:{transport:20}}});
+ assert.equal(r.bookingIntegrity,true);assert.equal(r.extraPaid,0);
+ assert.equal(r.typedPaidByStop[1].transfer,20);
+ assert.equal(r.accountedPaidByStop[1],0);
+});
+test('journal transaction without a matching stage category is not represented as verified',()=>{
+ const b=booking({paidEUR:0,refundedEUR:0,totalEUR:45,
+   transactions:[tx('existing',20,{recordedElsewhere:true,journalReference:'Travel journal'})]});
+ const r=reconcile({items:stops,bookings:[b],legacyPaidByStop:{1:20},legacyActualsByStop:{1:{lodging:20,transport:0}}});
+ assert.equal(r.bookingIntegrity,false);
+ assert.ok(r.warnings.some(w=>w.reason==='journal-category-payment-not-verifiable'));
+});
+test('old blanket payment retained when first new dated event is added',()=>{
+ const b=booking({paidEUR:25,refundedEUR:5,transactions:[tx('new',10)],
+  legacyPaidEUR:25,legacyRefundedEUR:5,legacyRecordedElsewhere:false});
+ const r=reconcile({items:stops,bookings:[b]});
+ assert.equal(r.extraPaid,30);assert.equal(r.typedPaidByStop[1].transfer,30);
+ assert.equal(r.records[0].paidEUR,35);assert.equal(r.records[0].refundedEUR,5);
+});
+test('a cancelled booking with an unrefunded event is treated as sunk spend only',()=>{
+ const b=booking({status:'cancelled',paidEUR:0,refundedEUR:0,totalEUR:45,transactions:[tx('one',20)]});
+ const r=reconcile({items:stops,bookings:[b]});
+ assert.equal(r.items[1].leg,80);assert.equal(r.extraPaid,20);
+ assert.equal(r.typedPaidByStop[1],undefined);
+});
