@@ -27,15 +27,19 @@ function validate(raw){
  if(raw.endDate&&!date(raw.endDate))errors.push('invalid-end-date');
  if(date(raw.startDate)&&date(raw.endDate)&&raw.endDate<=raw.startDate)errors.push('invalid-date-range');
  const inbound=type==='transport'&&raw.journeyOrigin===true;
+ const outbound=type==='transport'&&raw.journeyReturn===true;
  const travelMode=type==='transport'&&raw.travelMode==='flight'?'flight':'ground';
  const originPlace=String(raw.originPlace||'').trim().slice(0,160);
  const destinationAirport=String(raw.destinationAirport||'').trim().slice(0,120);
  const arrivalDate=String(raw.arrivalDate||'');
- if(type==='transport'&&!inbound&&!integer(raw.fromStageId))errors.push('invalid-origin');
- if(inbound){
-  if(!originPlace)errors.push('inbound-origin-required');
-  if(!date(arrivalDate)||date(raw.startDate)&&arrivalDate<raw.startDate)errors.push('invalid-inbound-arrival');
+ if(inbound&&outbound)errors.push('conflicting-journey-direction');
+ if(type==='transport'&&!inbound&&!outbound&&!integer(raw.fromStageId))errors.push('invalid-origin');
+ if(inbound||outbound){
+  if(!originPlace)errors.push('external-journey-origin-required');
+  if(!date(arrivalDate)||(date(raw.startDate)&&arrivalDate<raw.startDate))errors.push('invalid-external-arrival');
  }
+ const destinationPlace=String(raw.destinationPlace||'').trim().slice(0,160);
+ if(outbound&&!destinationPlace)errors.push('return-destination-required');
  if(travelMode!=='flight'&&Array.isArray(raw.stopovers)&&raw.stopovers.length)errors.push('stopovers-only-for-flights');
  const stopovers=Array.isArray(raw.stopovers)?raw.stopovers:[];
  if(raw.stopovers!==undefined&&!Array.isArray(raw.stopovers))errors.push('invalid-stopovers');
@@ -56,7 +60,7 @@ function validate(raw){
  if(!raw.startDate||!date(raw.startDate))errors.push('missing-date');
  if(status==='confirmed'&&(!raw.reference||!String(raw.reference).trim()))errors.push('confirmation-reference-required');
  if(typeof raw.reference==='string'&&raw.reference.length>200)errors.push('invalid-reference');
- if(!errors.length)return {ok:true,errors:[],record:{id:raw.id,type,status,stageId:raw.stageId,fromStageId:type==='transport'&&!inbound?raw.fromStageId:null,journeyOrigin:inbound,travelMode,originPlace:inbound?originPlace:'',
+ if(!errors.length)return {ok:true,errors:[],record:{id:raw.id,type,status,stageId:raw.stageId,fromStageId:type==='transport'&&!inbound&&!outbound?raw.fromStageId:null,journeyOrigin:inbound,journeyReturn:outbound,travelMode,originPlace:inbound||outbound?originPlace:'',destinationPlace:outbound?destinationPlace:'',
  destinationAirport:type==='transport'?destinationAirport:'',arrivalDate:type==='transport'?arrivalDate:'',
  stopovers:travelMode==='flight'?stopovers.map(x=>({place:String(x.place||'').trim().slice(0,160),arrivalDate:x.arrivalDate,departureDate:x.departureDate,overnight:x.overnight||'unknown'})):[],
  title:raw.title.trim(),provider:raw.provider.trim(),url:raw.url||'',reference:String(raw.reference||'').trim(),startDate:raw.startDate,endDate:raw.endDate||'',totalEUR:total,paidEUR:money(paid),refundedEUR:money(refunded),currency:converted.currency,totalAmount:converted.totalAmount,rateEUR:converted.rateEUR,rateCheckedAt:converted.rateCheckedAt,rateSource:converted.rateSource,transactions:converted.transactions,legacyPaidEUR:converted.legacyPaidEUR,legacyRefundedEUR:converted.legacyRefundedEUR,legacyRecordedElsewhere:converted.legacyRecordedElsewhere,recordedElsewhere:raw.recordedElsewhere===true,activityMode:raw.activityMode==='extra'?'extra':'allowance',notes:String(raw.notes||'').slice(0,500)}};
@@ -64,7 +68,7 @@ function validate(raw){
 }
 function reconcile({items=[],bookings=[],vol={},volunteerDetails={},legacyPaidByStop={},legacyActualsByStop={},originRequired=false}={}){
  const output=items.map(item=>({...item})),index=new Map(output.map((item,i)=>[item.i,i])),warnings=[],matched=[],paidByStop={},waitPaidByStop={},journalWaitPaidByStop={},typedPaidByStop={},journalTxByStop={},records=[],active=[];
- let extraPaid=0;
+ let extraPaid=0,returnBooking=null,returnPaymentEUR=0;
  const seen=new Set();
  const raw=Array.isArray(bookings)?bookings:[];
  for(const entry of raw){
@@ -92,7 +96,7 @@ function reconcile({items=[],bookings=[],vol={},volunteerDetails={},legacyPaidBy
   return true;
  };
  // Never let two confirmed bookings silently overwrite one another.
- const groupKey=b=>b.type==='transport'?('transport:'+b.stageId+(b.journeyOrigin?':inbound':':route')):b.type+':'+b.stageId;
+ const groupKey=b=>b.type==='transport'?('transport:'+b.stageId+(b.journeyOrigin?':inbound':b.journeyReturn?':return':':route')):b.type+':'+b.stageId;
  const groups=new Map();
  for(const b of active){const key=groupKey(b);groups.set(key,(groups.get(key)||[]).concat(b))}
  for(const b of active){
@@ -120,6 +124,23 @@ function reconcile({items=[],bookings=[],vol={},volunteerDetails={},legacyPaidBy
   }
   if(b.type==='transport'){
    const position=index.get(b.stageId),prev=output[position-1];
+   if(b.journeyReturn){
+    const lastTravel=output.filter(x=>!x.isReturn&&Number(x.days)>0).at(-1);
+    if(!lastTravel||lastTravel.i!==b.stageId||b.startDate!==lastTravel.end){
+     warnings.push({id:b.id,reason:'return-departure-date-or-origin-changed'});continue;
+    }
+    const returnMarker=output.at(-1)?.isReturn?output.at(-1):null;
+    if(returnMarker){returnMarker.leg=0;returnMarker.legMin=0;returnMarker.legMax=0;}
+    returnBooking={id:b.id,totalEUR:b.totalEUR,stageId:b.stageId,destination:b.destinationPlace,stopovers:b.stopovers};
+    returnPaymentEUR=money(b.paidEUR-b.refundedEUR);
+    if(b.travelMode==='flight'&&b.stopovers.some(stop=>stop.departureDate>stop.arrivalDate&&['unknown','separate'].includes(stop.overnight)))
+     warnings.push({id:b.id,reason:'layover-overnight-cost-not-confirmed'});
+    matched.push(b.id);
+    // Return fare is a fixed liability, not a stop's onward transfer or stay.
+    // Only the fixed-return component consumes this payment; the total paid amount
+    // is already present in extraPaid or journal actuals.
+    continue;
+   }
    if(b.journeyOrigin){
     if(position!==0||!b.arrivalDate||b.arrivalDate!==(item.arrival||item.start)){
      warnings.push({id:b.id,reason:'inbound-arrival-date-or-destination-changed'});continue;
@@ -267,7 +288,7 @@ function reconcile({items=[],bookings=[],vol={},volunteerDetails={},legacyPaidBy
  }
  const knownPayment=records.reduce((sum,b)=>sum+b.paidEUR-b.refundedEUR,0);
  const eventJournalTotal=id=>Object.values(journalTxByStop[id]||{}).reduce((n,v)=>n+v,0);
- return {items:output,extraPaid,paidByStop,typedPaidByStop,journalTxByStop,waitPaidByStop:Object.fromEntries([...new Set([...Object.keys(waitPaidByStop),...Object.keys(journalWaitPaidByStop)])].map(i=>[i,money((waitPaidByStop[i]||0)+(journalWaitPaidByStop[i]||0))])),matched,records,warnings,
+ return {items:output,extraPaid,returnBooking,returnPaymentEUR,paidByStop,typedPaidByStop,journalTxByStop,waitPaidByStop:Object.fromEntries([...new Set([...Object.keys(waitPaidByStop),...Object.keys(journalWaitPaidByStop)])].map(i=>[i,money((waitPaidByStop[i]||0)+(journalWaitPaidByStop[i]||0))])),matched,records,warnings,
   confirmed:active.length,recordedPayment:money(knownPayment),
   bookingIntegrity:warnings.length===0,
   // Warning: payments for unmatched bookings remain sunk expenditure, NOT a future prepayment.
