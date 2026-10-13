@@ -30,3 +30,13 @@ test('day totals change explicitly, and unclear fare is never claimed verified',
  assert.ok(r.options[1].daysDelta<0);
  assert.equal(r.options[1].complete,false);
 });
+
+test('total modeled savings equals duration changes plus volunteering lodging value, not two extra maximums',()=>{
+ const r=optimize({items:[s(0,3),s(1,32,24),s(2,8,17),s(3,33,20),s(4,3)],baselineTotal:16000,goal:8000});
+ for(const variant of r.options){
+  assert.equal(variant.modelSaving,Math.round((variant.durationSaving+variant.hostSaving)*100)/100);
+  assert.equal(variant.verifiedSavings,null);
+ }
+ const host=r.options.find(x=>x.mode==='volunteer');
+ assert.ok(host.hostNights>0);assert.ok(host.hostSaving>0);
+});
