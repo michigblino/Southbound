@@ -5,6 +5,9 @@ async function mode(page,next){
   await page.locator('#sb-theme-toggle').click();
  }
  await expect(page.locator('html')).toHaveAttribute('data-sb-theme',next);
+ await expect(page.locator('.sb-budget-summary')).toBeVisible();
+ await expect(page.locator('.sb-brand-icon--light')).toHaveCount(1);
+ await expect(page.locator('.sb-brand-icon--dark')).toHaveCount(1);
  await expect.poll(async()=>page.locator('#sb2 .sb-overview-hero').evaluate(x=>
    Number(getComputedStyle(x,'::after').opacity)),{timeout:2500}).toBe(next==='light'?0:1);
 }
@@ -13,6 +16,8 @@ test('the four requested brand swatches power actual UI tokens, not an unrelated
  await expect(page.locator('#sb-theme-toggle')).toBeVisible();
  for(const selected of ['light','dark']){
   await mode(page,selected);
+  await expect.poll(()=>page.evaluate(()=>getComputedStyle(document.body).color),{timeout:3000})
+   .toBe(selected==='light'?'rgb(23, 56, 76)':'rgb(247, 240, 236)');
   const computed=await page.evaluate(()=>{
    const sheet=getComputedStyle(document.documentElement);
    const surface=document.querySelector('.sb-budget-summary');
