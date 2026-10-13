@@ -746,7 +746,7 @@ html[data-sb-theme="light"] body::after{opacity:0}
   border:1px solid rgba(255,255,255,.16)!important;
   box-shadow:0 5px 16px rgba(16,31,40,.20),inset 0 1px 0 rgba(255,255,255,.26)!important;
 }
-#sb2 button:not(.primary):not(.active):not(.sb-booking-shortcuts button){
+#sb2 button:not(.primary):not(.active){
   background-color:var(--sb-surface);
   color:var(--text);
   border-color:var(--line);
@@ -938,3 +938,5 @@ html[data-sb-theme="light"] #sb2 .sb-overview-hero::after{opacity:0}
 @media(prefers-reduced-motion:reduce){
  #sb2 .sb-brand .sb-brand-icon img,#sb2 .sb-overview-hero::after{transition:none!important}
 }
+/* Tabs must remain precisely aligned while hovering; their glass highlight provides feedback. */
+#sb2 .topnav button:hover,#sb2 .topnav button:active{transform:none!important}
