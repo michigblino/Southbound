@@ -447,7 +447,20 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>n
    field('stageId').value=String(prefill.stageId);
    dates();
    if(prefill.type==='fixed')field('title').value=fixedLabels[prefill.fixedKind]||'Fixkosten';
-   if(prefill.type==='transport'&&route.at(-1)?.isReturn&&prefill.stageId===route.at(-1)?.i){
+   if(prefill.type==='transport'&&prefill.journeyPreset==='return'){
+    field('stageId').value=String(lastTravel?.i??prefill.stageId);
+    field('journeyOrigin').value='return';field('travelMode').value='flight';
+    field('originPlace').value=lastTravel?.name||'';
+    field('destinationPlace').value=tripOrigin;
+    field('startDate').value=lastTravel?.end||'';
+    field('arrivalDate').value=lastTravel?.end||'';
+    field('title').value='Rückflug '+(lastTravel?.name||'Reiseziel')+' → '+tripOrigin;
+   }else if(prefill.type==='transport'&&prefill.journeyPreset==='inbound'){
+    field('stageId').value=String(route[0]?.i??prefill.stageId);
+    field('journeyOrigin').value='inbound';field('travelMode').value='flight';
+    field('originPlace').value=tripOrigin;field('startDate').value='';
+    field('title').value='Anreiseflug '+tripOrigin+' → '+(route[0]?.name||'Reiseziel');
+   }else if(prefill.type==='transport'&&route.at(-1)?.isReturn&&prefill.stageId===route.at(-1)?.i){
     field('stageId').value=String(lastTravel?.i??prefill.stageId);
     field('journeyOrigin').value='return';field('travelMode').value='flight';
     field('originPlace').value=lastTravel?.name||'';
