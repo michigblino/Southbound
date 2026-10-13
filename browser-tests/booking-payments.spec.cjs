@@ -4,6 +4,7 @@ const tx=(page,k)=>page.locator('#sb-bookings-editor [data-bk-tx="'+k+'"]');
 test('manual BRL quote and BRL deposit use different exchange rates with evidence',async({page})=>{
  await page.goto('/',{waitUntil:'domcontentloaded'});
  await page.locator('[data-view="bookings"]').click();
+ await page.locator('[data-bk-payment-details] summary').click();
  await f(page,'type').selectOption('transport');
  await f(page,'stageId').selectOption('1');
  await f(page,'status').selectOption('confirmed');
@@ -52,6 +53,7 @@ test('adding a dated EUR payment retains prior aggregate payments',async({page})
  });
  await page.reload({waitUntil:'domcontentloaded'});
  await page.locator('[data-view="bookings"]').click();
+ await page.locator('[data-bk-payment-details] summary').click();
  await page.locator('[data-bk-edit]').first().click();
  await expect(f(page,'paidEUR')).toHaveValue('25');
  await tx(page,'date').fill('2026-10-13');
@@ -70,6 +72,7 @@ test('adding a dated EUR payment retains prior aggregate payments',async({page})
 test('journal-linked payment requires its own reference and refund remains separate',async({page})=>{
  await page.goto('/',{waitUntil:'domcontentloaded'});
  await page.locator('[data-view="bookings"]').click();
+ await page.locator('[data-bk-payment-details] summary').click();
  await f(page,'title').fill('Bus with linked journal payment');
  await f(page,'provider').fill('Test operator');
  await f(page,'totalEUR').fill('60');
@@ -87,6 +90,7 @@ test('the new currency and payment fields fit a 360px mobile booking view',async
  await page.setViewportSize({width:360,height:740});
  await page.goto('/',{waitUntil:'domcontentloaded'});
  await page.locator('[data-view="bookings"]').click();
+ await page.locator('[data-bk-payment-details] summary').click();
  await f(page,'currency').fill('COP');
  await tx(page,'currency').fill('COP');
  await expect(f(page,'rateEUR')).toBeVisible();
