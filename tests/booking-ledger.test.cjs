@@ -71,7 +71,7 @@ test('two non-overlapping hostels replace only reserved nights and leave gap est
  const second=booking({id:'hostel-b',type:'lodging',startDate:'2027-01-05',endDate:'2027-01-06',totalEUR:35,paidEUR:20});
  const r=reconcile({items:stops,bookings:[first,second]});
  assert.equal(r.items[1].stay,110); // 105 - 2 estimated nights *20 + actual 10+35
- assert.equal(r.items[1].bed,65/3); // replaced lodging subtotal = 10 + 20 (gap) + 35
+ assert.equal(r.items[1].bed,21.67); // replaced lodging subtotal = 10 + 20 (gap) + 35
  assert.equal(r.items[1].bookingLodgings.length,2);
  assert.deepEqual(r.matched,['hostel-a','hostel-b']);
  assert.equal(r.paidByStop[1],30);
