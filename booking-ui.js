@@ -5,6 +5,15 @@ const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const labels={transport:'Transfer',lodging:'Unterkunft',volunteering:'Volunteering',activity:'Erlebnis'};
 const statuses={planned:'Vorgemerkt',requested:'Angefragt',confirmed:'Bestätigt',cancelled:'Storniert'};
 const icons={transport:'↗',lodging:'⌂',volunteering:'♡',activity:'◇'};
+const shortcutPaths={
+ inbound:'<path d="m21 3-8 18-3-8-8-3 19-7Z"/><path d="m10 13 4-4"/>',
+ return:'<path d="m21 3-8 18-3-8-8-3 19-7Z"/><path d="m10 13 4-4"/>',
+ transport:'<rect x="4" y="3" width="16" height="17" rx="2"/><path d="M4 12h16M8 20v2m8-2v2M8 7h.01M16 7h.01"/>',
+ lodging:'<path d="M3 4v17M3 16h18v5M3 10h15a3 3 0 0 1 3 3v3"/><path d="M7 10V7h5v3"/>',
+ volunteering:'<path d="M20.8 8.6c0 4.2-8.8 10.1-8.8 10.1S3.2 12.8 3.2 8.6a4.3 4.3 0 0 1 8.8-1 4.3 4.3 0 0 1 8.8 1Z"/>',
+ activity:'<path d="m2 20 7-13 4 7 3-5 6 11H2Z"/>'
+};
+const shortcutIcon=kind=>'<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"'+(kind==='return'?' style="transform:rotate(180deg)"':'')+'>'+shortcutPaths[kind]+'</svg>';
 
 const typeCopy={
  transport:{hint:'Transfer: Startort, Ziel und Abfahrt müssen mit deiner Route übereinstimmen. Nur eine bestätigte passende Verbindung ersetzt den geschätzten Fahrpreis.',captions:{stageId:'Ziel / Etappe',title:'Verbindung / Ticket',provider:'Verkehrsanbieter',startDate:'Abfahrt / Reisetag',reference:'Ticket- oder Buchungsnummer'},placeholders:{title:'z. B. Bus Medellín → Salento',provider:'z. B. Busunternehmen',reference:'Ticket- oder Buchungsnummer'}},
@@ -13,13 +22,22 @@ const typeCopy={
  activity:{hint:'Erlebnis: Erfasse den Veranstaltungstag und wähle, ob der Preis in der Aktivitätenpauschale enthalten oder zusätzlich einzuplanen ist.',captions:{stageId:'Ort / Etappe',title:'Erlebnis / Ausflug',provider:'Veranstalter',startDate:'Datum des Erlebnisses',reference:'Ticket- oder Buchungsnummer'},placeholders:{title:'z. B. Wanderung mit Guide',provider:'Name des Veranstalters',reference:'Ticketcode'}}
 };
 const baseCaptions={stageId:'Ziel / Etappe',title:'Bezeichnung',provider:'Anbieter / Host',startDate:'Beginn / Abfahrt',endDate:'Ende / Check-out',reference:'Referenz / Bestätigung'};
-function render({route=[],bookings=[],ledger,baseCurrency='EUR',fxQuotes=null}={}){
+function render({route=[],bookings=[],ledger,baseCurrency='EUR',fxQuotes=null,tripOrigin='München (MUC)',fromStage=false}={}){
  const available=route.filter(x=>x&&x.i!==undefined),defaultId=available[0]?.i??0;
+ const lastTravel=[...available].reverse().find(x=>!x.isReturn&&Number(x.days)>0)||available.at(-1);
  const opts=available.map(x=>'<option value="'+x.i+'">'+esc(x.name)+'</option>').join('');
  const warnings=ledger?.warnings||[];
  const records=Array.isArray(bookings)?bookings:[];
  const total=ledger?.recordedPayment||0,real=ledger?.extraPaid||0;
- return '<div class="panel"><div class="eyebrow">Buchungen · Beta</div><h2>Deine Buchungszentrale</h2>'+
+ const chooser=(fromStage?'':'<div class="panel sb-booking-choose"><h2>Neue Buchung erfassen</h2><p class="small">Wähle den Buchungstyp. Die Felder passen sich an – bestätigte Buchungen musst du weiterhin selbst überprüfen.</p><div class="sb-booking-shortcuts">'+
+ '<button type="button" data-bk-preset="inbound">'+shortcutIcon('inbound')+'<b>Anreiseflug</b><small>'+esc(tripOrigin)+' → '+esc(available[0]?.name||'Reiseziel')+'</small></button>'+
+ '<button type="button" data-bk-preset="return">'+shortcutIcon('return')+'<b>Rückreise</b><small>'+esc(lastTravel?.name||'Letztes Reiseziel')+' → '+esc(tripOrigin)+'</small></button>'+
+ '<button type="button" data-bk-preset="transport">'+shortcutIcon('transport')+'<b>Transfer</b><small>Bus, Bahn, Flug</small></button>'+
+ '<button type="button" data-bk-preset="lodging">'+shortcutIcon('lodging')+'<b>Unterkunft</b><small>Hostel, Hotel</small></button>'+
+ '<button type="button" data-bk-preset="volunteering">'+shortcutIcon('volunteering')+'<b>Volunteering</b><small>Host-Zusage</small></button>'+
+ '<button type="button" data-bk-preset="activity">'+shortcutIcon('activity')+'<b>Erlebnis</b><small>Tour, Ticket</small></button>'+
+ '</div></div>');
+ return chooser+'<div class="panel"><div class="eyebrow">Buchungen · Beta</div><h2>Deine Buchungszentrale</h2>'+
  '<p class="small">Tickets, Host-Anfragen, Unterkünfte und Ausflüge festhalten. Noch <b>keine Buchung und keine Zahlung innerhalb von Southbound</b>. Bestätigt bedeutet hier: von dir als bestätigt eingetragen, nicht unabhängig vom Anbieter verifiziert. Aktuelle Kurse sind Tages-Referenzwerte, nicht automatisch dein tatsächlicher Bankkurs.</p>'+
  '<div class="sb-booking-stats"><div><small>Gespeicherte Einträge</small><b>'+records.length+'</b></div><div><small>Als bestätigt erfasst</small><b>'+Number(ledger?.confirmed||0)+'</b></div><div><small>Zahlungen (netto) in Buchungen</small><b>'+euro(total)+'</b></div></div>'+
  '<p class="small">Davon '+euro(real)+' noch nicht im Reisejournal verbucht – nur dieser Teil wird zusätzlich als bereits bezahlt gezählt. Bereits anderswo erfasste Beträge werden nicht erneut addiert. Wechselkurse, Zahlungen und Journal-Referenzen sind von dir eingetragen und nicht automatisch überprüft.</p>'+
@@ -27,22 +45,31 @@ function render({route=[],bookings=[],ledger,baseCurrency='EUR',fxQuotes=null}={
  '</div><div class="panel"><h2>Gespeicherte Buchungen</h2>'+
  (records.length?'<div class="sb-booking-list">'+records.map(b=>{
   const place=available.find(x=>x.i===b.stageId)?.name||'Etappe '+b.stageId;
+  const description=b.type==='transport'&&b.journeyOrigin?(b.originPlace||tripOrigin)+' → '+place:b.type==='transport'&&b.journeyReturn?(b.originPlace||place)+' → '+(b.destinationPlace||tripOrigin):place;
+  const stopoverLabel=Array.isArray(b.stopovers)&&b.stopovers.length?' · via '+b.stopovers.map(x=>x.place+(x.departureDate>x.arrivalDate?' (Übernachtung)':'')).join(', '):'';
   const paid=Number(b.paidEUR||0)-Number(b.refundedEUR||0);
   const converted=String(b.currency||'EUR')!=='EUR'&&b.totalAmount!==null&&b.totalAmount!==undefined?
    esc(b.totalAmount)+' '+esc(b.currency)+' ≈ '+euro(b.totalEUR):b.totalEUR===null?'Preis unbekannt':euro(b.totalEUR);
-  return '<div class="sb-booking-card"><span class="sb-booking-symbol" aria-hidden="true">'+esc(icons[b.type]||'·')+'</span><div class="sb-booking-info"><b>'+esc(b.title||'Eintrag')+'</b><small>'+esc(labels[b.type]||b.type)+' · '+esc(place)+' · '+esc(b.startDate||'ohne Datum')+'</small><small>'+esc(b.provider||'')+' · '+esc(statuses[b.status]||'Unbekannt')+' · '+converted+' · '+euro(paid)+' netto bezahlt</small></div><button type="button" data-bk-edit="'+esc(b.id)+'" class="sb-booking-edit">Bearbeiten</button></div>'
+  return '<div class="sb-booking-card"><span class="sb-booking-symbol" aria-hidden="true">'+esc(icons[b.type]||'·')+'</span><div class="sb-booking-info"><b>'+esc(b.title||'Eintrag')+'</b><small>'+esc(b.type==='transport'&&b.journeyOrigin?'Anreiseflug':b.type==='transport'&&b.journeyReturn?'Rückreise':labels[b.type]||b.type)+' · '+esc(description)+esc(stopoverLabel)+' · '+esc(b.startDate||'ohne Datum')+'</small><small>'+esc(b.provider||'')+' · '+esc(statuses[b.status]||'Unbekannt')+' · '+converted+' · '+euro(paid)+' netto bezahlt</small></div><button type="button" data-bk-edit="'+esc(b.id)+'" class="sb-booking-edit">Bearbeiten</button></div>'
  }).join('')+'</div>':'<p class="small">Noch keine Buchungen hinterlegt. Du kannst jetzt die erste Reiseleistung erfassen.</p>')+
- '</div><details class="panel" id="sb-bookings-editor"'+(records.length?'':' open')+'><summary><b>Buchung erfassen oder bearbeiten</b></summary>'+
+ '</div>'+'<details class="panel" id="sb-bookings-editor"'+(fromStage?' open':'')+'><summary><b data-bk-editor-title>Buchung erfassen oder bearbeiten</b></summary>'+
  '<p class="small">Nur tatsächlich erhaltene Buchungsbestätigungen als „Bestätigt“ markieren. Bei Volunteering erfolgt die eigentliche Host-Zusage weiterhin über „Etappen“.</p>'+
  '<p class="small" data-bk-context role="note"></p><div class="sb-booking-form" role="group" aria-label="Buchungseintrag">'+
  '<label>Art<select data-bk="type"><option value="transport">Transfer</option><option value="lodging">Unterkunft</option><option value="volunteering">Volunteering</option><option value="activity">Erlebnis</option></select></label>'+
  '<label>Status<select data-bk="status"><option value="planned">Vorgemerkt</option><option value="requested">Angefragt / reserviert</option><option value="confirmed">Bestätigt (selbst eingetragen)</option><option value="cancelled">Storniert</option></select></label>'+
  '<label><span data-bk-caption="stageId">Ziel / Etappe</span><select data-bk="stageId">'+opts+'</select></label>'+
- '<label data-bk-for="transport">Startort<select data-bk="fromStageId"><option value="">Noch auswählen</option>'+opts+'</select></label>'+
+ '<label data-bk-for="transport">Verbindung<select data-bk="journeyOrigin"><option value="route">Zwischen Reiseetappen</option><option value="inbound">Anreise von außerhalb der Route</option><option value="return">Rückreise zum Heimatort</option></select></label>'+
+ '<label data-bk-for="transport" data-bk-conditional="route-origin">Startetappe<select data-bk="fromStageId"><option value="">Noch auswählen</option>'+opts+'</select></label>'+
+ '<label data-bk-for="transport" data-bk-conditional="inbound-origin" hidden style="display:none"><span data-bk-origin-caption>Startflughafen / Startort</span><input data-bk="originPlace" maxlength="160" value="'+esc(tripOrigin)+'" placeholder="z. B. München (MUC)"></label>'+
+ '<label data-bk-for="transport" data-bk-conditional="return-destination" hidden style="display:none">Heimatflughafen / Rückkehrort<input data-bk="destinationPlace" maxlength="160" value="'+esc(tripOrigin)+'" placeholder="z. B. München (MUC)"></label>'+
+ '<label data-bk-for="transport">Transportmittel<select data-bk="travelMode"><option value="ground">Bus / Bahn / Sonstiges</option><option value="flight">Flug</option></select></label>'+
  '<label><span data-bk-caption="title">Bezeichnung</span><input data-bk="title" maxlength="160" placeholder="z. B. Bus Medellín → Salento"></label>'+
  '<label><span data-bk-caption="provider">Anbieter / Host</span><input data-bk="provider" maxlength="160" placeholder="Betreiber oder Hostel"></label>'+
  '<label><span data-bk-caption="startDate">Beginn / Abfahrt</span><input type="date" data-bk="startDate"></label>'+
  '<label data-bk-for="lodging volunteering" hidden style="display:none"><span data-bk-caption="endDate">Ende / Check-out</span><input type="date" data-bk="endDate"></label>'+
+ '<label data-bk-for="transport" data-bk-conditional="flight" hidden style="display:none">Ankunftstag am Ziel<input type="date" data-bk="arrivalDate"></label>'+
+ '<label data-bk-for="transport" data-bk-conditional="flight" hidden style="display:none">Zielflughafen (optional)<input data-bk="destinationAirport" maxlength="120" placeholder="z. B. São Paulo GRU"></label>'+
+ '<div class="sb-booking-stopovers" data-bk-for="transport" data-bk-conditional="flight" hidden style="display:none"><h3>Zwischenstopps / Layover</h3><p class="small">Übernachtungen im Ticket sind abgedeckt; separate oder unbekannte Hotelkosten bleiben im All-in-Budget offen, bis sie separat erfasst sind.</p><div data-bk-stopover-list></div><button type="button" data-bk-add-stopover>+ Zwischenstopp hinzufügen</button></div>'+
  '<label>Preiswährung (ISO-Code)<input data-bk="currency" maxlength="3" value="'+esc(baseCurrency)+'" placeholder="EUR, BRL, COP, USD ..."></label>'+
  '<label>Gesamtpreis inkl. Gebühren (gewählte Währung)<input type="number" min="0" step="any" data-bk="totalEUR" placeholder="Leer = unbekannt"></label>'+
  '<div data-bk-fx hidden style="display:none"><p class="small">Southbound trägt den letzten verfügbaren Tages-Referenzkurs automatisch ein. <b>1 Einheit der Preiswährung = wie viele EUR?</b> Für tatsächlich gezahlte Beträge den Bank-/Kartenauszug bevorzugen. Kurs, Quelle und Datum bleiben editierbar.</p>'+
@@ -55,7 +82,7 @@ function render({route=[],bookings=[],ledger,baseCurrency='EUR',fxQuotes=null}={
  '<label>HTTPS-Buchungslink<input type="url" data-bk="url" placeholder="https://..."></label>'+
  '<label data-bk-for="activity" hidden style="display:none">Aktivitäten im Budget<select data-bk="activityMode"><option value="allowance">Mit bestehendem Ausflugsbudget verrechnen</option><option value="extra">Zusätzliche Ausgabe</option></select></label>'+
  '<label class="sb-booking-check"><input type="checkbox" data-bk="recordedElsewhere"> Bisherige pauschale Zahlung bereits im Reisejournal erfasst</label>'+
- '<div class="sb-booking-notes"><h3>Zahlungen & Erstattungen</h3><p class="small">Für Fremdwährungen wird ein Tages-Referenzkurs automatisch vorgeschlagen. Der tatsächlich belastete Kartenkurs kann abweichen; überschreibe den Vorschlag mit dem Bankwert, falls vorhanden. Neue Einträge werden erst mit „Eintrag speichern“ übernommen.</p><div data-bk-payment-list></div>'+
+ '<details class="sb-booking-notes" data-bk-payment-details><summary><b>Einzelzahlungen & Erstattungen (optional)</b></summary><h3>Zahlungen & Erstattungen</h3><p class="small">Für Fremdwährungen wird ein Tages-Referenzkurs automatisch vorgeschlagen. Der tatsächlich belastete Kartenkurs kann abweichen; überschreibe den Vorschlag mit dem Bankwert, falls vorhanden. Neue Einträge werden erst mit „Eintrag speichern“ übernommen.</p><div data-bk-payment-list></div>'+
  '<div class="sb-booking-form" role="group" aria-label="Zahlung hinzufügen">'+
  '<label>Art<select data-bk-tx="kind"><option value="payment">Zahlung</option><option value="refund">Erstattung</option></select></label>'+
  '<label>Buchungstag der Zahlung<input type="date" data-bk-tx="date"></label>'+
@@ -64,17 +91,18 @@ function render({route=[],bookings=[],ledger,baseCurrency='EUR',fxQuotes=null}={
  '<div data-bk-tx-fx hidden style="display:none"><label>EUR je Währungseinheit<input type="number" step="any" min="0" data-bk-tx="rateEUR" placeholder="Tatsächlicher Kurs"></label><label>Datum des Zahlungskurses<input type="date" data-bk-tx="rateCheckedAt"></label><label>Quelle der Umrechnung<input data-bk-tx="rateSource" maxlength="160" placeholder="Bank / Kartenabrechnung"></label></div>'+
  '<label class="sb-booking-check"><input type="checkbox" data-bk-tx="recordedElsewhere"> Bereits im Reisejournal erfasst</label>'+
  '<label data-bk-journal hidden style="display:none">Journal-Referenz zur manuellen Zuordnung<input data-bk-tx="journalReference" maxlength="160" placeholder="z. B. Kartenzahlung im Reisejournal"></label>'+
- '</div><button type="button" data-bk-add-payment>Zahlung / Erstattung vormerken</button><p data-bk-payment-feedback class="small" role="status"></p></div>'+
+ '</div><button type="button" data-bk-add-payment>Zahlung / Erstattung vormerken</button><p data-bk-payment-feedback class="small" role="status"></p></details>'+
  '<label class="sb-booking-notes">Notiz<textarea data-bk="notes" rows="2" maxlength="500" placeholder="Gepäck, Stornierung, enthaltene Leistungen ..."></textarea></label>'+
  '</div><p id="sb-booking-feedback" class="small" role="status"></p>'+
  '<div class="controls"><button type="button" data-bk-save>Eintrag speichern</button><button type="button" data-bk-reset>Neue Buchung</button><button type="button" data-bk-delete hidden>Eintrag löschen</button></div>'+
  '<p class="small">Unterkünfte können pro Etappe auf mehrere Buchungen mit unterschiedlichen Check-in/Check-out-Daten aufgeteilt werden. Bestätigte, nicht überlappende Nächte ersetzen nur die zugehörigen Unterkunftsschätzungen. Vor einer Host-Zusage liegende Hostel-Nächte werden als Wartekosten angerechnet, nicht als kostenlose Host-Nächte. Aktivitäten werden nach ihrer Budgetart verrechnet; Bewerbungen sind keine Host-Zusagen.</p>'+
  '</details>';
 }
-function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>null,getBaseCurrency=()=> 'EUR',initialStageId=null,prefill=null}={}){
+function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>null,getBaseCurrency=()=> 'EUR',initialStageId=null,prefill=null,tripOrigin='München (MUC)',fromStage=false}={}){
  const form=root.querySelector('#sb-bookings-editor');if(!form)return;
  const field=k=>form.querySelector('[data-bk="'+k+'"]'),feedback=form.querySelector('#sb-booking-feedback');
- let editing=null,events=[],legacyPaid=0,legacyRefunded=0,legacyJournal=false;
+ let editing=null,events=[],legacyPaid=0,legacyRefunded=0,legacyJournal=false,stopovers=[];
+ const lastTravel=[...route].reverse().find(x=>!x.isReturn&&Number(x.days)>0)||route.at(-1);
  const deleteButton=root.querySelector('[data-bk-delete]');
  const tx=k=>form.querySelector('[data-bk-tx="'+k+'"]');
  const fxPanel=form.querySelector('[data-bk-fx]'),txFx=form.querySelector('[data-bk-tx-fx]');
@@ -119,6 +147,43 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>n
  };
 
  const routeLookup=i=>route.find(x=>x.i===i);
+ const layoversRoot=form.querySelector('[data-bk-stopover-list]');
+ const readStopovers=()=>field('type').value!=='transport'||field('travelMode').value!=='flight'?[]:
+  [...layoversRoot.querySelectorAll('[data-bk-layover-row]')].map(row=>({
+   place:row.querySelector('[data-bk-layover-place]').value.trim(),
+   arrivalDate:row.querySelector('[data-bk-layover-arrival]').value,
+   departureDate:row.querySelector('[data-bk-layover-departure]').value,
+   overnight:row.querySelector('[data-bk-layover-overnight]').value
+  }));
+ const showStopovers=()=>{
+  layoversRoot.innerHTML=stopovers.map((x,i)=>'<div class="sb-booking-layover" data-bk-layover-row>'+
+  '<div class="sb-booking-layover-title"><b>Zwischenstopp '+(i+1)+'</b><button type="button" data-bk-remove-stopover="'+i+'">Entfernen</button></div>'+
+  '<label>Flughafen / Ort<input data-bk-layover-place maxlength="160" value="'+esc(x.place||'')+'" placeholder="z. B. Casablanca (CMN)"></label>'+
+  '<label>Ankunft (Ortsdatum)<input type="date" data-bk-layover-arrival value="'+esc(x.arrivalDate||'')+'"></label>'+
+  '<label>Weiterflug (Ortsdatum)<input type="date" data-bk-layover-departure value="'+esc(x.departureDate||'')+'"></label>'+
+  '<label>Übernachtungskosten<select data-bk-layover-overnight>'+
+  [['unknown','Noch unbekannt'],['included','Hotel im Ticket enthalten'],['none','Kein Hotel benötigt (z. B. Flughafen)'],['separate','Hotel separat zu zahlen']].map(([v,l])=>'<option value="'+v+'"'+(x.overnight===v?' selected':'')+'>'+l+'</option>').join('')+
+  '</select></label></div>').join('');
+  layoversRoot.querySelectorAll('[data-bk-remove-stopover]').forEach(btn=>btn.onclick=()=>{
+   stopovers=readStopovers();stopovers.splice(Number(btn.dataset.bkRemoveStopover),1);showStopovers();
+  });
+ };
+ const showTransportFields=()=>{
+  const type=field('type').value,transport=type==='transport',inbound=transport&&field('journeyOrigin').value==='inbound',outbound=transport&&field('journeyOrigin').value==='return';
+  if(inbound||outbound)field('travelMode').value='flight';
+  for(const el of form.querySelectorAll('[data-bk-conditional]')){
+   const code=el.dataset.bkConditional;
+   const shown=transport&&(code==='inbound-origin'?(inbound||outbound):code==='return-destination'?outbound:code==='route-origin'?!inbound&&!outbound:field('travelMode').value==='flight');
+   el.hidden=!shown;el.style.display=shown?'':'none';
+   for(const control of el.querySelectorAll('input,select,textarea'))control.disabled=!shown;
+  }
+  form.querySelector('[data-bk-origin-caption]').textContent=outbound?'Abflughafen / Startort':'Startflughafen / Startort';
+  form.querySelector('[data-bk-caption="stageId"]').textContent=outbound?'Letzte Reiseetappe':inbound?'Ankunftsetappe':(typeCopy[type]||typeCopy.transport).captions.stageId||'Ziel / Etappe';
+  const header=form.querySelector('[data-bk-editor-title]');if(header)header.textContent=editing?'Buchung bearbeiten':outbound?'Rückreise erfassen':inbound?'Anreiseflug erfassen':(labels[type]||'Buchung')+' erfassen';
+  const note=form.querySelector('[data-bk-context]');
+  if(outbound&&note)note.textContent='Rückreise von der letzten Etappe nach '+(field('destinationPlace').value||tripOrigin)+'. Abflug am Ende der Etappe, mit optionalen Zwischenstopps und eigenem Ankunftsdatum. Ein gebuchtes Ticket ersetzt die alte Rückreiseschätzung.';
+  if(inbound&&note)note.textContent='Anreiseflug ab '+(field('originPlace').value||tripOrigin)+' zur ersten Etappe. Abflug kann vor Ankunft liegen. Zwischenstopps direkt am Ticket erfassen. Keine automatische Routenänderung.';
+ };
  const syncType=()=>{
   const type=field('type').value,info=typeCopy[type]||typeCopy.transport;
   const note=form.querySelector('[data-bk-context]');if(note)note.textContent=info.hint;
@@ -134,12 +199,14 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>n
   for(const key of ['title','provider','reference']){
    const input=field(key);if(input)input.placeholder=info.placeholders[key]||'';
   }
+  showTransportFields();
  };
  const reset=()=>{
-  editing=null;events=[];legacyPaid=0;legacyRefunded=0;legacyJournal=false;
-  if(deleteButton)deleteButton.hidden=true;for(const k of ['title','provider','reference','url','endDate','notes','totalEUR','rateEUR','rateCheckedAt','rateSource'])field(k).value='';
+  editing=null;events=[];legacyPaid=0;legacyRefunded=0;legacyJournal=false;stopovers=[];showStopovers();
+  if(deleteButton)deleteButton.hidden=true;for(const k of ['title','provider','reference','url','endDate','notes','totalEUR','rateEUR','rateCheckedAt','rateSource','arrivalDate','destinationAirport','destinationPlace'])field(k).value='';
   for(const k of ['paidEUR','refundedEUR'])field(k).value='0';
   field('type').value='transport';field('status').value='planned';field('activityMode').value='allowance';field('currency').value=getBaseCurrency();
+  field('journeyOrigin').value='route';field('travelMode').value='ground';field('originPlace').value=tripOrigin;field('destinationPlace').value=tripOrigin;
   for(const k of ['date','amount','rateEUR','rateCheckedAt','rateSource','journalReference'])tx(k).value='';
   tx('kind').value='payment';tx('currency').value=getBaseCurrency();tx('recordedElsewhere').checked=false;
   field('recordedElsewhere').checked=false;
@@ -153,12 +220,20 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>n
   field('startDate').value=waitingLodging?(item?.arrival||''):(item?.arrival||item?.start||'');
   field('endDate').value=waitingLodging?(item?.start||''):(item?.end||'');
   field('fromStageId').value=at>0?String(route[at-1].i):'';
+  field('arrivalDate').value=item?.arrival||item?.start||'';
  };
  const fill=b=>{
   editing=b.id;if(deleteButton)deleteButton.hidden=false;
   for(const k of ['type','status','stageId','fromStageId','title','provider','reference','url','startDate','endDate','totalEUR','paidEUR','refundedEUR','activityMode','notes']){
    if(field(k))field(k).value=b[k]??'';
   }
+  field('journeyOrigin').value=b.journeyOrigin===true?'inbound':b.journeyReturn===true?'return':'route';
+  field('travelMode').value=b.travelMode==='flight'?'flight':'ground';
+  field('originPlace').value=b.originPlace||tripOrigin;field('destinationPlace').value=b.destinationPlace||tripOrigin;
+  field('arrivalDate').value=b.arrivalDate||'';
+  field('destinationAirport').value=b.destinationAirport||'';
+  stopovers=Array.isArray(b.stopovers)?b.stopovers.map(x=>({...x})):[];
+  showStopovers();
   field('currency').value=b.currency||'EUR';
   field('totalEUR').value=b.totalAmount??b.totalEUR??'';
   for(const k of ['rateEUR','rateCheckedAt','rateSource'])field(k).value=b[k]??'';
@@ -168,14 +243,53 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>n
   legacyJournal=events.length?b.legacyRecordedElsewhere===true:b.recordedElsewhere===true;
   field('recordedElsewhere').checked=legacyJournal;
   tx('currency').value=b.currency||'EUR';
-  syncType();changeFx();showEvents();
+  syncType();changeFx();showEvents();if(events.length)form.querySelector('[data-bk-payment-details]').open=true;
   feedback.textContent='Du bearbeitest einen vorhandenen Eintrag. Änderungen werden erst mit „Eintrag speichern“ übernommen.';
   form.open=true;form.scrollIntoView({behavior:'smooth',block:'start'});
  };
  root.querySelectorAll('[data-bk-edit]').forEach(button=>button.addEventListener('click',()=>{
   const b=(getBookings()||[]).find(x=>x.id===button.dataset.bkEdit);if(b)fill(b);
  }));
- field('stageId').addEventListener('change',dates);
+ field('stageId').addEventListener('change',()=>{dates();showTransportFields()});
+ field('journeyOrigin').addEventListener('change',()=>{
+  const direction=field('journeyOrigin').value;
+  if(direction==='inbound'){
+   field('stageId').value=String(route[0]?.i??0);dates();field('startDate').value='';
+   if(!field('originPlace').value.trim())field('originPlace').value=tripOrigin;
+  }else if(direction==='return'){
+   field('stageId').value=String(lastTravel?.i??route[0]?.i??0);dates();
+   field('startDate').value=lastTravel?.end||'';
+   field('arrivalDate').value=lastTravel?.end||'';
+   field('originPlace').value=lastTravel?.name||'';
+   field('destinationPlace').value=tripOrigin;
+  }else dates();
+  showTransportFields();
+ });
+ field('travelMode').addEventListener('change',showTransportFields);
+ field('originPlace').addEventListener('input',showTransportFields);
+ form.querySelector('[data-bk-add-stopover]').addEventListener('click',()=>{
+  stopovers=readStopovers();
+  if(stopovers.length>=8){feedback.textContent='Maximal acht Zwischenstopps pro Flugbuchung.';return;}
+  stopovers.push({place:'',arrivalDate:'',departureDate:'',overnight:'unknown'});showStopovers();
+ });
+ root.querySelectorAll('[data-bk-preset]').forEach(btn=>btn.addEventListener('click',()=>{
+  reset();const preset=btn.dataset.bkPreset;
+  field('type').value=preset==='inbound'||preset==='return'?'transport':preset;
+  if(preset==='inbound'){
+   field('journeyOrigin').value='inbound';field('travelMode').value='flight';
+   field('stageId').value=String(route[0]?.i??0);dates();field('startDate').value='';
+   field('title').value='Flug '+tripOrigin+' → '+(route[0]?.name||'Reiseziel');
+  }else if(preset==='return'){
+   field('journeyOrigin').value='return';field('travelMode').value='flight';
+   field('stageId').value=String(lastTravel?.i??route[0]?.i??0);dates();
+   field('startDate').value=lastTravel?.end||'';
+   field('arrivalDate').value=lastTravel?.end||'';
+   field('originPlace').value=lastTravel?.name||'';
+   field('destinationPlace').value=tripOrigin;
+   field('title').value='Rückflug '+(lastTravel?.name||'Reiseziel')+' → '+tripOrigin;
+  }
+  syncType();form.open=true;form.scrollIntoView({behavior:'smooth',block:'start'});
+ }));
  field('currency').addEventListener('input',changeFx);
  field('currency').addEventListener('change',()=>{
   if(!tx('amount').value){
@@ -214,7 +328,7 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>n
   form.querySelector('[data-bk-payment-feedback]').textContent='Zahlungszeile vorgemerkt – Buchung bitte speichern.';
  });
  field('type').addEventListener('change',()=>{if(editing===null)dates();syncType()});
- root.querySelector('[data-bk-reset]').addEventListener('click',reset);
+ root.querySelector('[data-bk-reset]').addEventListener('click',()=>{reset();form.open=true;});
  if(deleteButton)deleteButton.addEventListener('click',()=>{
   const record=(getBookings()||[]).find(x=>x.id===editing);if(!record)return;
   const paid=Math.max(0,Number(record.paidEUR||0)-Number(record.refundedEUR||0));
@@ -228,7 +342,15 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>n
   const raw={
    id:editing||'booking-'+Date.now()+'-'+Math.random().toString(36).slice(2,10),
    type,status:value('status'),stageId:Number(value('stageId')),
-   fromStageId:type==='transport'&&value('fromStageId')!==''?Number(value('fromStageId')):null,
+   fromStageId:type==='transport'&&value('journeyOrigin')==='route'&&value('fromStageId')!==''?Number(value('fromStageId')):null,
+   journeyOrigin:type==='transport'&&value('journeyOrigin')==='inbound',
+   journeyReturn:type==='transport'&&value('journeyOrigin')==='return',
+   travelMode:type==='transport'?value('travelMode'):'ground',
+   originPlace:type==='transport'&&value('journeyOrigin')!=='route'?value('originPlace').trim():'',
+   destinationPlace:type==='transport'&&value('journeyOrigin')==='return'?value('destinationPlace').trim():'',
+   arrivalDate:type==='transport'&&value('travelMode')==='flight'?value('arrivalDate'):'',
+   destinationAirport:type==='transport'&&value('travelMode')==='flight'?value('destinationAirport').trim():'',
+   stopovers:readStopovers(),
    title:value('title'),provider:value('provider'),url:value('url').trim(),reference:value('reference'),
    startDate:value('startDate'),endDate:type==='lodging'||type==='volunteering'?value('endDate'):'',
    currency:value('currency').toUpperCase(),totalAmount:value('totalEUR'),totalEUR:value('currency').toUpperCase()==='EUR'?value('totalEUR'):'',
@@ -244,13 +366,26 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>n
   storeBookings(others.concat(entry));onSaved();
  });
  reset();
+ if(fromStage)form.open=true;
  if(prefill&&routeLookup(prefill.stageId)&&['transport','lodging','volunteering','activity'].includes(prefill.type)){
-  const existing=prefill.editId&&(getBookings()||[]).find(x=>x.id===prefill.editId&&x.type===prefill.type&&x.stageId===prefill.stageId);
+  const existing=prefill.editId&&(getBookings()||[]).find(x=>x.id===prefill.editId&&x.type===prefill.type&&(x.stageId===prefill.stageId||(prefill.type==='transport'&&x.journeyReturn===true&&route.at(-1)?.isReturn===true)));
   if(existing)fill(existing);
   else{
    field('type').value=prefill.type;
    field('stageId').value=String(prefill.stageId);
-   dates();syncType();
+   dates();
+   if(prefill.type==='transport'&&route.at(-1)?.isReturn&&prefill.stageId===route.at(-1)?.i){
+    field('stageId').value=String(lastTravel?.i??prefill.stageId);
+    field('journeyOrigin').value='return';field('travelMode').value='flight';
+    field('originPlace').value=lastTravel?.name||'';
+    field('destinationPlace').value=tripOrigin;
+    field('startDate').value=lastTravel?.end||'';
+    field('arrivalDate').value=lastTravel?.end||'';
+   }else if(prefill.type==='transport'&&prefill.stageId===route[0]?.i){
+    field('journeyOrigin').value='inbound';field('travelMode').value='flight';
+    field('originPlace').value=tripOrigin;field('startDate').value='';
+   }
+   syncType();
    form.open=true;
    feedback.textContent='Eintrag für '+(labels[prefill.type]||prefill.type)+' und die ausgewählte Etappe vorbereiten. Noch nichts gespeichert.';
   }

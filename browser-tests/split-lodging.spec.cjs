@@ -3,6 +3,7 @@ const field=(page,key)=>page.locator('#sb-bookings-editor [data-bk="'+key+'"]');
 
 test('two confirmed hostels share a stop and only their own nights reprice the budget',async({page})=>{
  await page.goto('/',{waitUntil:'domcontentloaded'});
+ await expect.poll(()=>page.evaluate(()=>!!localStorage.getItem('southbound-v3'))).toBe(true);
  const original=await page.evaluate(()=>{
   const m=JSON.parse(localStorage.getItem('southbound-v3'));
   const p=window.SouthboundItinerary.plan({stops:STOPS,start:m.tripStart,excluded:m.excluded,days:m.days,order:m.routeOrder,quotes:m.hostelQuotes,transportOffers:m.transportOffers,vol:m.vol,volunteerDetails:m.volunteerDetails});
@@ -12,6 +13,7 @@ test('two confirmed hostels share a stop and only their own nights reprice the b
  });
  const save=async(name,from,to,total,paid)=>{
   await page.locator('[data-view="bookings"]').click();
+ if(!(await page.locator('#sb-bookings-editor').evaluate(el=>el.open)))await page.locator('#sb-bookings-editor > summary').click();
   await field(page,'type').selectOption('lodging');
   await field(page,'stageId').selectOption('1');
   await field(page,'startDate').fill(from);
@@ -46,6 +48,7 @@ test('two confirmed hostels share a stop and only their own nights reprice the b
 
 test('two overlapping hostel bookings remain saved but are flagged and do not overwrite costs',async({page})=>{
  await page.goto('/',{waitUntil:'domcontentloaded'});
+ await expect.poll(()=>page.evaluate(()=>!!localStorage.getItem('southbound-v3'))).toBe(true);
  await page.evaluate(()=>{
   const m=JSON.parse(localStorage.getItem('southbound-v3'));
   const a={id:'first',type:'lodging',status:'confirmed',stageId:1,title:'Hostel A',provider:'Test',startDate:'2026-12-31',endDate:'2027-01-03',totalEUR:50,paidEUR:5,refundedEUR:0,reference:'A'};

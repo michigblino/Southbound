@@ -11,6 +11,7 @@ async function fakeDailyFx(page){
 test('changing to a user-selected base currency shows consistent budgets and inputs',async({page})=>{
  const date=await fakeDailyFx(page);
  await page.goto('/',{waitUntil:'domcontentloaded'});
+ await expect.poll(()=>page.evaluate(()=>!!localStorage.getItem('southbound-v3'))).toBe(true);
  await expect(page.locator('[data-sb-currency-status]')).toContainText(date);
  const before=await page.evaluate(()=>{const m=JSON.parse(localStorage.getItem('southbound-v3'));return {goal:m.goal,cap:m.cap,reserve:m.reserve}});
  await page.locator('[data-sb-base-currency]').fill('BRL');
@@ -35,10 +36,13 @@ test('changing to a user-selected base currency shows consistent budgets and inp
 test('daily rates are prefilled for booking and payment in arbitrary user base',async({page})=>{
  const date=await fakeDailyFx(page);
  await page.goto('/',{waitUntil:'domcontentloaded'});
+ await expect.poll(()=>page.evaluate(()=>!!localStorage.getItem('southbound-v3'))).toBe(true);
  await expect(page.locator('[data-sb-currency-status]')).toContainText(date);
  await page.locator('[data-sb-base-currency]').fill('COP');
  await page.locator('[data-sb-base-currency]').press('Enter');
  await page.locator('[data-view="bookings"]').click();
+ await page.locator('#sb-bookings-editor > summary').click();
+ await page.locator('[data-bk-payment-details] summary').click();
  await expect(field(page,'currency')).toHaveValue('COP');
  await expect(field(page,'rateEUR')).toHaveValue(String(Number((1/4800).toPrecision(12))));
  await expect(field(page,'rateCheckedAt')).toHaveValue(date);
@@ -56,17 +60,21 @@ test('daily rates are prefilled for booking and payment in arbitrary user base',
 test('network outage does not invent exchange rate and EUR fallback is visibly identified',async({page})=>{
  await page.route(/(?:cdn\.jsdelivr\.net|currency-api\.pages\.dev).*\/currencies\/eur\.min\.json/,route=>route.abort());
  await page.goto('/',{waitUntil:'domcontentloaded'});
+ await expect.poll(()=>page.evaluate(()=>!!localStorage.getItem('southbound-v3'))).toBe(true);
  await page.locator('[data-sb-base-currency]').fill('BRL');
  await page.locator('[data-sb-base-currency]').press('Enter');
  await expect(page.locator('[data-sb-all-in-total]')).toContainText('€');
  await expect(page.locator('[data-sb-currency-status]')).toContainText(/Kurs|EUR/);
  await page.locator('[data-view="bookings"]').click();
+ await page.locator('#sb-bookings-editor > summary').click();
+ await page.locator('[data-bk-payment-details] summary').click();
  await expect(field(page,'rateEUR')).toHaveValue('');
 });
 
 test('actual travel spending and fixed costs entered in BRL persist as canonical EUR',async({page})=>{
  const date=await fakeDailyFx(page);
  await page.goto('/',{waitUntil:'domcontentloaded'});
+ await expect.poll(()=>page.evaluate(()=>!!localStorage.getItem('southbound-v3'))).toBe(true);
  await expect(page.locator('[data-sb-currency-status]')).toContainText(date);
  await page.locator('[data-sb-base-currency]').fill('BRL');
  await page.locator('[data-sb-base-currency]').press('Enter');

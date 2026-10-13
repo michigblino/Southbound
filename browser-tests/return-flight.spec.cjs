@@ -1,0 +1,72 @@
+const {test,expect}=require('@playwright/test');
+const field=(page,k)=>page.locator('#sb-bookings-editor [data-bk="'+k+'"]');
+test('direct booking tab offers exactly six contextual choices and keeps editor collapsed',async({page})=>{
+ await page.setViewportSize({width:390,height:844});
+ await page.goto('/',{waitUntil:'domcontentloaded'});
+ await page.locator('[data-view="bookings"]').click();
+ await expect(page.locator('[data-bk-preset]')).toHaveCount(6);
+ await expect(page.locator('[data-bk-preset="return"]')).toBeVisible();
+ await expect(page.locator('[data-bk-preset="inbound"]')).toBeVisible();
+ await expect(page.locator('#sb-bookings-editor')).not.toHaveAttribute('open');
+ await page.locator('[data-bk-preset="return"]').click();
+ await expect(page.locator('#sb-bookings-editor')).toHaveAttribute('open');
+ await expect(field(page,'journeyOrigin')).toHaveValue('return');
+ await expect(field(page,'travelMode')).toHaveValue('flight');
+ await expect(field(page,'destinationPlace')).toHaveValue('München (MUC)');
+ await expect(field(page,'fromStageId')).toBeHidden();
+ const widths=await page.evaluate(()=>({actual:document.documentElement.scrollWidth,expected:document.documentElement.clientWidth}));
+ expect(widths.actual,JSON.stringify(widths)).toBeLessThanOrEqual(widths.expected+2);
+});
+test('return flight can be saved with a layover, edited and reconciled without counting twice',async({page})=>{
+ await page.goto('/',{waitUntil:'domcontentloaded'});
+ await page.locator('[data-view="bookings"]').click();
+ await page.locator('[data-bk-preset="return"]').click();
+ const date=await field(page,'startDate').inputValue();
+ expect(date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+ await field(page,'arrivalDate').fill(date);
+ await field(page,'status').selectOption('confirmed');
+ await field(page,'title').fill('Rückflug mit Zwischenstopp');
+ await field(page,'provider').fill('Testfluggesellschaft');
+ await field(page,'reference').fill('RETURN-TEST');
+ await field(page,'totalEUR').fill('550');
+ await field(page,'paidEUR').fill('200');
+ await page.locator('[data-bk-add-stopover]').click();
+ const stop=page.locator('[data-bk-layover-row]').first();
+ await stop.locator('[data-bk-layover-place]').fill('Casablanca (CMN)');
+ await stop.locator('[data-bk-layover-arrival]').fill(date);
+ await stop.locator('[data-bk-layover-departure]').fill(date);
+ await stop.locator('[data-bk-layover-overnight]').selectOption('included');
+ page.once('dialog',d=>d.accept());
+ await page.locator('[data-bk-save]').click();
+ await expect(page.locator('.sb-booking-list')).toContainText('Rückreise');
+ const snap=await page.evaluate(()=>{
+  const m=JSON.parse(localStorage.getItem('southbound-v3'));
+  const p=window.SouthboundItinerary.plan({stops:STOPS,start:m.tripStart,days:m.days,order:m.routeOrder,excluded:m.excluded});
+  const ledger=window.SouthboundBookingLedger.reconcile({items:p.items,bookings:m.bookingLedger});
+  const result=window.SouthboundRouteBudget.snapshot({
+   items:ledger.items,paid:ledger.extraPaid,fixedCosts:{return:ledger.returnBooking.totalEUR,insurance:0,visas:0,equipment:0},
+   returnPaymentEUR:ledger.returnPaymentEUR,waitingCost:0,paidByStop:ledger.accountedPaidByStop,
+   paymentAllocationsByStop:ledger.typedPaidByStop});
+  return {b:m.bookingLedger[0],r:ledger.returnBooking,paid:ledger.returnPaymentEUR,
+    returnLine:result.lines.find(x=>x.label==='Rückreise').amount};
+ });
+ expect(snap.b.journeyReturn).toBe(true);
+ expect(snap.b.stopovers[0].place).toBe('Casablanca (CMN)');
+ expect(snap.r.totalEUR).toBe(550);
+ expect(snap.paid).toBe(200);
+ expect(snap.returnLine).toBe(350);
+ await page.locator('[data-bk-edit]').first().click();
+ await expect(field(page,'journeyOrigin')).toHaveValue('return');
+ await expect(field(page,'destinationPlace')).toHaveValue('München (MUC)');
+ await expect(page.locator('[data-bk-layover-row]')).toHaveCount(1);
+});
+test('coming from an itinerary stage bypasses category chooser and opens matching editor',async({page})=>{
+ await page.goto('/',{waitUntil:'domcontentloaded'});
+ await page.locator('[data-view="stages"]').click();
+ await page.locator('#sb-stage-1 summary').first().click();
+ await page.locator('#sb-stage-1 [data-stage-action="lodging"]').click();
+ await expect(page.locator('[data-bk-preset]')).toHaveCount(0);
+ await expect(page.locator('#sb-bookings-editor')).toHaveAttribute('open');
+ await expect(field(page,'type')).toHaveValue('lodging');
+ await expect(field(page,'stageId')).toHaveValue('1');
+});

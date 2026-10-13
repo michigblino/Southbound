@@ -14,11 +14,14 @@ const subs={transport:'Ticket prüfen, erfassen oder bearbeiten',lodging:'Buchun
 const rank={confirmed:4,requested:3,planned:2,cancelled:1};
 function summarize({item,previous=null,bookings=[],ledger={},hostConfirmed=false,hostHours=null,maxVolunteerHours=30,manualTicket=false,hostelQuote=false}={}){
  if(!item||!Number.isInteger(item.i))return null;
- const valid=Array.isArray(bookings)?bookings.filter(b=>b&&b.stageId===item.i):[];
+ const valid=Array.isArray(bookings)?bookings.filter(b=>b&&(
+  (b.stageId===item.i&&!(b.journeyReturn&&!item.isReturn))||
+  (item.isReturn&&b.type==='transport'&&b.journeyReturn===true)
+ )):[];
  const matched=new Set(ledger?.matched||[]),warnings=new Set((ledger?.warnings||[]).map(w=>w.id));
  const result={stageId:item.i,title:previous?previous.name+' → '+item.name:'Ankunft in '+item.name,rows:[]};
  for(const type of ['transport','lodging','volunteering','activity']){
-  const options=valid.filter(b=>b.type===type).sort((a,b)=>(rank[b.status]||0)-(rank[a.status]||0));
+  const options=valid.filter(b=>b.type===type&&(!item.isReturn||type!=='transport'||b.journeyReturn===true)).sort((a,b)=>(rank[b.status]||0)-(rank[a.status]||0));
   const warning=options.find(b=>b.status==='confirmed'&&(warnings.has(b.id)||!matched.has(b.id)));
   const confirmed=options.find(b=>b.status==='confirmed'&&matched.has(b.id));
   const requested=options.find(b=>b.status==='requested');
@@ -26,8 +29,8 @@ function summarize({item,previous=null,bookings=[],ledger={},hostConfirmed=false
   const cancelled=options.find(b=>b.status==='cancelled');
   let label=type==='volunteering'||type==='activity'?'Optional':'Offen';
   let kind='neutral',selected=confirmed||requested||planned||cancelled||null;
-  const disabled=type==='transport'&&!previous||(item.days===0&&type!=='transport');
-  if(disabled){label=type==='transport'?'Startort':'Entfällt';kind='muted'}
+  const disabled=item.days===0&&type!=='transport';
+  if(disabled){label='Entfällt';kind='muted'}
   else if(warning){label='Prüfen';kind='warning';selected=warning}
   else if(type==='volunteering'&&hostConfirmed){label='Host bestätigt';kind='positive'}
   else if(confirmed){
@@ -62,8 +65,10 @@ function summarize({item,previous=null,bookings=[],ledger={},hostConfirmed=false
   const lodgingTotal=hostConfirmed?Number(item.waitingDays)||0:Number(item.days)||0;
   const lodgingSubtitle=lodgingConfirmed.length?hostConfirmed?
    lodgingNights+' Wartetage vor Host gebucht':lodgingNights+' von '+lodgingTotal+' Nächten bestätigt; Rest geschätzt':subs[type];
-  const subtitle=exceed?'Achtung: '+hostHours+' Std./Woche über Wunschlimit ('+maxVolunteerHours+')':type==='lodging'?lodgingSubtitle:subs[type];
-  result.rows.push({type,title:titles[type],subtitle,label,kind,disabled,editId:selected?.id||'',exceedsHourPreference:exceed});
+  const subtitle=exceed?'Achtung: '+hostHours+' Std./Woche über Wunschlimit ('+maxVolunteerHours+')':type==='transport'&&!previous?'Anreiseflug zum ersten Reiseziel verwalten':type==='lodging'?lodgingSubtitle:subs[type];
+  result.rows.push({type,title:type==='transport'&&item.isReturn?'Rückreise':type==='transport'&&!previous?'Anreise':titles[type],
+   subtitle:type==='transport'&&item.isReturn?'Rückflug und Buchung zum Heimatort verwalten':subtitle,
+   label,kind,disabled,editId:selected?.id||'',exceedsHourPreference:exceed});
  }
  return result;
 }

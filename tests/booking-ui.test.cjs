@@ -3,7 +3,11 @@ const {render}=require('../booking-ui.js');
 const html=render({route:[{i:0,name:'Medellín'},{i:1,name:'Salento'}],bookings:[]});
 
 test('booking form has type-dependent transfer, lodging, volunteering and activity inputs',()=>{
- assert.match(html,/data-bk-for="transport"[^>]*>Startort/);
+ assert.match(html,/data-bk-for="transport"[^>]*>Verbindung/);
+ assert.match(html,/data-bk="journeyOrigin"/);
+ assert.match(html,/data-bk="travelMode"/);
+ assert.match(html,/data-bk-preset="inbound"/);
+ assert.match(html,/data-bk-add-stopover/);
  assert.match(html,/data-bk-for="lodging volunteering" hidden style="display:none"/);
  assert.match(html,/data-bk-for="activity" hidden style="display:none"/);
  assert.match(html,/data-bk-context role="note"/);
