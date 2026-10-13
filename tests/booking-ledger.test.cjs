@@ -135,3 +135,15 @@ test('confirmed lodging needs a valid checkout date, but draft transfers stay un
  assert.ok(bad.errors.includes('lodging-checkout-required'));
  assert.equal(validate(booking({status:'planned',reference:''})).ok,true);
 });
+
+
+test('wait-hostel payment in the journal is attributed to wait liability instead of stay',()=>{
+ const host={confirmed:true,night:0,from:'2027-01-05',to:'2027-01-08',extraCosts:0,foodPerDay:10};
+ const stage={...stops[1],arrival:'2027-01-03',start:'2027-01-05',end:'2027-01-08',days:3,bed:0,regularBed:20,hostExtras:0,stay:51,waitingDays:2};
+ const b=booking({id:'journal-wait',type:'lodging',startDate:'2027-01-03',endDate:'2027-01-05',totalEUR:26,paidEUR:10,recordedElsewhere:true});
+ const ok=reconcile({items:[stops[0],stage],bookings:[b],vol:{1:true},volunteerDetails:{1:host},legacyPaidByStop:{1:10}});
+ assert.equal(ok.extraPaid,0);assert.equal(ok.waitPaidByStop[1],10);assert.equal(ok.accountedPaidByStop[1],0);assert.equal(ok.bookingIntegrity,true);
+ const bad=reconcile({items:[stops[0],stage],bookings:[b],vol:{1:true},volunteerDetails:{1:host},legacyPaidByStop:{1:0}});
+ assert.equal(bad.bookingIntegrity,false);
+ assert.ok(bad.warnings.some(x=>x.reason==='wait-prepayment-not-attributed-to-stage'));
+});
