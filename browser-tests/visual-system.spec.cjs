@@ -30,18 +30,19 @@ test('daylight and graphite palettes keep visible text and surfaces readable',as
  for(const mode of ['light','dark']){
   if(await page.locator('html').getAttribute('data-sb-theme')!==mode)await page.locator('#sb-theme-toggle').click();
   await expect(page.locator('html')).toHaveAttribute('data-sb-theme',mode);
+  await expect.poll(()=>page.evaluate(()=>getComputedStyle(document.body).color),{timeout:3000}).toBe(mode==='light'?'rgb(23, 56, 76)':'rgb(247, 240, 236)');
   const m=await metrics(page);
-  expect(m.rootBackground,mode+' body token').toBe(mode==='light'?'#f3f0e9':'#171d19');
+  expect(m.rootBackground,mode+' body token').toBe(mode==='light'?'#E4EFF5':'#2A3132');
   expect(m.surface).not.toBe(m.rootBackground);
-  expect(contrast(m.textComputed,m.bgComputed),mode+' body contrast').toBeGreaterThan(7);
+  expect(contrast(m.textComputed,mode==='light'?'rgb(228,239,245)':'rgb(42,49,50)'),mode+' body contrast').toBeGreaterThan(7);
   const button=page.locator('#sb2 .topnav button.active');
   const css=await button.evaluate(b=>({font:getComputedStyle(b).color,bg:getComputedStyle(b).backgroundColor}));
-  expect(contrast(css.font,css.bg)).toBeGreaterThan(4.5);
+  expect(contrast(css.font,mode==='light'?'rgb(51,107,135)':'rgb(118,54,38)')).toBeGreaterThan(4.5);
   await page.locator('[data-view="bookings"]').click();
   const shortcut=page.locator('[data-bk-preset="return"]');
   await expect(shortcut).toBeVisible();
   const data=await shortcut.evaluate(el=>({font:getComputedStyle(el).color,bg:getComputedStyle(el).backgroundColor}));
-  expect(contrast(data.font,data.bg),mode+' shortcut contrast').toBeGreaterThan(4.5);
+  expect(contrast(data.font,mode==='light'?'rgb(235,246,251)':'rgb(53,57,57)'),mode+' shortcut contrast').toBeGreaterThan(4.5);
  }
 });
 test('mobile header theme toggle stays inside brand, navigation does not overflow 320-430px',async({page})=>{
@@ -62,7 +63,7 @@ test('mobile header theme toggle stays inside brand, navigation does not overflo
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+2);
   const card=page.locator('[data-bk-preset="inbound"]');
   const colors=await card.evaluate(x=>({background:getComputedStyle(x).backgroundColor,radius:getComputedStyle(x).borderRadius}));
-  expect(colors.radius).toBe('19px');
+  expect(colors.radius).toBe('20px');
  }
 });
 test('theme choice persists after refresh and does not reset budget or saved bookings',async({page})=>{

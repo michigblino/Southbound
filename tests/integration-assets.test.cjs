@@ -10,7 +10,7 @@ test('budget integrity panel passes keyed fixed costs to shared snapshot',()=>{a
 
 test('overview distinguishes primary all-in subtotal from optional risk simulation',()=>{assert.match(html,/data-sb-all-in-total/);assert.match(html,/Zusätzliche Preisrisiko-Simulation \(kein All-in-Budget\)/);assert.match(html,/<details class="panel"><summary><b>Zusätzliche Preisrisiko-Simulation/);assert.doesNotMatch(html,/budgetGap=t\.mid/)});
 
-test('STH/BND app icon is used by favicon and PWA manifest',()=>{const icon=fs.readFileSync(path.join(root,'icon.svg'),'utf8'),manifest=JSON.parse(fs.readFileSync(path.join(root,'manifest.webmanifest'),'utf8'));assert.match(icon,/>STH<\/text>/);assert.match(icon,/>BND<\/text>/);assert.match(icon,/M95 116H417M95 394H417/);assert.ok(html.includes('href="./icon.svg"'));assert.ok(manifest.icons.some(x=>x.src==='./icon.svg'))});
+test('STH/BND app icon is used by favicon and PWA manifest',()=>{const icon=fs.readFileSync(path.join(root,'icon.svg'),'utf8'),manifest=JSON.parse(fs.readFileSync(path.join(root,'manifest.webmanifest'),'utf8'));assert.match(icon,/>STH<\/text>/);assert.match(icon,/>BND<\/text>/);assert.match(icon,/M85 122H427M85 405H427/);assert.ok(html.includes('href="./icon.svg"'));assert.ok(manifest.icons.some(x=>x.src==='./icon.svg'));assert.ok(html.includes('icon-dark.svg'));assert.ok(sw.includes('icon-dark.svg'));assert.ok(sw.includes('woodcut-pattern.svg'))});
 
 test('volunteer recommendations do not stop when gross savings seem to cover budget gap',()=>{assert.match(html,/if\(selected\.length>=5\)break/);assert.doesNotMatch(html,/if\(gap>0&&covered>=gap\)break/);assert.match(html,/zusätzliche Tage mit noch zu kalkulierenden Kosten/);assert.match(html,/nicht<\/b> von der Budgetlücke abgezogen/)});
 
@@ -21,4 +21,16 @@ test('stage card CSS and booking status UI are included in offline build',()=>{
  assert.ok(sw.includes('stage-card.css','design-system.css'));
  assert.ok(html.includes('SouthboundStageCard.summarize'));
  assert.ok(html.includes('data-stage-action'));
+});
+
+test('Mist/Stone and Shadow/Autumn are real CSS tokens and offline assets',()=>{
+ const css=fs.readFileSync(path.join(root,'design-system.css'),'utf8');
+ for(const color of ['#90AFC5','#336B87','#2A3132','#763626'])assert.ok(css.includes(color),'missing user palette '+color);
+ assert.match(css,/backdrop-filter:blur/);
+ assert.match(css,/woodcut-pattern\.svg/);
+ assert.match(css,/prefers-reduced-motion/);
+ assert.match(css,/--sb-gradient-hero/);
+ assert.ok(sw.includes('design-system.css'));
+ const pattern=fs.readFileSync(path.join(root,'woodcut-pattern.svg'),'utf8');
+ assert.match(pattern,/<svg /);assert.match(pattern,/<path /);
 });
