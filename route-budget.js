@@ -1,7 +1,7 @@
 /* Shared, conservative route budget snapshot for UI and volunteer scenarios. */
 (function(g){'use strict';
 const amount=v=>v===null||v===undefined||v===''?null:Number.isFinite(Number(v))&&Number(v)>=0?Number(v):null;
-function snapshot({items=[],paid=0,reserve=0,goal=0,cap=null,fixedCosts={},completed={},paidByStop={},paymentAllocationsByStop={},waitingCost=0,waitingComplete=true,waitingPaid=0,returnPaymentEUR=0,unrecorded=0,timingFeasible=true,bookingIntegrity=true,additionalCosts=0}={}){
+function snapshot({items=[],paid=0,reserve=0,goal=0,cap=null,fixedCosts={},completed={},paidByStop={},paymentAllocationsByStop={},waitingCost=0,waitingComplete=true,waitingPaid=0,returnPaymentEUR=0,fixedPaymentEUR={},unrecorded=0,timingFeasible=true,bookingIntegrity=true,additionalCosts=0}={}){
  const engine=g.SouthboundBudgetEngine;if(!engine)throw Error('Budget engine unavailable');
  const lines=[],unknownTransfers=[],unknownPrepayments=[],invalidPrepayments=[],invalidTypedPayments=[],unknownHostCosts=[],unknownHostMeals=[];
  for(const item of items){
@@ -33,10 +33,14 @@ function snapshot({items=[],paid=0,reserve=0,goal=0,cap=null,fixedCosts={},compl
  const categories=[['return','Rückreise'],['insurance','Versicherung'],['visas','Visa'],['equipment','Ausrüstung']];
  const paidReturn=amount(returnPaymentEUR),quotedReturn=amount(fixedCosts.return);
  const invalidReturnPayment=paidReturn===null||(quotedReturn!==null&&paidReturn>quotedReturn+0.005);
+ const invalidFixedPayments=[];
  for(const [key,label] of categories){
   const value=amount(fixedCosts[key]);
-  lines.push({label,amount:key==='return'&&value!==null&&paidReturn!==null&&!invalidReturnPayment?
-   Math.max(0,Math.round((value-paidReturn)*100)/100):value,status:'estimate'});
+  const payment=key==='return'?paidReturn:amount(fixedPaymentEUR[key]??0);
+  const invalidPayment=payment===null||(value!==null&&payment>value+0.005);
+  if(key!=='return'&&invalidPayment)invalidFixedPayments.push(key);
+  lines.push({label,amount:value!==null&&payment!==null&&!invalidPayment?
+   Math.max(0,Math.round((value-payment)*100)/100):value,status:'estimate'});
  }
  const parsedWaitCost=amount(waitingCost),parsedWaitPaid=amount(waitingPaid);
  const invalidWaitPayment=parsedWaitPaid===null||(waitingComplete&&parsedWaitCost!==null&&parsedWaitPaid>parsedWaitCost+0.005);
@@ -56,6 +60,7 @@ function snapshot({items=[],paid=0,reserve=0,goal=0,cap=null,fixedCosts={},compl
  if(!waitingComplete||waitRemainder===null)incompleteReasons.push('unknown-waiting-costs');
  if(invalidWaitPayment)incompleteReasons.push('unallocated-wait-prepayments');
  if(invalidReturnPayment)incompleteReasons.push('invalid-return-prepayments');
+ if(invalidFixedPayments.length)incompleteReasons.push('invalid-fixed-prepayments');
  if(unrecorded>0)incompleteReasons.push('unrecorded-completed-stops');
  if(!timingFeasible)incompleteReasons.push('unverified-route-dates');
  if(!bookingIntegrity)incompleteReasons.push('booking-records-need-review');
@@ -65,7 +70,7 @@ function snapshot({items=[],paid=0,reserve=0,goal=0,cap=null,fixedCosts={},compl
  const minimumKnownEstimate=budget.totalEstimate;
  const budgetHeadroom=budget.goal===null?null:budget.goal-minimumKnownEstimate;
  const capHeadroom=budget.cap===null?null:budget.cap-minimumKnownEstimate;
- return {...budget,unknownTransfers,unknownHostCosts,unknownHostMeals,unknownPrepayments,invalidPrepayments,invalidTypedPayments,incompleteReasons,complete,goalStatus:complete?budget.goalStatus:'unverified',allInVerified:false,minimumKnownEstimate,budgetHeadroom,capHeadroom,minimumGoalOverrun:budgetHeadroom===null?null:Math.max(0,-budgetHeadroom),minimumCapOverrun:capHeadroom===null?null:Math.max(0,-capHeadroom),budgetVerdict:complete?(budget.goalStatus==='within'?'within-estimate':'over-estimate'):'incomplete'};
+ return {...budget,invalidFixedPayments,unknownTransfers,unknownHostCosts,unknownHostMeals,unknownPrepayments,invalidPrepayments,invalidTypedPayments,incompleteReasons,complete,goalStatus:complete?budget.goalStatus:'unverified',allInVerified:false,minimumKnownEstimate,budgetHeadroom,capHeadroom,minimumGoalOverrun:budgetHeadroom===null?null:Math.max(0,-budgetHeadroom),minimumCapOverrun:capHeadroom===null?null:Math.max(0,-capHeadroom),budgetVerdict:complete?(budget.goalStatus==='within'?'within-estimate':'over-estimate'):'incomplete'};
 }
 g.SouthboundRouteBudget={snapshot};
 })(typeof window!=='undefined'?window:globalThis);

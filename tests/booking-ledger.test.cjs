@@ -196,3 +196,21 @@ test('a cancelled booking with an unrefunded event is treated as sunk spend only
  assert.equal(r.items[1].leg,80);assert.equal(r.extraPaid,20);
  assert.equal(r.typedPaidByStop[1],undefined);
 });
+
+test('confirmed insurance booking replaces fixed estimate and its paid amount is not counted twice',()=>{
+ const fixed={id:'cover-1',type:'fixed',fixedKind:'insurance',stageId:0,title:'Travel insurance',provider:'Test Insurer',
+   status:'confirmed',startDate:'2026-10-14',reference:'POLICY-1',totalEUR:180,paidEUR:100,refundedEUR:0,recordedElsewhere:false};
+ const r=reconcile({items:stops,bookings:[fixed]});
+ assert.equal(r.bookingIntegrity,true);assert.equal(r.fixedBookings.insurance.totalEUR,180);
+ assert.equal(r.fixedPaymentEUR.insurance,100);assert.equal(r.extraPaid,100);
+ const bad=validate({...fixed,fixedKind:'invented'});
+ assert.equal(bad.ok,false);assert.ok(bad.errors.includes('invalid-fixed-kind'));
+});
+test('unverified journal-linked fixed payments must not replace estimates',()=>{
+ const r=reconcile({items:stops,bookings:[{
+  id:'gear-1',type:'fixed',fixedKind:'equipment',stageId:0,title:'Backpack',provider:'Gear shop',
+  status:'confirmed',startDate:'2026-10-14',reference:'RECEIPT',totalEUR:75,paidEUR:75,refundedEUR:0,recordedElsewhere:true
+ }]});
+ assert.equal(r.bookingIntegrity,false);assert.equal(r.fixedBookings.equipment,undefined);
+ assert.ok(r.warnings.some(x=>x.reason==='fixed-booking-journal-link-not-verified'));
+});
