@@ -1,19 +1,27 @@
 /* Shared, conservative route budget snapshot for UI and volunteer scenarios. */
 (function(g){'use strict';
 const amount=v=>v===null||v===undefined||v===''?null:Number.isFinite(Number(v))&&Number(v)>=0?Number(v):null;
-function snapshot({items=[],paid=0,reserve=0,goal=0,cap=null,fixedCosts={},completed={},paidByStop={},waitingCost=0,waitingComplete=true,waitingPaid=0,unrecorded=0,timingFeasible=true,bookingIntegrity=true,additionalCosts=0}={}){
+function snapshot({items=[],paid=0,reserve=0,goal=0,cap=null,fixedCosts={},completed={},paidByStop={},paymentAllocationsByStop={},waitingCost=0,waitingComplete=true,waitingPaid=0,unrecorded=0,timingFeasible=true,bookingIntegrity=true,additionalCosts=0}={}){
  const engine=g.SouthboundBudgetEngine;if(!engine)throw Error('Budget engine unavailable');
- const lines=[],unknownTransfers=[],unknownPrepayments=[],invalidPrepayments=[],unknownHostCosts=[],unknownHostMeals=[];
+ const lines=[],unknownTransfers=[],unknownPrepayments=[],invalidPrepayments=[],invalidTypedPayments=[],unknownHostCosts=[],unknownHostMeals=[];
  for(const item of items){
-  const i=item.i,rawPaid=paidByStop[i],parsedPaid=amount(rawPaid),already=parsedPaid||0;
+  const i=item.i,rawPaid=paidByStop[i],parsedPaid=amount(rawPaid),already=parsedPaid||0,typed=paymentAllocationsByStop[i]||{};
+  const paidStay=amount(typed.stay??0),paidTransfer=amount(typed.transfer??0);
+  if(paidStay===null||paidTransfer===null)invalidTypedPayments.push(i);
   if(rawPaid!==undefined&&rawPaid!==null&&rawPaid!==''&&parsedPaid===null)invalidPrepayments.push(i);
   const isCompleted=!!completed[i],stay=amount(item.stay),leg=amount(item.leg);
   if(isCompleted){continue;}
   // Track the two independent liabilities separately: an unknown stay must not hide a priced transfer.
   // Apply stop-level prepayments to lodging first, then to transport, without making a missing amount look known.
-  const stayRemainder=stay===null?null:Math.max(0,stay-already);
-  const remainingPrepayment=stay===null?0:Math.max(0,already-stay);
-  const transferRemainder=leg===null?null:Math.max(0,leg-remainingPrepayment);
+  const stayClaim=stay===null?0:(paidStay??0);
+  const legClaim=leg===null?0:(paidTransfer??0);
+  if(stay!==null&&paidStay>stay+0.005||leg!==null&&paidTransfer>leg+0.005)invalidTypedPayments.push(i);
+  if(stay===null&&paidStay>0||leg===null&&paidTransfer>0)unknownPrepayments.push(i);
+  const stayAfterTyped=stay===null?null:Math.max(0,stay-stayClaim);
+  const legAfterTyped=leg===null?null:Math.max(0,leg-legClaim);
+  const stayRemainder=stayAfterTyped===null?null:Math.max(0,stayAfterTyped-already);
+  const remainingPrepayment=stayAfterTyped===null?0:Math.max(0,already-stayAfterTyped);
+  const transferRemainder=legAfterTyped===null?null:Math.max(0,legAfterTyped-remainingPrepayment);
   lines.push({label:'Aufenthalt '+i,amount:stayRemainder,status:'estimate'});
   lines.push({label:'Transfer '+i,amount:transferRemainder,status:leg===null?'unknown':'estimate'});
   // Host fees are already part of item.stay when priced. Missing fees/meals block all-in verification.
@@ -37,6 +45,7 @@ function snapshot({items=[],paid=0,reserve=0,goal=0,cap=null,fixedCosts={},compl
  if(unknownHostMeals.length)incompleteReasons.push('unknown-host-meals');
  if(unknownPrepayments.length)incompleteReasons.push('unallocated-prepayments');
  if(invalidPrepayments.length)incompleteReasons.push('invalid-stop-prepayments');
+ if(invalidTypedPayments.length)incompleteReasons.push('invalid-booking-allocations');
  if(categories.some(([key])=>amount(fixedCosts[key])===null))incompleteReasons.push('missing-fixed-costs');
  if(!waitingComplete||waitRemainder===null)incompleteReasons.push('unknown-waiting-costs');
  if(invalidWaitPayment)incompleteReasons.push('unallocated-wait-prepayments');
@@ -49,7 +58,7 @@ function snapshot({items=[],paid=0,reserve=0,goal=0,cap=null,fixedCosts={},compl
  const minimumKnownEstimate=budget.totalEstimate;
  const budgetHeadroom=budget.goal===null?null:budget.goal-minimumKnownEstimate;
  const capHeadroom=budget.cap===null?null:budget.cap-minimumKnownEstimate;
- return {...budget,unknownTransfers,unknownHostCosts,unknownHostMeals,unknownPrepayments,invalidPrepayments,incompleteReasons,complete,goalStatus:complete?budget.goalStatus:'unverified',allInVerified:false,minimumKnownEstimate,budgetHeadroom,capHeadroom,minimumGoalOverrun:budgetHeadroom===null?null:Math.max(0,-budgetHeadroom),minimumCapOverrun:capHeadroom===null?null:Math.max(0,-capHeadroom),budgetVerdict:complete?(budget.goalStatus==='within'?'within-estimate':'over-estimate'):'incomplete'};
+ return {...budget,unknownTransfers,unknownHostCosts,unknownHostMeals,unknownPrepayments,invalidPrepayments,invalidTypedPayments,incompleteReasons,complete,goalStatus:complete?budget.goalStatus:'unverified',allInVerified:false,minimumKnownEstimate,budgetHeadroom,capHeadroom,minimumGoalOverrun:budgetHeadroom===null?null:Math.max(0,-budgetHeadroom),minimumCapOverrun:capHeadroom===null?null:Math.max(0,-capHeadroom),budgetVerdict:complete?(budget.goalStatus==='within'?'within-estimate':'over-estimate'):'incomplete'};
 }
 g.SouthboundRouteBudget={snapshot};
 })(typeof window!=='undefined'?window:globalThis);
