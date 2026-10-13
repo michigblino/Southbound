@@ -112,3 +112,24 @@ test('guided booking wizard separates dates, price, and confirmation without sav
  await expect(page.locator('[data-bk="status"]')).toBeVisible();
  expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('southbound-v3')).bookingLedger.length)).toBe(0);
 });
+
+test('guided inbound booking saves a real local record only after the confirmation step',async({page})=>{
+ await page.goto('/',{waitUntil:'domcontentloaded'});
+ await page.locator('[data-view="bookings"]').click();
+ await page.locator('[data-bk-preset="inbound"]').click();
+ const k=name=>page.locator('#sb-bookings-editor [data-bk="'+name+'"]');
+ await k('startDate').fill('2026-12-26');
+ await k('provider').fill('Test provider');
+ await k('title').fill('Guided MUC → GRU');
+ await page.locator('[data-bk-next]').click();
+ await k('totalEUR').fill('200');
+ await page.locator('[data-bk-next]').click();
+ await k('status').selectOption('confirmed');
+ await k('reference').fill('GUIDED-2026');
+ page.once('dialog',d=>d.accept());
+ await page.locator('[data-bk-save]').click();
+ await expect(page.locator('[data-bk-group="inbound"]')).toContainText('Guided MUC');
+ const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('southbound-v3')).bookingLedger);
+ expect(saved).toHaveLength(1);expect(saved[0].journeyOrigin).toBe(true);
+ expect(saved[0].totalEUR).toBe(200);
+});
