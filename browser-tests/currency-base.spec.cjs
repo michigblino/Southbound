@@ -1,0 +1,65 @@
+const {test,expect}=require('@playwright/test');
+const field=(page,key)=>page.locator('#sb-bookings-editor [data-bk="'+key+'"]');
+const pay=(page,key)=>page.locator('#sb-bookings-editor [data-bk-tx="'+key+'"]');
+const codes=['eur','usd','brl','cop','pen','ars','clp','uyu','gbp','aud','cad','jpy','inr','chf','zar','mxn','thb','idr','nzd','bob','pyg','nok','sek','dkk','pln','czk','try','cny','krw','huf','sgd','aed'];
+async function fakeDailyFx(page){
+ const date=new Date().toISOString().slice(0,10),eur=Object.fromEntries(codes.map((k,i)=>[k,i+1]));
+ eur.eur=1;eur.usd=1.2;eur.brl=6;eur.cop=4800;
+ await page.route(/(?:cdn\.jsdelivr\.net|currency-api\.pages\.dev).*\/currencies\/eur\.min\.json/,route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({date,eur})}));
+ return date;
+}
+test('changing to a user-selected base currency shows consistent budgets and inputs',async({page})=>{
+ const date=await fakeDailyFx(page);
+ await page.goto('/',{waitUntil:'domcontentloaded'});
+ await expect(page.locator('[data-sb-currency-status]')).toContainText(date);
+ const before=await page.evaluate(()=>{const m=JSON.parse(localStorage.getItem('southbound-v3'));return {goal:m.goal,cap:m.cap,reserve:m.reserve}});
+ await page.locator('[data-sb-base-currency]').fill('BRL');
+ await page.locator('[data-sb-base-currency]').press('Enter');
+ await expect(page.locator('[data-sb-base-currency]')).toHaveValue('BRL');
+ await expect(page.locator('[data-sb-all-in-total]')).toContainText('R$');
+ await page.locator('#sb-travel-settings summary').click();
+ await expect(page.locator('[data-pref-budget]')).toHaveValue(String(before.goal*6));
+ await expect(page.locator('[data-pref-reserve]')).toHaveValue(String(before.reserve*6));
+ const after=await page.evaluate(()=>{const m=JSON.parse(localStorage.getItem('southbound-v3'));return {goal:m.goal,cap:m.cap,reserve:m.reserve,base:m.baseCurrency}});
+ expect(after).toEqual({...before,base:'BRL'});
+ await page.locator('[data-pref-budget]').fill(String(before.goal*6+600));
+ await page.locator('[data-pref-save]').click();
+ const update=await page.evaluate(()=>JSON.parse(localStorage.getItem('southbound-v3')).goal);
+ expect(update).toBe(before.goal+100);
+ await page.locator('[data-sb-base-currency]').fill('EUR');
+ await page.locator('[data-sb-base-currency]').press('Enter');
+ await expect(page.locator('[data-sb-all-in-total]')).toContainText('€');
+ const persisted=await page.evaluate(()=>JSON.parse(localStorage.getItem('southbound-v3')).goal);
+ expect(persisted).toBe(before.goal+100);
+});
+test('daily rates are prefilled for booking and payment in arbitrary user base',async({page})=>{
+ const date=await fakeDailyFx(page);
+ await page.goto('/',{waitUntil:'domcontentloaded'});
+ await expect(page.locator('[data-sb-currency-status]')).toContainText(date);
+ await page.locator('[data-sb-base-currency]').fill('COP');
+ await page.locator('[data-sb-base-currency]').press('Enter');
+ await page.locator('[data-view="bookings"]').click();
+ await expect(field(page,'currency')).toHaveValue('COP');
+ await expect(field(page,'rateEUR')).toHaveValue(String(Number((1/4800).toPrecision(12))));
+ await expect(field(page,'rateCheckedAt')).toHaveValue(date);
+ await expect(field(page,'rateSource')).toContainText(''); // inspected through input value below
+ const quoteSource=await field(page,'rateSource').inputValue();
+ expect(quoteSource).toContain('exchange-api');
+ await expect(pay(page,'currency')).toHaveValue('COP');
+ await expect(pay(page,'rateEUR')).not.toHaveValue('');
+ await field(page,'currency').fill('BRL');
+ await field(page,'currency').press('Tab');
+ await expect(field(page,'rateEUR')).toHaveValue(String(Number((1/6).toPrecision(12))));
+ await expect(pay(page,'currency')).toHaveValue('BRL');
+ await expect(pay(page,'rateEUR')).toHaveValue(String(Number((1/6).toPrecision(12))));
+});
+test('network outage does not invent exchange rate and EUR fallback is visibly identified',async({page})=>{
+ await page.route(/(?:cdn\.jsdelivr\.net|currency-api\.pages\.dev).*\/currencies\/eur\.min\.json/,route=>route.abort());
+ await page.goto('/',{waitUntil:'domcontentloaded'});
+ await page.locator('[data-sb-base-currency]').fill('BRL');
+ await page.locator('[data-sb-base-currency]').press('Enter');
+ await expect(page.locator('[data-sb-all-in-total]')).toContainText('€');
+ await expect(page.locator('[data-sb-currency-status]')).toContainText(/Kurs|EUR/);
+ await page.locator('[data-view="bookings"]').click();
+ await expect(field(page,'rateEUR')).toHaveValue('');
+});
