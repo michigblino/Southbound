@@ -11,6 +11,7 @@ async function fakeDailyFx(page){
 test('changing to a user-selected base currency shows consistent budgets and inputs',async({page})=>{
  const date=await fakeDailyFx(page);
  await page.goto('/',{waitUntil:'domcontentloaded'});
+ await expect.poll(()=>page.evaluate(()=>!!localStorage.getItem('southbound-v3'))).toBe(true);
  await expect(page.locator('[data-sb-currency-status]')).toContainText(date);
  const before=await page.evaluate(()=>{const m=JSON.parse(localStorage.getItem('southbound-v3'));return {goal:m.goal,cap:m.cap,reserve:m.reserve}});
  await page.locator('[data-sb-base-currency]').fill('BRL');
@@ -35,6 +36,7 @@ test('changing to a user-selected base currency shows consistent budgets and inp
 test('daily rates are prefilled for booking and payment in arbitrary user base',async({page})=>{
  const date=await fakeDailyFx(page);
  await page.goto('/',{waitUntil:'domcontentloaded'});
+ await expect.poll(()=>page.evaluate(()=>!!localStorage.getItem('southbound-v3'))).toBe(true);
  await expect(page.locator('[data-sb-currency-status]')).toContainText(date);
  await page.locator('[data-sb-base-currency]').fill('COP');
  await page.locator('[data-sb-base-currency]').press('Enter');
@@ -57,6 +59,7 @@ test('daily rates are prefilled for booking and payment in arbitrary user base',
 test('network outage does not invent exchange rate and EUR fallback is visibly identified',async({page})=>{
  await page.route(/(?:cdn\.jsdelivr\.net|currency-api\.pages\.dev).*\/currencies\/eur\.min\.json/,route=>route.abort());
  await page.goto('/',{waitUntil:'domcontentloaded'});
+ await expect.poll(()=>page.evaluate(()=>!!localStorage.getItem('southbound-v3'))).toBe(true);
  await page.locator('[data-sb-base-currency]').fill('BRL');
  await page.locator('[data-sb-base-currency]').press('Enter');
  await expect(page.locator('[data-sb-all-in-total]')).toContainText('€');
@@ -69,6 +72,7 @@ test('network outage does not invent exchange rate and EUR fallback is visibly i
 test('actual travel spending and fixed costs entered in BRL persist as canonical EUR',async({page})=>{
  const date=await fakeDailyFx(page);
  await page.goto('/',{waitUntil:'domcontentloaded'});
+ await expect.poll(()=>page.evaluate(()=>!!localStorage.getItem('southbound-v3'))).toBe(true);
  await expect(page.locator('[data-sb-currency-status]')).toContainText(date);
  await page.locator('[data-sb-base-currency]').fill('BRL');
  await page.locator('[data-sb-base-currency]').press('Enter');
