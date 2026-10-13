@@ -248,7 +248,7 @@ function sbBudgetIntegrityPanel(plan){
  '<p class="small">Fehlende Fixkosten bitte ergänzen. Alle Eingaben verwenden die oben gewählte Basiswährung; bereits bezahlte Beträge sind in erfassten Ausgaben enthalten. 0 nur für tatsächlich kostenlose Leistungen.</p>'+
  '<div class="sb-fixed-book-grid">'+[['insurance','Versicherung'],['equipment','Ausrüstung'],['inbound','Anreise'],['return','Abreise']].map(([k,label])=>{
   const entry=k==='return'?booked.returnBooking:k==='inbound'?booked.items.find(x=>x.bookingInbound)?.bookingInbound:booked.fixedBookings?.[k];
-  const legacy=k==='inbound'?null:fixed[k];
+  const legacy=k==='inbound'?null:m.fixedCosts?.[k];
   const state=entry?'Buchung erfasst':legacy!==null&&legacy!==undefined&&legacy!==''?'Betrag bisher manuell erfasst':'Noch offen';
   return '<div class="sb-fixed-book-tile"><div><small>'+label+'</small><b>'+state+'</b></div><button type="button" data-sb-fixed-book="'+k+'">'+(entry?'Buchung bearbeiten':'Buchung erfassen')+' →</button></div>';
  }).join('')+'</div>'+
@@ -269,7 +269,9 @@ function bindSbFixedCosts(){
   const route=p.items,first=route.find(x=>!x.isReturn),last=[...route].reverse().find(x=>!x.isReturn&&Number(x.days)>0);
   if(!first||!last)return;
   const book=sbLedger(p),key=kind==='return'?'return':kind;
-  const id=kind==='return'?book.returnBooking?.id:kind==='inbound'?first.bookingInbound?.id:book.fixedBookings?.[key]?.id;
+  const existing=(m.bookingLedger||[]).find(x=>x?.type==='transport'&&(kind==='inbound'?x.journeyOrigin===true:x.journeyReturn===true))||
+  (m.bookingLedger||[]).find(x=>x?.type==='fixed'&&x.fixedKind===kind);
+  const id=existing?.id|| (kind==='return'?book.returnBooking?.id:kind==='inbound'?first.bookingInbound?.id:book.fixedBookings?.[key]?.id);
   sbBookingIntent=['insurance','equipment','visas'].includes(kind)?
    {type:'fixed',fixedKind:kind,stageId:first.i,editId:id||''}:
    {type:'transport',stageId:kind==='return'?last.i:first.i,journeyPreset:kind,editId:id||''};

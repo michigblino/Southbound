@@ -8,13 +8,15 @@ const money=x=>Math.round((x+Number.EPSILON)*100)/100;
 const day=x=>Math.max(0,Math.floor(nonneg(x)||0));
 const nature=/Chapada|Lençóis|Salento|Minca|Cusco|Uyuni|Atacama|Bariloche|Chaltén|Torres|Paraty|Huacachina|Iguaçu|Tayrona|Machu|Amazon|Pantanal|Galápagos|Patagon/i;
 function optimize({items=[],bookings=[],vol={},volunteerDetails={},completed={},preferences={},goal=8000,baselineTotal=null}={}){
- const all=Array.isArray(items)?items:[],confirmed=Array.isArray(bookings)?bookings.filter(b=>b?.status==='confirmed'):[];
+ const all=Array.isArray(items)?items:[],records=Array.isArray(bookings)?bookings:[],
+ confirmed=records.filter(b=>b?.status==='confirmed'),
+ committed=records.filter(b=>b?.status==='confirmed'||(nonneg(b?.paidEUR)||0)>(nonneg(b?.refundedEUR)||0));
  const allowedHours=Math.min(30,nonneg(preferences.maxVolunteerHours)??30);
  const maxHostDays=Math.min(28,Math.floor((nonneg(preferences.maxVolunteerWeeks)??4)*7));
  const mustVisit=String(preferences.mustVisit||'').split(',').map(x=>x.trim().toLocaleLowerCase('de')).filter(Boolean);
  const stages=all.filter(x=>x&&!x.isReturn&&Number.isInteger(x.i)&&x.i>=0);
  const first=stages.at(0)?.i,last=stages.at(-1)?.i;
- const locked=new Set(confirmed.filter(b=>b&&Number.isInteger(b.stageId)).map(b=>b.stageId));
+ const locked=new Set(committed.filter(b=>b&&Number.isInteger(b.stageId)).map(b=>b.stageId));
  const usable=stages.filter(s=>!completed[s.i]&&!locked.has(s.i)&&!(vol[s.i]===true&&volunteerDetails[s.i]?.confirmed===true));
  const minutes=x=>({i:x.i,name:x.name,from:day(x.days),to:day(x.days),hostNights:0,regularBed:nonneg(x.regularBed)??nonneg(x.bed),dailyOther:(nonneg(x.food)||0)+(nonneg(x.leisure)||0)+(nonneg(x.other)||0)});
  const source=new Map(stages.map(x=>[x.i,minutes(x)]));
@@ -24,8 +26,7 @@ function optimize({items=[],bookings=[],vol={},volunteerDetails={},completed={},
   const hours=nonneg(raw);
   return raw===null||raw===undefined||raw===''||hours!==null&&hours<=allowedHours;
  };
- const hostPossible=s=>maxHostDays>=21&&hoursValid(s)&&!confirmed.some(b=>b.type==='lodging'&&b.stageId===s.i)&&
-   !mustVisit.some(k=>String(s.name).toLocaleLowerCase('de').includes(k)&&false);
+ const hostPossible=s=>maxHostDays>=21&&hoursValid(s)&&!committed.some(b=>b.type==='lodging'&&b.stageId===s.i);
  const safeName=s=>mustVisit.some(k=>String(s.name).toLocaleLowerCase('de').includes(k));
  const safeMin=(s,mode)=>{
   const n=day(s.days),important=nature.test(s.name)||safeName(s),base=mode==='aggressive'?(important?3:2):(important?5:3);
