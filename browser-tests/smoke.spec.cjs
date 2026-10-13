@@ -145,3 +145,56 @@ test('booking center fits mobile viewport',async({page})=>{
  const width=await page.evaluate(()=>({scroll:document.documentElement.scrollWidth,client:document.documentElement.clientWidth}));
  expect(width.scroll).toBeLessThanOrEqual(width.client+2);
 });
+
+
+test('stage card opens the correct lodging booking editor and reflects confirmation',async({page})=>{
+ await page.goto('/',{waitUntil:'domcontentloaded'});
+ await page.locator('[data-view="stages"]').click();
+ await page.locator('#sb-stage-1 summary').first().click();
+ const row=page.locator('#sb-stage-1 [data-stage-action="lodging"]');
+ await expect(row).toContainText('Offen');
+ await expect(page.locator('#sb-stage-1 [data-stage-action="transport"]')).toBeVisible();
+ await expect(page.locator('#sb-stage-1 .sb-stage-dashboard__row')).toHaveCount(4);
+ await row.click();
+ await expect(page.locator('#sb-bookings-editor')).toBeVisible();
+ const field=k=>page.locator('#sb-bookings-editor [data-bk="'+k+'"]');
+ expect(await field('type').inputValue()).toBe('lodging');
+ expect(await field('stageId').inputValue()).toBe('1');
+ expect(await field('startDate').inputValue()).toBe('2026-12-31');
+ await field('status').selectOption('confirmed');
+ await field('title').fill('Hostel Booking Regression');
+ await field('provider').fill('Example Hostel');
+ await field('reference').fill('HOSTEL-123');
+ await field('totalEUR').fill('75');
+ await field('paidEUR').fill('20');
+ page.once('dialog',d=>d.accept());
+ await page.locator('[data-bk-save]').click();
+ await page.locator('[data-view="stages"]').click();
+ const stage=page.locator('#sb-stage-1');
+ if(!(await stage.evaluate(el=>el.open)))await stage.locator('summary').first().click();
+ await expect(stage.locator('[data-stage-action="lodging"]')).toContainText('Bestätigt');
+ await stage.locator('[data-stage-action="lodging"]').click();
+ await expect(field('title')).toHaveValue('Hostel Booking Regression');
+ await expect(field('paidEUR')).toHaveValue('20');
+});
+test('stage card warns when a confirmed booking no longer matches its travel date',async({page})=>{
+ await page.goto('/',{waitUntil:'domcontentloaded'});
+ await page.evaluate(()=>{
+  const m=JSON.parse(localStorage.getItem('southbound-v3')||'{}');
+  m.bookingLedger=[{id:'mismatch',type:'transport',status:'confirmed',stageId:1,fromStageId:0,title:'Altes Busticket',provider:'Bus Beispiel',startDate:'2027-03-01',endDate:'',totalEUR:42,paidEUR:42,refundedEUR:0,reference:'AB123',recordedElsewhere:false}];
+  localStorage.setItem('southbound-v3',JSON.stringify(m));
+ });
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('[data-view="stages"]').click();
+ await page.locator('#sb-stage-1 summary').first().click();
+ await expect(page.locator('#sb-stage-1 [data-stage-action="transport"]')).toContainText('Prüfen');
+});
+test('stage action cards do not overflow a 360px mobile viewport',async({page})=>{
+ await page.setViewportSize({width:360,height:740});
+ await page.goto('/',{waitUntil:'domcontentloaded'});
+ await page.locator('[data-view="stages"]').click();
+ await page.locator('#sb-stage-1 summary').first().click();
+ const sizes=await page.evaluate(()=>({scroll:document.documentElement.scrollWidth,width:document.documentElement.clientWidth,card:document.querySelector('#sb-stage-1 .sb-stage-dashboard')?.getBoundingClientRect().width}));
+ expect(sizes.card).toBeGreaterThan(0);
+ expect(sizes.scroll,JSON.stringify(sizes)).toBeLessThanOrEqual(sizes.width+2);
+});
