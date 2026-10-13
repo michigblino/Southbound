@@ -1126,3 +1126,10 @@ html:not([data-sb-theme="light"]) #sb2 .sb-booking-shortcuts button svg{color:#E
 }
 @media(max-width:355px){#sb2 .sb-variant-picker{grid-template-columns:1fr}#sb2 button.sb-variant-option{min-height:68px;align-items:center;flex-wrap:nowrap}#sb2 button.sb-variant-option>strong{width:auto;margin-left:auto;padding:0}}
 @media(prefers-reduced-motion:reduce){#sb2 button.sb-variant-option,#sb2 .sb-hub-detail>summary>span:last-child{transition:none!important}}
+
+/* The price-range simulation is a subordinate explanation, never a competing headline. */
+#sb2 .sb-hub-risk{margin-top:2px}
+#sb2 .sb-hub-risk>summary{font-weight:730}
+#sb2 .sb-hub-risk h3{font-size:clamp(23px,3.3vw,30px);margin:14px 4px 5px;font-variant-numeric:tabular-nums;letter-spacing:-.04em}
+#sb2 .sb-hub-risk>p{margin:10px 4px;font-size:12px;line-height:1.55;color:var(--muted)}
+#sb2 .sb-hub-risk>p b{color:var(--text)}

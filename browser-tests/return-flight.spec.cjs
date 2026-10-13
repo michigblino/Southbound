@@ -185,6 +185,8 @@ test('one savings center compares scenarios without double-counting isolated lod
  await hub.locator('#sb-savings-tips > summary').click();
  await expect(hub.locator('#sb-savings-tips .sb-hub-tip').first()).toBeVisible();
  await expect(hub.locator('#sb-savings-tips')).toContainText('nicht automatisch');
+ await expect(page.locator('#sb-savings-risk')).toHaveCount(1);
+ await expect(page.locator('#sb-savings-risk')).toBeHidden();
  expect(await page.evaluate(()=>localStorage.getItem('southbound-v3'))).toBe(before);
  const sizes=await page.evaluate(()=>({scroll:document.documentElement.scrollWidth,client:document.documentElement.clientWidth}));
  expect(sizes.scroll).toBeLessThanOrEqual(sizes.client+2);
