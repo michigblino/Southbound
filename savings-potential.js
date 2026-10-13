@@ -17,7 +17,7 @@ function analyze({items=[],vol={},volunteerDetails={},bookings=[],completed={},v
   if(!item||item.isReturn||!Number.isInteger(item.i)||completed[item.i]||visited[item.i])continue;
   const i=item.i,days=Math.floor(value(item.days)??0);
   if(vol[i]===true&&volunteerDetails[i]?.confirmed===true){reasons.push({i,name:item.name,reason:'Bereits eingeplantes Volunteering: nicht nochmals sparen'});continue}
-  if(days<requiredDays){reasons.push({i,name:item.name,reason:'Weniger als 21 Aufenthaltstage – keine Host-Termine erfunden'});continue}
+  if(days<requiredDays||maxSingleHostDays<requiredDays){reasons.push({i,name:item.name,reason:'Weniger als 21 zulässige Aufenthaltstage – keine Host-Termine erfunden'});continue}
   const knownHours=volunteerDetails[i]?.hoursPerWeek??volunteerDetails[i]?.hours;
   const hours=value(knownHours);
   if(knownHours!==null&&knownHours!==undefined&&knownHours!==''&&hours===null){

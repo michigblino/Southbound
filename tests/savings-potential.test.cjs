@@ -28,3 +28,8 @@ test('leg range is labeled price spread; never merged into host gross or verifie
  const p=analyze({items:[I(0,22,10,{leg:100,legMin:70}),I(1,22,20,{leg:80,legMin:60,transportOffer:{price:80}})]});
  assert.equal(p.grossAccommodationCeiling,660);assert.equal(p.priceSpreadIndicator,30);assert.equal(p.verifiedAdditionalSaving,null);
 });
+
+test('maximum voluntary host weeks below three disallows 21-day blocks',()=>{
+ const p=analyze({items:[I(0,28,20)],preferences:{maxVolunteerWeeks:2}});
+ assert.equal(p.grossAccommodationCeiling,0);assert.equal(p.eligibleNights,0);
+});
