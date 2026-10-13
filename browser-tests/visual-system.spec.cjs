@@ -34,7 +34,7 @@ test('daylight and graphite palettes keep visible text and surfaces readable',as
   expect(m.rootBackground,mode+' body token').toBe(mode==='light'?'#f3f0e9':'#171d19');
   expect(m.surface).not.toBe(m.rootBackground);
   expect(contrast(m.textComputed,m.bgComputed),mode+' body contrast').toBeGreaterThan(7);
-  const button=page.locator('[data-view="bookings"]');
+  const button=page.locator('#sb2 .topnav button.active');
   const css=await button.evaluate(b=>({font:getComputedStyle(b).color,bg:getComputedStyle(b).backgroundColor}));
   expect(contrast(css.font,css.bg)).toBeGreaterThan(4.5);
   await page.locator('[data-view="bookings"]').click();
