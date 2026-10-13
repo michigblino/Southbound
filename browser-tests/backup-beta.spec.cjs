@@ -1,17 +1,19 @@
 const {test,expect}=require('@playwright/test');
 const fs=require('node:fs');
 test('active beta cockpit exports a complete, versioned backup of saved bookings and FX preferences',async({page})=>{
- await page.goto('/',{waitUntil:'domcontentloaded'});
- await expect.poll(()=>page.evaluate(()=>!!localStorage.getItem('southbound-v3'))).toBe(true);
- await expect(page.locator('#sb-beta-backup')).toHaveCount(1);
- await page.evaluate(()=>{
-  const m=JSON.parse(localStorage.getItem('southbound-v3')||'{}');
-  m.goal=8100;m.cap=12000;m.baseCurrency='EUR';
-  m.bookingLedger=[{id:'backup-booking',type:'lodging',stageId:1,title:'Test hostel',startDate:'2027-01-01',endDate:'2027-01-03',
-   provider:'Test',status:'confirmed',reference:'BOOK-123',totalEUR:40,paidEUR:20,refundedEUR:0}];
+ // Seed before the app is initialized; async provider callbacks must not rewrite an
+ // externally injected storage fixture using an old in-memory traveler state.
+ await page.addInitScript(()=>{
+  if(sessionStorage.getItem('sb-backup-seeded'))return;
+  const m={goal:8100,cap:12000,reserve:2200,days:{},vol:{},visited:{},excluded:{},baseCurrency:'EUR',
+   bookingLedger:[{id:'backup-booking',type:'lodging',stageId:1,title:'Test hostel',startDate:'2027-01-01',endDate:'2027-01-03',
+    provider:'Test',status:'confirmed',reference:'BOOK-123',totalEUR:40,paidEUR:20,refundedEUR:0}]};
   localStorage.setItem('southbound-v3',JSON.stringify(m));
+  sessionStorage.setItem('sb-backup-seeded','1');
  });
- await page.reload({waitUntil:'domcontentloaded'});
+ await page.goto('/',{waitUntil:'domcontentloaded'});
+ await expect.poll(()=>page.evaluate(()=>JSON.parse(localStorage.getItem('southbound-v3')||'{}').goal)).toBe(8100);
+ await expect(page.locator('#sb-beta-backup')).toHaveCount(1);
  await page.locator('#sb-beta-backup summary').click();
  const downloadPromise=page.waitForEvent('download');
  await page.locator('#sb-export').click();
