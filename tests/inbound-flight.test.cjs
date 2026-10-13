@@ -30,7 +30,7 @@ test('a booked Munich flight with overnight Casablanca layover is one inbound li
  assert.deepEqual(r.matched,['munich-sao-paulo-flight']);
  assert.equal(r.extraPaid,650);
  assert.equal(r.bookingIntegrity,true,JSON.stringify(r.warnings));
- assert.equal(r.paidByStop[0],650);
+ assert.equal(r.paidByStop[0],undefined);assert.equal(r.typedPaidByStop[0].transfer,650);
  const b=costs(r);assert.equal(b.complete,true,JSON.stringify(b.incompleteReasons));
  assert.equal(b.lines.find(x=>x.label==='Transfer 0').amount,0);
  assert.equal(b.totalEstimate,1740); // paid 650 + stays 260 + Rio transfer 80 + fixed 250 + reserve 500
