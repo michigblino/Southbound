@@ -56,3 +56,12 @@ Neue/angepasste Tests: Ticket-Routen-/Datumsbindung; Host-Kalender; Host-Gebühr
 - Für eine zukünftige Buchung **direkt in der App** brauchen wir Partner-APIs, Backend/Secret-Handling, Rechts-/Zahlungs-/Stornoabwicklung. Die jetzige UI ist ein Buchungsregister, **kein Buchungscheckout**.
 
 Aktuelle Priorität: diese MVP-Funktionen mit Unit- und Playwright-Tests gegen Preis-/Datums-/Zahlungs-Doppelerfassung, Mobile-Overflow, Backup und Browser-Reload absichern, erst danach PR mergen.
+
+## 2026-10-13 – Buchungsworkflow nach Nutzerfreigabe
+
+- Die aktuelle Produktions-App besitzt bereits die Buchungszentrale V1 (vorheriger PR), inklusive Belegstatus, Zahlungen und Rückerstattungen. **Nicht doppelt implementieren.**
+- Dieser Follow-up-Branch ergänzt von der jeweiligen Etappe aus die Aktion „Buchung für diese Etappe erfassen“ mit vorausgewähltem Ziel im vorhandenen Register. Er macht die zuvor nur indirekt zugängliche Buchungsverwaltung schneller bedienbar.
+- Bestehende Buchungseinträge lassen sich nach bewusster Bestätigung löschen. Falls netto bereits bezahlt, erklärt eine ausdrückliche Warnung, dass damit auch der Nachweis einer real gezahlten Ausgabe aus Southbound verschwinden würde. Für echte Stornos/Refunds stattdessen den vorhandenen Status- und Erstattungseditor benutzen.
+- Keine automatische Anbieterbuchung, kein Login, keine Zahlungsverarbeitung, keine Preisgarantie. Bereits gespeicherte `m.bookingLedger`-Einträge bleiben erhalten.
+- **Noch ausstehend:** Etappenkarte mit kleinen Icons und vier Statuszeilen (Screenshot), Anbieter-Integrationen, gemischte Unterkunftsbuchungen und lokal währungsgenaue Rechnungen, Buchungsstatus „paid“ nur mit Beleg, Zeitplankonflikte nach Änderungen.
+- 30 Wochenstunden bleiben eine **Präferenz**: Ein Host mit höheren Stunden kann nach ausdrücklicher Warnbestätigung als Zusage gespeichert werden; automatische Vorschläge priorisieren weiter passende Hosts.
