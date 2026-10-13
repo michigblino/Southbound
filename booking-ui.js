@@ -5,6 +5,15 @@ const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const labels={transport:'Transfer',lodging:'Unterkunft',volunteering:'Volunteering',activity:'Erlebnis'};
 const statuses={planned:'Vorgemerkt',requested:'Angefragt',confirmed:'Bestätigt',cancelled:'Storniert'};
 const icons={transport:'↗',lodging:'⌂',volunteering:'♡',activity:'◇'};
+const shortcutPaths={
+ inbound:'<path d="m21 3-8 18-3-8-8-3 19-7Z"/><path d="m10 13 4-4"/>',
+ return:'<path d="m21 3-8 18-3-8-8-3 19-7Z"/><path d="m10 13 4-4"/>',
+ transport:'<rect x="4" y="3" width="16" height="17" rx="2"/><path d="M4 12h16M8 20v2m8-2v2M8 7h.01M16 7h.01"/>',
+ lodging:'<path d="M3 4v17M3 16h18v5M3 10h15a3 3 0 0 1 3 3v3"/><path d="M7 10V7h5v3"/>',
+ volunteering:'<path d="M20.8 8.6c0 4.2-8.8 10.1-8.8 10.1S3.2 12.8 3.2 8.6a4.3 4.3 0 0 1 8.8-1 4.3 4.3 0 0 1 8.8 1Z"/>',
+ activity:'<path d="m2 20 7-13 4 7 3-5 6 11H2Z"/>'
+};
+const shortcutIcon=kind=>'<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"'+(kind==='return'?' style="transform:rotate(180deg)"':'')+'>'+shortcutPaths[kind]+'</svg>';
 
 const typeCopy={
  transport:{hint:'Transfer: Startort, Ziel und Abfahrt müssen mit deiner Route übereinstimmen. Nur eine bestätigte passende Verbindung ersetzt den geschätzten Fahrpreis.',captions:{stageId:'Ziel / Etappe',title:'Verbindung / Ticket',provider:'Verkehrsanbieter',startDate:'Abfahrt / Reisetag',reference:'Ticket- oder Buchungsnummer'},placeholders:{title:'z. B. Bus Medellín → Salento',provider:'z. B. Busunternehmen',reference:'Ticket- oder Buchungsnummer'}},
@@ -36,12 +45,12 @@ function render({route=[],bookings=[],ledger,baseCurrency='EUR',fxQuotes=null,tr
   return '<div class="sb-booking-card"><span class="sb-booking-symbol" aria-hidden="true">'+esc(icons[b.type]||'·')+'</span><div class="sb-booking-info"><b>'+esc(b.title||'Eintrag')+'</b><small>'+esc(b.type==='transport'&&b.journeyOrigin?'Anreiseflug':b.type==='transport'&&b.journeyReturn?'Rückreise':labels[b.type]||b.type)+' · '+esc(description)+esc(stopoverLabel)+' · '+esc(b.startDate||'ohne Datum')+'</small><small>'+esc(b.provider||'')+' · '+esc(statuses[b.status]||'Unbekannt')+' · '+converted+' · '+euro(paid)+' netto bezahlt</small></div><button type="button" data-bk-edit="'+esc(b.id)+'" class="sb-booking-edit">Bearbeiten</button></div>'
  }).join('')+'</div>':'<p class="small">Noch keine Buchungen hinterlegt. Du kannst jetzt die erste Reiseleistung erfassen.</p>')+
  '</div>'+(fromStage?'':'<div class="panel sb-booking-choose"><h2>Neue Buchung erfassen</h2><p class="small">Wähle den Buchungstyp. Die Felder passen sich an – bestätigte Buchungen musst du weiterhin selbst überprüfen.</p><div class="sb-booking-shortcuts">'+
- '<button type="button" data-bk-preset="inbound"><span aria-hidden="true">✈</span><b>Anreiseflug</b><small>'+esc(tripOrigin)+' → '+esc(available[0]?.name||'Reiseziel')+'</small></button>'+
- '<button type="button" data-bk-preset="return"><span aria-hidden="true">✈</span><b>Rückreise</b><small>'+esc(lastTravel?.name||'Letztes Reiseziel')+' → '+esc(tripOrigin)+'</small></button>'+
- '<button type="button" data-bk-preset="transport"><span aria-hidden="true">🚌</span><b>Transfer</b><small>Bus, Bahn, Flug</small></button>'+
- '<button type="button" data-bk-preset="lodging"><span aria-hidden="true">⌂</span><b>Unterkunft</b><small>Hostel, Hotel</small></button>'+
- '<button type="button" data-bk-preset="volunteering"><span aria-hidden="true">♡</span><b>Volunteering</b><small>Host-Zusage</small></button>'+
- '<button type="button" data-bk-preset="activity"><span aria-hidden="true">◇</span><b>Erlebnis</b><small>Tour, Ticket</small></button>'+
+ '<button type="button" data-bk-preset="inbound">'+shortcutIcon('inbound')+'<b>Anreiseflug</b><small>'+esc(tripOrigin)+' → '+esc(available[0]?.name||'Reiseziel')+'</small></button>'+
+ '<button type="button" data-bk-preset="return">'+shortcutIcon('return')+'<b>Rückreise</b><small>'+esc(lastTravel?.name||'Letztes Reiseziel')+' → '+esc(tripOrigin)+'</small></button>'+
+ '<button type="button" data-bk-preset="transport">'+shortcutIcon('transport')+'<b>Transfer</b><small>Bus, Bahn, Flug</small></button>'+
+ '<button type="button" data-bk-preset="lodging">'+shortcutIcon('lodging')+'<b>Unterkunft</b><small>Hostel, Hotel</small></button>'+
+ '<button type="button" data-bk-preset="volunteering">'+shortcutIcon('volunteering')+'<b>Volunteering</b><small>Host-Zusage</small></button>'+
+ '<button type="button" data-bk-preset="activity">'+shortcutIcon('activity')+'<b>Erlebnis</b><small>Tour, Ticket</small></button>'+
  '</div></div>')+'<details class="panel" id="sb-bookings-editor"'+(fromStage?' open':'')+'><summary><b data-bk-editor-title>Buchung erfassen oder bearbeiten</b></summary>'+
  '<p class="small">Nur tatsächlich erhaltene Buchungsbestätigungen als „Bestätigt“ markieren. Bei Volunteering erfolgt die eigentliche Host-Zusage weiterhin über „Etappen“.</p>'+
  '<p class="small" data-bk-context role="note"></p><div class="sb-booking-form" role="group" aria-label="Buchungseintrag">'+
