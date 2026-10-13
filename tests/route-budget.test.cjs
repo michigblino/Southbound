@@ -64,7 +64,7 @@ test('unmatched confirmed booking blocks verified total even if all other costs 
 
 test('host waiting-nights paid deposits reduce only waiting liability, not stage stay twice',()=>{
  const r=snapshot({...base,paid:125,waitingCost:64,waitingPaid:25});
- assert.equal(r.totalEstimate,540); // original paid 100+waiting 40 -> paid 125+waiting 39
+ assert.equal(r.totalEstimate,564); // paid +25 while waiting-cost total rises +24, deposit is offset once
  assert.equal(r.lines.find(x=>x.label==='Wartekosten').amount,39);
 });
 test('waiting prepayment larger than total nights flags unreconciled budget rather than negative liability',()=>{
