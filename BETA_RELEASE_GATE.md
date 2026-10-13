@@ -2,7 +2,7 @@
 
 ## Stand und Sicherheitsgrenze
 
-Dies ist ein **isolierter Testbranch** auf Basis von PR #18; die öffentlichen Daten auf `main` und GitHub Pages bleiben bis zu einer gesondert freigegebenen Veröffentlichung unverändert.
+**Stand 2026-10-13, nach Abschluss der Merge-Reihenfolge:** PRs #15, #16, #17, #18 und #19 sind vollständig nach `main` gemergt (letzter Merge `08f12e0e0befb448f6d325501b852d841a041722`). Der bisherige Code liegt im Sicherheitsbranch `safety/pre-beta-main-20261013`. GitHub Pages verwendet `main`; die tatsächliche Auslieferung an jedes Gerät und der physische Android-Test wurden noch **nicht** unabhängig bestätigt. Der frühere Status als isolierter Featurebranch ist damit abgeschlossen.
 
 - PR #15: Buchungsformulare je Kategorie
 - PR #16: mehrteilige Unterkünfte und Host-Wartenächte
@@ -10,7 +10,7 @@ Dies ist ein **isolierter Testbranch** auf Basis von PR #18; die öffentlichen D
 - PR #18: automatische indikative Tageskurse und wählbare Basiswährung
 - Dieser Folge-PR: unabhängiger All-in-Stresstest, maschinenlesbarer Audit, Backup-Validierung und sichtbarer Export/Import in der aktiven Oberfläche
 
-Nach allen grünen automatischen Prüfungen erst #15, #16, #17, #18 und diesen Folge-PR geordnet zusammenführen. Wenn die Basiszweige zwischendurch gemergt werden: restliche PRs neu auf `main` ausrichten, Unterschiede prüfen, **vollen CI-Lauf erneut durchführen**. Ein grüner Testbranch ist nicht mit einem getesteten Produktionsmerge gleichzusetzen.
+**Die fünf PRs wurden am 2026-10-13 in genau dieser Reihenfolge zusammengeführt.** Vor dem letzten Merge wurden nach dem Retargeting auf `main` nochmals **256/256 Node-Tests und 30/30 Playwright-Browsertests** bestanden (GitHub Actions Run `38400223582`); Routenprüfungen ebenfalls erfolgreich (`38400223753`). Die `quality.yml` läuft jetzt auch bei Pushes auf `main`. Ein nach dem letzten Merge ausgeführter Push-Test bzw. die GitHub-Pages-Auslieferung wurde mit den verfügbaren Connector-Aktionen **nicht gesondert eingesehen**. Für den Nutzer bleiben Android-Test, lokale Backup-Sicherung und kritische echte Buchungsfälle offen.
 
 ## Prüfungen vor privater Beta
 
