@@ -92,7 +92,7 @@ function reconcile({items=[],bookings=[],vol={},volunteerDetails={},legacyPaidBy
    }
    const estimatedNights=item.days*(Number(item.bed)||0);
    item.stay=money(item.stay-estimatedNights+b.totalEUR);
-   item.daily=money(item.daily+(b.totalEUR-estimatedNights)/item.days);
+   if(Number.isFinite(Number(item.daily)))item.daily=money(Number(item.daily)+(b.totalEUR-estimatedNights)/item.days);
    item.bed=money(b.totalEUR/item.days);
    item.bookingLodging={id:b.id,provider:b.provider,reference:b.reference};
   }else if(b.type==='activity'){
