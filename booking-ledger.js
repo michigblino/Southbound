@@ -298,7 +298,7 @@ function reconcile({items=[],bookings=[],vol={},volunteerDetails={},legacyPaidBy
   confirmed:active.length,recordedPayment:money(knownPayment),
   bookingIntegrity:warnings.length===0,
   // Warning: payments for unmatched bookings remain sunk expenditure, NOT a future prepayment.
-  accountedPaidByStop:Object.fromEntries(output.map(item=>[item.i,money(Math.max(0,(num(legacyPaidByStop[item.i])||0)-(journalWaitPaidByStop[item.i]||0)-eventJournalTotal(item.i))+(paidByStop[item.i]||0)-(returnJournalStage===item.i?returnLegacyJournal:0))]))
+  accountedPaidByStop:Object.fromEntries(output.map(item=>[item.i,money(Math.max(0,(num(legacyPaidByStop[item.i])||0)-(journalWaitPaidByStop[item.i]||0)-eventJournalTotal(item.i)-(returnJournalStage===item.i?returnLegacyJournal:0))+(paidByStop[item.i]||0))]))
  };
 }
 g.SouthboundBookingLedger={validate,reconcile,types:TYPES.slice(),statuses:STATES.slice()};
