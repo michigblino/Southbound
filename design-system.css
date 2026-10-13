@@ -348,3 +348,44 @@ html[data-sb-theme="light"] #sb2 .sb-booking-shortcuts button svg{color:var(--ac
   scroll-behavior:auto!important;
  }
 }
+
+/* Responsive editorial header: brand top row, full-width headline below.
+ * The mobile title must not be squeezed between the logo and theme switch. */
+@media(max-width:760px){
+ #sb2 .sb-brand{
+  display:grid;
+  grid-template-columns:45px minmax(0,1fr) auto;
+  grid-template-areas:"logo kicker toggle" "title title title" "subtitle subtitle subtitle";
+  gap:5px 11px;
+  align-items:center;
+ }
+ #sb2 .sb-brand img{grid-area:logo;margin:0}
+ #sb2 .sb-brand>div:nth-child(2){display:contents}
+ #sb2 .sb-brand .over{grid-area:kicker;align-self:center;font-size:10px;margin:0}
+ #sb2 .sb-brand h1{
+  grid-area:title;align-self:start;
+  width:100%;max-width:100%;
+  font-size:clamp(29px,7.15vw,39px);
+  line-height:1.08;
+  margin:13px 0 0;
+  letter-spacing:-.053em;
+ }
+ #sb2 .sb-brand p{grid-area:subtitle;max-width:100%;font-size:12.5px;line-height:1.42;margin:1px 0 0}
+ #sb2 .sb-brand-actions{grid-area:toggle;justify-self:end;margin:0}
+ #sb2 .sb-currency-toolbar{
+  display:grid;
+  grid-template-columns:max-content 84px minmax(0,1fr);
+  align-items:center;
+  gap:9px 8px;
+ }
+ #sb2 .sb-currency-toolbar>label{grid-column:1;grid-row:1}
+ #sb2 .sb-currency-toolbar [data-sb-base-currency]{grid-column:2;grid-row:1}
+ #sb2 .sb-currency-toolbar [data-sb-currency-refresh]{grid-column:3;grid-row:1;justify-self:end;white-space:nowrap}
+ #sb2 .sb-currency-toolbar [data-sb-currency-status]{grid-column:1/-1;grid-row:2;min-width:0}
+}
+@media(max-width:380px){
+ #sb2 .sb-brand{grid-template-columns:40px minmax(0,1fr) 40px;gap:4px 9px}
+ #sb2 .sb-brand h1{font-size:clamp(27px,7.8vw,31px);margin-top:10px}
+ #sb2 .sb-currency-toolbar{grid-template-columns:max-content 79px minmax(0,1fr);gap:8px 6px}
+ #sb2 .sb-currency-toolbar [data-sb-base-currency]{width:79px!important;max-width:79px}
+}
