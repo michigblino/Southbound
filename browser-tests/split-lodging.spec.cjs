@@ -13,7 +13,7 @@ test('two confirmed hostels share a stop and only their own nights reprice the b
  });
  const save=async(name,from,to,total,paid)=>{
   await page.locator('[data-view="bookings"]').click();
- await page.locator('#sb-bookings-editor > summary').click();
+ if(!(await page.locator('#sb-bookings-editor').evaluate(el=>el.open)))await page.locator('#sb-bookings-editor > summary').click();
   await field(page,'type').selectOption('lodging');
   await field(page,'stageId').selectOption('1');
   await field(page,'startDate').fill(from);
