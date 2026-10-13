@@ -73,3 +73,14 @@ test('hostel booked before a confirmed host is named as waiting night, not a hos
  assert.equal(status(x,'lodging').label,'Vor Host gebucht');
  assert.match(status(x,'lodging').subtitle,/2 Wartetage/);
 });
+
+test('explicit homecoming stage displays its return booking instead of mislabeling preceding transfer',()=>{
+ const back={id:'return-1',type:'transport',journeyReturn:true,stageId:1,status:'confirmed',totalEUR:500,paidEUR:200,refundedEUR:0};
+ const marker={i:2,name:'München',isReturn:true,days:0,start:'2027-01-06',arrival:'2027-01-06',end:'2027-01-06'};
+ const atHome=make({item:marker,previous:item,bookings:[back],ledger:{matched:['return-1'],warnings:[]}});
+ assert.equal(status(atHome,'transport').title,'Rückreise');
+ assert.equal(status(atHome,'transport').label,'Bestätigt');
+ assert.equal(status(atHome,'transport').editId,'return-1');
+ const stillAway=make({bookings:[back],ledger:{matched:['return-1'],warnings:[]}});
+ assert.equal(status(stillAway,'transport').label,'Offen');
+});
