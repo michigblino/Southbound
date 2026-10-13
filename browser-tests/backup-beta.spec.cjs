@@ -47,14 +47,15 @@ test('replacing a trip with a version 3 backup clears stale bookings instead of 
  expect(local.bookingLedger||[]).toHaveLength(0);
 });
 test('corrupt user uploads leave existing booking/payment data untouched',async({page})=>{
- await page.goto('/',{waitUntil:'domcontentloaded'});
- await expect.poll(()=>page.evaluate(()=>!!localStorage.getItem('southbound-v3'))).toBe(true);
- await page.evaluate(()=>{
+ await page.addInitScript(()=>{
+  if(sessionStorage.getItem('sb-corrupt-seeded'))return;
   const m=JSON.parse(localStorage.getItem('southbound-v3')||'{}');
   m.goal=8000;m.bookingLedger=[{id:'keep-this-booking',type:'lodging'}];
   localStorage.setItem('southbound-v3',JSON.stringify(m));
+  sessionStorage.setItem('sb-corrupt-seeded','1');
  });
- await page.reload({waitUntil:'domcontentloaded'});
+ await page.goto('/',{waitUntil:'domcontentloaded'});
+ await expect.poll(()=>page.evaluate(()=>JSON.parse(localStorage.getItem('southbound-v3')||'{}').bookingLedger?.[0]?.id)).toBe('keep-this-booking');
  await page.locator('#sb-beta-backup summary').click();
  page.on('dialog',d=>d.accept());
  const corrupt=JSON.stringify({version:4,state:{goal:7500,cap:12000,bookingLedger:{id:'corrupt-not-an-array'}}});
