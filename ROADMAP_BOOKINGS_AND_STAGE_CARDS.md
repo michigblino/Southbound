@@ -41,3 +41,18 @@ Die Icons sind als echte SVGs oder Icon-Library einzubinden (nicht als unzuverl�
 Neue/angepasste Tests: Ticket-Routen-/Datumsbindung; Host-Kalender; Host-Gebühren; Wartefood; Stundenlimits und Widerruf in UI; bestehende Budget- und Volunteering-Regressionssuite.
 
 `node --test --test-reporter=spec tests/*.test.cjs` sowie `node scripts/check-inline-scripts.cjs` und Playwright müssen in GitHub Actions für diesen Branch erfolgreich sein, bevor nach `main` gemergt wird. Grün bedeutet **nicht**, dass Live-Preise oder echte Buchungen verifiziert wurden.
+
+
+## 2026-10-13 – Buchungszentrale V1 (Featurebranch, keine Live-Buchung)
+
+- Implementierungsbranch `feat/booking-ledger-v1`: getrennte reine Logik `booking-ledger.js` plus UI `booking-ui.js`, Registeransicht **Buchungen**. Einträge werden unter neuem optionalem `m.bookingLedger` im **bestehenden** `southbound-v3` gespeichert. Backups über `state:m` schließen sie ein. Keine existierenden Daten werden gelöscht/überschrieben.
+- Typen: Transfer, Unterkunft, Volunteering, Aktivitäten. Status: vorgemerkt, angefragt, manuell bestätigt, storniert. Zahlungsstand und Erstattung sind eigene Felder. `recordedElsewhere` verhindert die doppelte Zählung bereits im Reisejournal erfasster Zahlungen.
+- Bestätigte Tickets ersetzen Modellpreise nur bei identischer Anreiseetappe, Startort und exakt passendem Datum. Bestätigte Hostelbuchungen ersetzen Nächte nur bei exakt vollständiger Übereinstimmung von An-/Abreise und ohne konkurrierende bestätigte Host-Zusage. Bestätigte Aktivitäten ersetzen über die gekennzeichnete Budgetart eine vorhandene Aktivitätenpauschale **oder** sind explizite Zusatzausgaben. Eine Volunteering-Bewerbung im Buchungsregister erzeugt niemals automatisch freie Übernachtungen; die bestehende Host-Zusage bleibt maßgeblich.
+- Ein nicht passender oder unvollständiger Buchungseintrag bleibt gespeichert und wird klar zur Prüfung markiert. Die All-in-Prognose darf bei solchen Buchungen nicht als vollständig bestätigt gelten.
+- Host-Wunschgrenze von 30 Stunden/Woche ist **keine Buchungssperre** mehr. Über dem Limit erscheint eine Warnung und das Speichern verlangt ausdrückliche Bestätigung. In der automatischen Vorabauswahl sind niedrigere Stunden weiterhin bevorzugt.
+- Keine externe Provider-API, kein Echtzeitbestand, keine Zahlungsschnittstelle und keine automatische Prüfung einer Buchungsbestätigung. Angaben sind Nutzer-Selbstauskünfte. Refunds für bereits im Reisejournal dokumentierte Ausgaben müssen dort gesondert korrigiert werden.
+- **Bekannte Grenzen:** Mehrere Hostels pro Etappe / gesplittete Übernachtungen, Tarif in Nicht-EUR, lokale Fahrzeiten und Zeitverschiebungen, fixe Rückreise-Reconciliation, automatische Einlesung von Bestätigungsmails, Vertrauensprüfung von Belegen und unabhängige Buchungsanbieter-Statusabfrage sind noch nicht umgesetzt. Legacy-Alternativkalkulationen können vom maßgeblichen All-in-Budget abweichen; nicht als gesicherte Einsparungen ausgeben.
+- Nächster UI-Schritt nach CI/Validierung: die bereits vereinbarte Etappenkarte mit **kleinen Linien-Icons** und Status-Chips für Transfer/Unterkunft/Volunteering/Aktivitäten auf den neuen Buchungsstatus aufsetzen (nicht als statisches Bild).
+- Für eine zukünftige Buchung **direkt in der App** brauchen wir Partner-APIs, Backend/Secret-Handling, Rechts-/Zahlungs-/Stornoabwicklung. Die jetzige UI ist ein Buchungsregister, **kein Buchungscheckout**.
+
+Aktuelle Priorität: diese MVP-Funktionen mit Unit- und Playwright-Tests gegen Preis-/Datums-/Zahlungs-Doppelerfassung, Mobile-Overflow, Backup und Browser-Reload absichern, erst danach PR mergen.
