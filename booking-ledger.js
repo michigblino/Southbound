@@ -68,7 +68,7 @@ function validate(raw){
 }
 function reconcile({items=[],bookings=[],vol={},volunteerDetails={},legacyPaidByStop={},legacyActualsByStop={},originRequired=false}={}){
  const output=items.map(item=>({...item})),index=new Map(output.map((item,i)=>[item.i,i])),warnings=[],matched=[],paidByStop={},waitPaidByStop={},journalWaitPaidByStop={},typedPaidByStop={},journalTxByStop={},records=[],active=[];
- let extraPaid=0,returnBooking=null,returnPaymentEUR=0;
+ let extraPaid=0,returnBooking=null,returnPaymentEUR=0,returnLegacyJournal=0,returnJournalStage=null;
  const seen=new Set();
  const raw=Array.isArray(bookings)?bookings:[];
  for(const entry of raw){
@@ -133,6 +133,12 @@ function reconcile({items=[],bookings=[],vol={},volunteerDetails={},legacyPaidBy
     if(returnMarker){returnMarker.leg=0;returnMarker.legMin=0;returnMarker.legMax=0;}
     returnBooking={id:b.id,totalEUR:b.totalEUR,stageId:b.stageId,destination:b.destinationPlace,stopovers:b.stopovers};
     returnPaymentEUR=money(b.paidEUR-b.refundedEUR);
+    if(b.recordedElsewhere&&!b.transactions.length){
+     returnLegacyJournal=returnPaymentEUR;returnJournalStage=b.stageId;
+     const observed=num(legacyActualsByStop[b.stageId]?.transport);
+     if(observed===null||observed+0.005<returnLegacyJournal)
+      warnings.push({id:b.id,reason:'return-journal-payment-not-verifiable'});
+    }
     if(b.travelMode==='flight'&&b.stopovers.some(stop=>stop.departureDate>stop.arrivalDate&&['unknown','separate'].includes(stop.overnight)))
      warnings.push({id:b.id,reason:'layover-overnight-cost-not-confirmed'});
     matched.push(b.id);
@@ -292,7 +298,7 @@ function reconcile({items=[],bookings=[],vol={},volunteerDetails={},legacyPaidBy
   confirmed:active.length,recordedPayment:money(knownPayment),
   bookingIntegrity:warnings.length===0,
   // Warning: payments for unmatched bookings remain sunk expenditure, NOT a future prepayment.
-  accountedPaidByStop:Object.fromEntries(output.map(item=>[item.i,money(Math.max(0,(num(legacyPaidByStop[item.i])||0)-(journalWaitPaidByStop[item.i]||0)-eventJournalTotal(item.i))+(paidByStop[item.i]||0))]))
+  accountedPaidByStop:Object.fromEntries(output.map(item=>[item.i,money(Math.max(0,(num(legacyPaidByStop[item.i])||0)-(journalWaitPaidByStop[item.i]||0)-eventJournalTotal(item.i))+(paidByStop[item.i]||0)-(returnJournalStage===item.i?returnLegacyJournal:0))]))
  };
 }
 g.SouthboundBookingLedger={validate,reconcile,types:TYPES.slice(),statuses:STATES.slice()};
