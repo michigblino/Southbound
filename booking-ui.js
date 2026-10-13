@@ -38,6 +38,7 @@ function render({route=[],bookings=[],ledger,baseCurrency='EUR',fxQuotes=null,tr
  const warnings=ledger?.warnings||[];
  const records=Array.isArray(bookings)?bookings:[];
  const total=ledger?.recordedPayment||0,real=ledger?.extraPaid||0;
+ const firstSavedGroup=bookingGroups.find(group=>records.some(b=>bookingCategory(b)===group.key))?.key;
  const chooser=(fromStage?'':'<div class="panel sb-booking-choose"><div class="eyebrow">BUCHUNGEN / SCHNELLSTART</div><h2>Was möchtest du buchen?</h2><p class="small">Wähle eine Kategorie – die passenden Felder öffnen sich direkt. Bestätigungen und Preise trägst du selbst ein.</p><div class="sb-booking-shortcuts">'+
  '<button type="button" data-bk-preset="inbound">'+shortcutIcon('inbound')+'<b>Anreiseflug</b><small>Ab Heimatflughafen</small></button>'+
  '<button type="button" data-bk-preset="return">'+shortcutIcon('return')+'<b>Rückflug</b><small>Zurück nach Hause</small></button>'+
@@ -55,7 +56,7 @@ function render({route=[],bookings=[],ledger,baseCurrency='EUR',fxQuotes=null,tr
  (records.length?'<div class="sb-booking-groups">'+bookingGroups.map(group=>{
   const subset=records.filter(b=>bookingCategory(b)===group.key).sort((a,b)=>String(a.startDate||'9999-99-99').localeCompare(String(b.startDate||'9999-99-99')));
   if(!subset.length)return '';
-  return '<section class="sb-booking-group" data-bk-group="'+group.key+'"><div class="sb-booking-group__heading"><span class="sb-booking-group__icon" aria-hidden="true">'+shortcutIcon(group.key)+'</span><div><h3>'+group.title+'</h3><p class="small">'+group.subtitle+'</p></div><span class="sb-booking-group__count" aria-label="'+subset.length+' Einträge">'+subset.length+'</span></div><div class="sb-booking-list">'+subset.map(b=>{
+  return '<details class="sb-booking-group" data-bk-group="'+group.key+'"'+(firstSavedGroup===group.key?' open':'')+'><summary class="sb-booking-group__heading"><span class="sb-booking-group__icon" aria-hidden="true">'+shortcutIcon(group.key)+'</span><div><h3>'+group.title+'</h3><p class="small">'+group.subtitle+'</p></div><span class="sb-booking-group__count" aria-label="'+subset.length+' Einträge">'+subset.length+'</span><span class="sb-booking-group__chevron" aria-hidden="true">⌄</span></summary><div class="sb-booking-list">'+subset.map(b=>{
   const place=available.find(x=>x.i===b.stageId)?.name||'Etappe '+b.stageId;
   const description=b.type==='transport'&&b.journeyOrigin?(b.originPlace||tripOrigin)+' → '+place:b.type==='transport'&&b.journeyReturn?(b.originPlace||place)+' → '+(b.destinationPlace||tripOrigin):place;
   const stopoverLabel=Array.isArray(b.stopovers)&&b.stopovers.length?' · via '+b.stopovers.map(x=>x.place+(x.departureDate>x.arrivalDate?' (Übernachtung)':'')).join(', '):'';
@@ -63,7 +64,7 @@ function render({route=[],bookings=[],ledger,baseCurrency='EUR',fxQuotes=null,tr
   const converted=String(b.currency||'EUR')!=='EUR'&&b.totalAmount!==null&&b.totalAmount!==undefined?
    esc(b.totalAmount)+' '+esc(b.currency)+' ≈ '+euro(b.totalEUR):b.totalEUR===null?'Preis unbekannt':euro(b.totalEUR);
   return '<div class="sb-booking-card"><span class="sb-booking-symbol" aria-hidden="true">'+esc(icons[b.type]||'·')+'</span><div class="sb-booking-info"><b>'+esc(b.title||'Eintrag')+'</b><small>'+esc(b.type==='transport'&&b.journeyOrigin?'Anreiseflug':b.type==='transport'&&b.journeyReturn?'Rückflug':labels[b.type]||b.type)+' · '+esc(description)+esc(stopoverLabel)+' · '+esc(b.startDate||'ohne Datum')+'</small><small>'+esc(b.provider||'')+' · '+esc(statuses[b.status]||'Unbekannt')+' · '+converted+' · '+euro(paid)+' netto bezahlt</small></div><button type="button" data-bk-edit="'+esc(b.id)+'" class="sb-booking-edit">Bearbeiten</button></div>'
- }).join('')+'</div></section>';
+ }).join('')+'</div></details>';
  }).join('')+'</div>':'<p class="small">Noch keine Buchungen hinterlegt. Du kannst jetzt die erste Reiseleistung erfassen.</p>')+
  '</div>'+'<details class="panel" id="sb-bookings-editor"'+(fromStage?' open':'')+'><summary><b data-bk-editor-title>Buchung erfassen oder bearbeiten</b></summary>'+
  '<p class="small">Nur tatsächlich erhaltene Buchungsbestätigungen als „Bestätigt“ markieren. Bei Volunteering erfolgt die eigentliche Host-Zusage weiterhin über „Etappen“.</p>'+
