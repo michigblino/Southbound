@@ -46,7 +46,7 @@ function render({route=[],bookings=[],ledger}={}){
  '<p class="small">Nur vollständig passende bestätigte Tickets bzw. Unterkünfte ersetzen Schätzungen. Aktivitäten werden nach ihrer gewählten Budgetart verrechnet. Volunteering-Einträge sind hier nur Nachweise/Bewerbungsstatus; für kostenlose Host-Nächte ist weiterhin die separate Zusage nötig.</p>'+
  '</details>';
 }
-function bind(root,{route=[],getBookings,storeBookings,onSaved,confirmExtraHours}={}){
+function bind(root,{route=[],getBookings,storeBookings,onSaved,prefill=null}={}){
  const form=root.querySelector('#sb-bookings-editor');if(!form)return;
  const field=k=>form.querySelector('[data-bk="'+k+'"]'),feedback=form.querySelector('#sb-booking-feedback');
  let editing=null;
@@ -97,6 +97,17 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,confirmExtraHours
   storeBookings(others.concat(entry));onSaved();
  });
  reset();
+ if(prefill&&routeLookup(prefill.stageId)&&['transport','lodging','volunteering','activity'].includes(prefill.type)){
+  const existing=prefill.editId&&(getBookings()||[]).find(x=>x.id===prefill.editId&&x.type===prefill.type&&x.stageId===prefill.stageId);
+  if(existing)fill(existing);
+  else{
+   field('type').value=prefill.type;
+   field('stageId').value=String(prefill.stageId);
+   dates();
+   form.open=true;
+   feedback.textContent='Eintrag für '+(labels[prefill.type]||prefill.type)+' und die ausgewählte Etappe vorbereiten. Noch nichts gespeichert.';
+  }
+ }
 }
 g.SouthboundBookingUI={render,bind};
 })(typeof globalThis!=='undefined'?globalThis:this);
