@@ -30,6 +30,7 @@ test('daylight and graphite palettes keep visible text and surfaces readable',as
  for(const mode of ['light','dark']){
   if(await page.locator('html').getAttribute('data-sb-theme')!==mode)await page.locator('#sb-theme-toggle').click();
   await expect(page.locator('html')).toHaveAttribute('data-sb-theme',mode);
+  await expect.poll(()=>page.evaluate(()=>getComputedStyle(document.body).color),{timeout:3000}).toBe(mode==='light'?'rgb(23, 56, 76)':'rgb(247, 240, 236)');
   const m=await metrics(page);
   expect(m.rootBackground,mode+' body token').toBe(mode==='light'?'#E4EFF5':'#2A3132');
   expect(m.surface).not.toBe(m.rootBackground);
