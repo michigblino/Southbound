@@ -133,3 +133,27 @@ test('guided inbound booking saves a real local record only after the confirmati
  expect(saved).toHaveLength(1);expect(saved[0].journeyOrigin).toBe(true);
  expect(saved[0].totalEUR).toBe(200);
 });
+
+test('budget fixed-cost cards route to correct editor without erasing manually entered amounts',async({page})=>{
+ await page.goto('/',{waitUntil:'domcontentloaded'});
+ await expect(page.locator('[data-sb-fixed-book]')).toHaveCount(5);
+ const labels=await page.locator('.sb-fixed-book-tile small').allTextContents();
+ expect(labels).toEqual(['Versicherung','Ausrüstung','Anreise','Abreise']);
+ await page.locator('[data-sb-fixed-book="insurance"]').click();
+ await expect(page.locator('#sb-bookings-editor')).toHaveAttribute('open');
+ await expect(page.locator('[data-bk="type"]')).toHaveValue('fixed');
+ await expect(page.locator('[data-bk="fixedKind"]')).toHaveValue('insurance');
+ await page.locator('[data-view="overview"]').click();
+ await page.locator('[data-sb-fixed-book="inbound"]').click();
+ await expect(page.locator('[data-bk="journeyOrigin"]')).toHaveValue('inbound');
+ await page.locator('[data-view="overview"]').click();
+ await page.locator('[data-sb-fixed-book="return"]').click();
+ await expect(page.locator('[data-bk="journeyOrigin"]')).toHaveValue('return');
+});
+test('all-in scenario options show gaps and preserve browser-owned trip data',async({page})=>{
+ await page.goto('/',{waitUntil:'domcontentloaded'});
+ const previous=await page.evaluate(()=>localStorage.getItem('southbound-v3'));
+ await expect(page.locator('.sb-variant-card')).toHaveCount(4);
+ await expect(page.locator('.sb-budget-variants')).toContainText('Viel Volunteering');
+ expect(await page.evaluate(()=>localStorage.getItem('southbound-v3'))).toBe(previous);
+});

@@ -51,3 +51,9 @@ test('guided editor only changes presentation, not booking record fields',()=>{
  assert.match(code,/data-bk-all/);
  assert.match(code,/setWizard\(false\)/);
 });
+
+test('four budget shortcuts and scenario planning are connected to their real modules',()=>{
+ assert.match(html,/data-sb-fixed-book/);assert.match(html,/\['insurance','Versicherung'\],\['equipment','Ausrüstung'\],\['inbound','Anreise'\],\['return','Abreise'\]/);
+ assert.match(html,/sbBudgetVariantsPanel\(booked.items,check.totalEstimate\)/);
+ assert.match(html,/fixedPaymentEUR:booked.fixedPaymentEUR/);
+});

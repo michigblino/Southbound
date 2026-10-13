@@ -23,3 +23,10 @@ test('missing lodging estimate is not treated as free savings',()=>{
  const r=optimize({items:[s(0,2),{...s(1,40),regularBed:null,bed:null},s(2,5)],baselineTotal:1800});
  assert.equal(r.options[2].actions.some(x=>x.i===1&&x.hostNights>0),false);
 });
+
+test('day totals change explicitly, and unclear fare is never claimed verified',()=>{
+ const r=optimize({items:[s(0,2),s(1,80,20),{...s(2,5),leg:null},s(3,2)],baselineTotal:16609,goal:8000});
+ assert.equal(r.constraints.unknownFareCount,1);
+ assert.ok(r.options[1].daysDelta<0);
+ assert.equal(r.options[1].complete,false);
+});
