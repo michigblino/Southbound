@@ -4,7 +4,8 @@
  */
 (function(g){'use strict';
 const finance=g.SouthboundBookingFinance||(typeof require==='function'?require('./booking-finance.js'):null);
-const TYPES=['transport','lodging','volunteering','activity'];
+const TYPES=['transport','lodging','volunteering','activity','fixed'];
+const FIXED_KINDS=['insurance','equipment','visas'];
 const STATES=['planned','requested','confirmed','cancelled'];
 const ISO=/^\d{4}-\d{2}-\d{2}$/;
 const num=v=>v===null||v===undefined||v===''?null:Number.isFinite(Number(v))&&Number(v)>=0?Number(v):null;
@@ -18,6 +19,7 @@ function validate(raw){
  const type=raw.type,status=raw.status,converted=finance.normalize(raw),total=converted.totalEUR,paid=converted.paidEUR,refunded=converted.refundedEUR;
  errors.push(...converted.errors);
  if(!TYPES.includes(type))errors.push('invalid-type');
+ if(type==='fixed'&&!FIXED_KINDS.includes(raw.fixedKind))errors.push('invalid-fixed-kind');
  if(!STATES.includes(status))errors.push('invalid-status');
  if(!integer(raw.stageId))errors.push('invalid-stage');
  if(typeof raw.id!=='string'||!raw.id.trim()||raw.id.length>100)errors.push('invalid-id');
@@ -60,7 +62,7 @@ function validate(raw){
  if(!raw.startDate||!date(raw.startDate))errors.push('missing-date');
  if(status==='confirmed'&&(!raw.reference||!String(raw.reference).trim()))errors.push('confirmation-reference-required');
  if(typeof raw.reference==='string'&&raw.reference.length>200)errors.push('invalid-reference');
- if(!errors.length)return {ok:true,errors:[],record:{id:raw.id,type,status,stageId:raw.stageId,fromStageId:type==='transport'&&!inbound&&!outbound?raw.fromStageId:null,journeyOrigin:inbound,journeyReturn:outbound,travelMode,originPlace:inbound||outbound?originPlace:'',destinationPlace:outbound?destinationPlace:'',
+ if(!errors.length)return {ok:true,errors:[],record:{id:raw.id,type,status,fixedKind:type==='fixed'?raw.fixedKind:'',stageId:raw.stageId,fromStageId:type==='transport'&&!inbound&&!outbound?raw.fromStageId:null,journeyOrigin:inbound,journeyReturn:outbound,travelMode,originPlace:inbound||outbound?originPlace:'',destinationPlace:outbound?destinationPlace:'',
  destinationAirport:type==='transport'?destinationAirport:'',arrivalDate:type==='transport'?arrivalDate:'',
  stopovers:travelMode==='flight'?stopovers.map(x=>({place:String(x.place||'').trim().slice(0,160),arrivalDate:x.arrivalDate,departureDate:x.departureDate,overnight:x.overnight||'unknown'})):[],
  title:raw.title.trim(),provider:raw.provider.trim(),url:raw.url||'',reference:String(raw.reference||'').trim(),startDate:raw.startDate,endDate:raw.endDate||'',totalEUR:total,paidEUR:money(paid),refundedEUR:money(refunded),currency:converted.currency,totalAmount:converted.totalAmount,rateEUR:converted.rateEUR,rateCheckedAt:converted.rateCheckedAt,rateSource:converted.rateSource,transactions:converted.transactions,legacyPaidEUR:converted.legacyPaidEUR,legacyRefundedEUR:converted.legacyRefundedEUR,legacyRecordedElsewhere:converted.legacyRecordedElsewhere,recordedElsewhere:raw.recordedElsewhere===true,activityMode:raw.activityMode==='extra'?'extra':'allowance',notes:String(raw.notes||'').slice(0,500)}};
@@ -69,6 +71,7 @@ function validate(raw){
 function reconcile({items=[],bookings=[],vol={},volunteerDetails={},legacyPaidByStop={},legacyActualsByStop={},originRequired=false}={}){
  const output=items.map(item=>({...item})),index=new Map(output.map((item,i)=>[item.i,i])),warnings=[],matched=[],paidByStop={},waitPaidByStop={},journalWaitPaidByStop={},typedPaidByStop={},journalTxByStop={},records=[],active=[];
  let extraPaid=0,returnBooking=null,returnPaymentEUR=0,returnLegacyJournal=0,returnJournalStage=null;
+ const fixedBookings={},fixedPaymentEUR={};
  const seen=new Set();
  const raw=Array.isArray(bookings)?bookings:[];
  for(const entry of raw){
@@ -96,13 +99,22 @@ function reconcile({items=[],bookings=[],vol={},volunteerDetails={},legacyPaidBy
   return true;
  };
  // Never let two confirmed bookings silently overwrite one another.
- const groupKey=b=>b.type==='transport'?('transport:'+b.stageId+(b.journeyOrigin?':inbound':b.journeyReturn?':return':':route')):b.type+':'+b.stageId;
+ const groupKey=b=>b.type==='fixed'?'fixed:'+b.fixedKind:b.type==='transport'?('transport:'+b.stageId+(b.journeyOrigin?':inbound':b.journeyReturn?':return':':route')):b.type+':'+b.stageId;
  const groups=new Map();
  for(const b of active){const key=groupKey(b);groups.set(key,(groups.get(key)||[]).concat(b))}
  for(const b of active){
   const item=output[index.get(b.stageId)];
   if(!item){warnings.push({id:b.id,reason:'missing-or-excluded-stage'});continue}
   if(!b.totalEUR && b.totalEUR!==0){warnings.push({id:b.id,reason:'unpriced-confirmed-booking'});continue}
+  if(b.type==='fixed'){
+   if(groups.get(groupKey(b)).length>1){warnings.push({id:b.id,reason:'duplicate-fixed-cost-booking'});continue;}
+   if(b.recordedElsewhere||b.transactions.some(tx=>tx.recordedElsewhere)){
+    warnings.push({id:b.id,reason:'fixed-booking-journal-link-not-verified'});continue;
+   }
+   fixedBookings[b.fixedKind]={id:b.id,totalEUR:b.totalEUR,stageId:b.stageId};
+   fixedPaymentEUR[b.fixedKind]=money(b.paidEUR-b.refundedEUR);
+   matched.push(b.id);continue;
+  }
   if(b.type==='volunteering'){
    // Host acceptance stays authoritative. Never create free accommodation from this entry.
    const host=volunteerDetails[b.stageId]||{};
@@ -294,7 +306,7 @@ function reconcile({items=[],bookings=[],vol={},volunteerDetails={},legacyPaidBy
  }
  const knownPayment=records.reduce((sum,b)=>sum+b.paidEUR-b.refundedEUR,0);
  const eventJournalTotal=id=>Object.values(journalTxByStop[id]||{}).reduce((n,v)=>n+v,0);
- return {items:output,extraPaid,returnBooking,returnPaymentEUR,paidByStop,typedPaidByStop,journalTxByStop,waitPaidByStop:Object.fromEntries([...new Set([...Object.keys(waitPaidByStop),...Object.keys(journalWaitPaidByStop)])].map(i=>[i,money((waitPaidByStop[i]||0)+(journalWaitPaidByStop[i]||0))])),matched,records,warnings,
+ return {items:output,extraPaid,returnBooking,returnPaymentEUR,fixedBookings,fixedPaymentEUR,paidByStop,typedPaidByStop,journalTxByStop,waitPaidByStop:Object.fromEntries([...new Set([...Object.keys(waitPaidByStop),...Object.keys(journalWaitPaidByStop)])].map(i=>[i,money((waitPaidByStop[i]||0)+(journalWaitPaidByStop[i]||0))])),matched,records,warnings,
   confirmed:active.length,recordedPayment:money(knownPayment),
   bookingIntegrity:warnings.length===0,
   // Warning: payments for unmatched bookings remain sunk expenditure, NOT a future prepayment.
