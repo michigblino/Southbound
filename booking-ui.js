@@ -358,7 +358,7 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>n
  reset();
  if(fromStage)form.open=true;
  if(prefill&&routeLookup(prefill.stageId)&&['transport','lodging','volunteering','activity'].includes(prefill.type)){
-  const existing=prefill.editId&&(getBookings()||[]).find(x=>x.id===prefill.editId&&x.type===prefill.type&&x.stageId===prefill.stageId);
+  const existing=prefill.editId&&(getBookings()||[]).find(x=>x.id===prefill.editId&&x.type===prefill.type&&(x.stageId===prefill.stageId||(prefill.type==='transport'&&x.journeyReturn===true&&route.at(-1)?.isReturn===true)));
   if(existing)fill(existing);
   else{
    field('type').value=prefill.type;
