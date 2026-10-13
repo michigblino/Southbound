@@ -3,7 +3,7 @@
 <linearGradient id="pane" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity=".66"/><stop offset="1" stop-color="#FFFFFF" stop-opacity=".25"/></linearGradient>
 <linearGradient id="range" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4C84A3" stop-opacity=".48"/><stop offset="1" stop-color="#336B87" stop-opacity=".07"/></linearGradient>
 </defs>
-<g><rect width="512" height="512" fill="url(#background)"/>
+<rect width="512" height="512" fill="url(#background)"/><g transform="translate(42 42) scale(.835)">
 <circle cx="422" cy="86" r="145" fill="#FFFFFF" fill-opacity=".24"/>
 <path d="M-30 342L72 268L135 308L211 205L284 273L366 214L543 329V550H-30Z" fill="url(#range)"/>
 <path d="M-20 380Q77 335 146 353T281 339T533 369M-10 407Q117 367 187 393T359 380T533 406M-10 432Q120 402 199 421T360 404T533 427" fill="none" stroke="#FFFFFF" stroke-opacity=".28" stroke-width="3.5"/>
