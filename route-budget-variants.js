@@ -69,19 +69,23 @@ function optimize({items=[],bookings=[],vol={},volunteerDetails={},completed={},
    }
   }
   const rows=[],blocked=[];
-  let old=0,next=0,daysDelta=0,hostNights=0;
+  let old=0,next=0,daysDelta=0,hostNights=0,durationSaving=0,hostSaving=0;
   for(const s of stages){
    const x=map.get(s.i),before=source.get(s.i),base=amount(before),after=amount(x);
    if(base===null||after===null){blocked.push(s.i);continue;}
    old+=base;next+=after;daysDelta+=x.to-before.from;hostNights+=x.hostNights;
+   durationSaving+=money((before.from-x.to)*(before.regularBed+before.dailyOther));
+   hostSaving+=money(x.hostNights*x.regularBed);
    if(x.to!==before.from||x.hostNights)rows.push({
     i:x.i,name:x.name,from:before.from,to:x.to,hostNights:x.hostNights,
-    delta:money(base-after)
+    durationSaving:money((before.from-x.to)*(before.regularBed+before.dailyOther)),
+    hostSaving:money(x.hostNights*x.regularBed),delta:money(base-after)
    });
   }
   const gross=money(old-next),forecast=nonneg(baselineTotal)===null?null:money(Number(baselineTotal)-gross);
   return {name,mode,actions:rows,modelSaving:gross,forecast,remainingToGoal:forecast===null?null:money(Math.max(0,forecast-(nonneg(goal)||0))),
-   daysDelta,hostNights,affectedStops:rows.length,blocked,
+   daysDelta,hostNights,durationSaving:money(durationSaving),hostSaving:money(hostSaving),
+   affectedStops:rows.length,blocked,
    complete:false,verifiedSavings:null,
    warning:'Bedingtes Rechenmodell ohne bestätigte Host-Zusage, neue Transfers, Buchungsänderungen, saisonale Preise oder Sicherheitsprüfung. Die Ersparnis darf nicht als verfügbarer Reisepreis ausgegeben werden.'};
  };
