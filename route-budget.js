@@ -1,7 +1,7 @@
 /* Shared, conservative route budget snapshot for UI and volunteer scenarios. */
 (function(g){'use strict';
 const amount=v=>v===null||v===undefined||v===''?null:Number.isFinite(Number(v))&&Number(v)>=0?Number(v):null;
-function snapshot({items=[],paid=0,reserve=0,goal=0,cap=null,fixedCosts={},completed={},paidByStop={},waitingCost=0,waitingComplete=true,unrecorded=0,timingFeasible=true,bookingIntegrity=true,additionalCosts=0}={}){
+function snapshot({items=[],paid=0,reserve=0,goal=0,cap=null,fixedCosts={},completed={},paidByStop={},waitingCost=0,waitingComplete=true,waitingPaid=0,unrecorded=0,timingFeasible=true,bookingIntegrity=true,additionalCosts=0}={}){
  const engine=g.SouthboundBudgetEngine;if(!engine)throw Error('Budget engine unavailable');
  const lines=[],unknownTransfers=[],unknownPrepayments=[],invalidPrepayments=[],unknownHostCosts=[],unknownHostMeals=[];
  for(const item of items){
@@ -24,7 +24,11 @@ function snapshot({items=[],paid=0,reserve=0,goal=0,cap=null,fixedCosts={},compl
  }
  const categories=[['return','Rückreise'],['insurance','Versicherung'],['visas','Visa'],['equipment','Ausrüstung']];
  for(const [key,label] of categories)lines.push({label,amount:amount(fixedCosts[key]),status:'estimate'});
- lines.push({label:'Wartekosten',amount:waitingComplete?amount(waitingCost):null,status:'estimate'});
+ const parsedWaitCost=amount(waitingCost),parsedWaitPaid=amount(waitingPaid);
+ const invalidWaitPayment=parsedWaitPaid===null||(waitingComplete&&parsedWaitCost!==null&&parsedWaitPaid>parsedWaitCost+0.005);
+ const waitRemainder=waitingComplete&&parsedWaitCost!==null&&!invalidWaitPayment?
+  Math.max(0,Math.round((parsedWaitCost-parsedWaitPaid)*100)/100):null;
+ lines.push({label:'Wartekosten',amount:waitRemainder,status:waitRemainder===null?'unknown':'estimate'});
  lines.push({label:'Zusätzliche Szenariokosten',amount:amount(additionalCosts),status:'estimate'});
  const budget=engine.calculate({paid,reserve,goal,cap,items:[],fixedCosts:lines});
  const incompleteReasons=[];
@@ -34,7 +38,8 @@ function snapshot({items=[],paid=0,reserve=0,goal=0,cap=null,fixedCosts={},compl
  if(unknownPrepayments.length)incompleteReasons.push('unallocated-prepayments');
  if(invalidPrepayments.length)incompleteReasons.push('invalid-stop-prepayments');
  if(categories.some(([key])=>amount(fixedCosts[key])===null))incompleteReasons.push('missing-fixed-costs');
- if(!waitingComplete)incompleteReasons.push('unknown-waiting-costs');
+ if(!waitingComplete||waitRemainder===null)incompleteReasons.push('unknown-waiting-costs');
+ if(invalidWaitPayment)incompleteReasons.push('unallocated-wait-prepayments');
  if(unrecorded>0)incompleteReasons.push('unrecorded-completed-stops');
  if(!timingFeasible)incompleteReasons.push('unverified-route-dates');
  if(!bookingIntegrity)incompleteReasons.push('booking-records-need-review');
