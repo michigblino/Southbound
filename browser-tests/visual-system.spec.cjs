@@ -79,3 +79,22 @@ test('theme choice persists after refresh and does not reset budget or saved boo
  expect(after.goal).toBe(initial.goal);expect(after.cap).toBe(initial.cap);
  expect(after.bookingLedger||[]).toEqual(initial.bookingLedger||[]);
 });
+
+test('overview opens with a meaningful real-trip summary before technical forms',async({page})=>{
+ await page.setViewportSize({width:360,height:780});
+ await page.goto('/',{waitUntil:'domcontentloaded'});
+ const hero=page.locator('#sb2 .sb-overview-hero');
+ await expect(hero).toBeVisible();
+ await expect(hero).toContainText('Zielbudget');
+ await expect(hero).toContainText('Reisetage');
+ const positions=await page.evaluate(()=>({
+  hero:document.querySelector('.sb-overview-hero').getBoundingClientRect().top,
+  preferences:document.querySelector('#sb-travel-settings').getBoundingClientRect().top,
+  scroll:document.documentElement.scrollWidth,
+  viewport:document.documentElement.clientWidth
+ }));
+ expect(positions.hero).toBeLessThan(positions.preferences);
+ expect(positions.scroll).toBeLessThanOrEqual(positions.viewport+2);
+ await hero.locator('[data-view="stages"]').click();
+ await expect(page.locator('#sb2 .topnav [data-view="stages"]')).toHaveAttribute('aria-current','page');
+});
