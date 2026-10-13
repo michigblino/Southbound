@@ -146,7 +146,13 @@ function reconcile({items=[],bookings=[],vol={},volunteerDetails={},legacyPaidBy
    continue;
   }
   matched.push(b.id);
-  if(!assignTyped(b,'transfer')&&!b.recordedElsewhere){
+  // The initial flight deposit belongs only to the inbound ticket, never to hotel nights.
+  // Typed event bookings are already handled by assignTyped; legacy paid flight records
+  // need the same explicit attribution. Journal-linked aggregate deposits remain generic.
+  if(b.type==='transport'&&b.journeyOrigin&&!b.transactions.length&&!b.recordedElsewhere){
+   const row=typedPaidByStop[b.stageId]||(typedPaidByStop[b.stageId]={stay:0,transfer:0,wait:0});
+   row.transfer=money(row.transfer+b.paidEUR-b.refundedEUR);
+  }else if(!assignTyped(b,'transfer')&&!b.recordedElsewhere){
    paidByStop[b.stageId]=money((paidByStop[b.stageId]||0)+b.paidEUR-b.refundedEUR);
   }
  }
