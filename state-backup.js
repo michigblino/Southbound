@@ -5,8 +5,8 @@
 (function(g){'use strict';
 const MAX_BYTES=8*1024*1024;
 const DANGEROUS=new Set(['__proto__','constructor','prototype']);
-const OBJECT_FIELDS=['days','vol','visited','excluded','actuals','volunteerDetails','hostelQuotes','transportOffers','fixedCosts','travelPreferences','priceRanges','fx','dailyRatesCache','transferDaysByStop','volunteerCounts'];
-const ARRAY_FIELDS=['bookingLedger','customStops','extraStops','routeOrder','routeOffers','priceHistory','departures'];
+const OBJECT_FIELDS=['days','vol','visited','excluded','actuals','volunteerDetails','hostelQuotes','transportOffers','fixedCosts','travelPreferences','priceRanges','fx','dailyRatesCache','transferDaysByStop','volunteerCounts','departures'];
+const ARRAY_FIELDS=['bookingLedger','customStops','extraStops','routeOrder','routeOffers','priceHistory'];
 const isPlain=x=>x!==null&&typeof x==='object'&&!Array.isArray(x)&&Object.getPrototypeOf(x)===Object.prototype;
 function inspect(obj,depth=0){
  if(depth>22)throw Error('Backup ist zu tief verschachtelt');
