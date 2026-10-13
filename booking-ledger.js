@@ -36,7 +36,7 @@ function validate(raw){
  return {ok:false,errors,record:null};
 }
 function reconcile({items=[],bookings=[],vol={},volunteerDetails={},legacyPaidByStop={}}={}){
- const output=items.map(item=>({...item})),index=new Map(output.map((item,i)=>[item.i,i])),warnings=[],matched=[],paidByStop={},waitPaidByStop={},records=[],active=[];
+ const output=items.map(item=>({...item})),index=new Map(output.map((item,i)=>[item.i,i])),warnings=[],matched=[],paidByStop={},waitPaidByStop={},journalWaitPaidByStop={},records=[],active=[];
  let extraPaid=0;
  const seen=new Set();
  const raw=Array.isArray(bookings)?bookings:[];
@@ -153,10 +153,10 @@ function reconcile({items=[],bookings=[],vol={},volunteerDetails={},legacyPaidBy
   if(prepared.length===1)item.bookingLodging={id:prepared[0].id,provider:prepared[0].provider,reference:prepared[0].reference};
   for(const b of prepared){
    matched.push(b.id);
-   if(!b.recordedElsewhere){
-    const target=b.allocation==='wait'?waitPaidByStop:paidByStop;
-    target[stageId]=money((target[stageId]||0)+b.paidEUR-b.refundedEUR);
-   }
+   const net=money(b.paidEUR-b.refundedEUR);
+   const target=b.allocation==='wait'?(b.recordedElsewhere?journalWaitPaidByStop:waitPaidByStop):b.recordedElsewhere?null:paidByStop;
+   if(target)target[stageId]=money((target[stageId]||0)+net);
+
   }
  }
  for(const [stageId,at] of index){
@@ -179,12 +179,18 @@ function reconcile({items=[],bookings=[],vol={},volunteerDetails={},legacyPaidBy
    warnings.push({id:b.id,reason:'confirmed-booking-not-reconciled'});
   }
  }
+ // Existing journal spending may include hostel waiting-night deposits. Reallocate those
+ // amounts from generic stay prepayments to the waiting-night liability exactly once.
+ for(const [id,waitPaid] of Object.entries(journalWaitPaidByStop)){
+  if((num(legacyPaidByStop[id])||0)+0.005<waitPaid)
+   warnings.push({id:'journal-wait-'+id,reason:'wait-prepayment-not-attributed-to-stage'});
+ }
  const knownPayment=records.reduce((sum,b)=>sum+b.paidEUR-b.refundedEUR,0);
- return {items:output,extraPaid,paidByStop,waitPaidByStop,matched,records,warnings,
+ return {items:output,extraPaid,paidByStop,waitPaidByStop:Object.fromEntries([...new Set([...Object.keys(waitPaidByStop),...Object.keys(journalWaitPaidByStop)])].map(i=>[i,money((waitPaidByStop[i]||0)+(journalWaitPaidByStop[i]||0))])),matched,records,warnings,
   confirmed:active.length,recordedPayment:money(knownPayment),
   bookingIntegrity:warnings.length===0,
   // Warning: payments for unmatched bookings remain sunk expenditure, NOT a future prepayment.
-  accountedPaidByStop:Object.fromEntries(output.map(item=>[item.i,money((num(legacyPaidByStop[item.i])||0)+(paidByStop[item.i]||0))]))
+  accountedPaidByStop:Object.fromEntries(output.map(item=>[item.i,money(Math.max(0,(num(legacyPaidByStop[item.i])||0)-(journalWaitPaidByStop[item.i]||0))+(paidByStop[item.i]||0))]))
  };
 }
 g.SouthboundBookingLedger={validate,reconcile,types:TYPES.slice(),statuses:STATES.slice()};
