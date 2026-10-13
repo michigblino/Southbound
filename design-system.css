@@ -940,3 +940,35 @@ html[data-sb-theme="light"] #sb2 .sb-overview-hero::after{opacity:0}
 }
 /* Tabs must remain precisely aligned while hovering; their glass highlight provides feedback. */
 #sb2 .topnav button:hover,#sb2 .topnav button:active{transform:none!important}
+
+/* Booking hub v3.1: two-column chooser and grouped editable records. */
+#sb2 .sb-booking-choose{padding:clamp(16px,2.8vw,26px);overflow:hidden}
+#sb2 .sb-booking-choose>.eyebrow{margin-bottom:7px}
+#sb2 .sb-booking-choose h2{margin:4px 0 8px}
+#sb2 .sb-booking-choose>.small{max-width:60ch;margin-bottom:17px}
+#sb2 .sb-booking-shortcuts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px}
+#sb2 .sb-booking-shortcuts button{min-width:0;min-height:114px;height:100%;display:flex;flex-direction:column;justify-content:flex-start;align-items:flex-start;gap:5px;border-radius:18px;padding:15px 16px!important;text-align:left;background:var(--sb-gradient-tile)!important;color:var(--text)!important;border:1px solid var(--sb-glass-border)!important;box-shadow:inset 0 1px 0 var(--sb-highlight),var(--sb-shadow-small)!important}
+#sb2 .sb-booking-shortcuts button svg{width:25px;height:25px;flex:none;stroke-width:1.8;color:var(--accent)!important;margin:0 0 3px}
+#sb2 .sb-booking-shortcuts button b{font-size:clamp(13px,2.3vw,16px);line-height:1.25}
+#sb2 .sb-booking-shortcuts button small{color:var(--muted);font-size:clamp(10px,1.75vw,12px);line-height:1.35}
+#sb2 .sb-booking-shortcuts button:focus-visible{outline:3px solid var(--sb-focus)!important;outline-offset:2px}
+#sb2 .sb-booking-shortcuts button:active{transform:scale(.99)!important}
+#sb2 .sb-booking-groups{display:grid;gap:18px}
+#sb2 .sb-booking-group{min-width:0}
+#sb2 .sb-booking-group__heading{display:flex;align-items:center;gap:10px;margin:0 0 10px;padding:9px 3px 12px;border-bottom:1px solid var(--line)}
+#sb2 .sb-booking-group__icon{display:grid;place-items:center;flex:0 0 38px;height:38px;border-radius:12px;background:var(--sb-subtle);color:var(--text)}
+#sb2 .sb-booking-group__icon svg{width:20px;height:20px}
+#sb2 .sb-booking-group__heading>div{flex:1;min-width:0}
+#sb2 .sb-booking-group__heading h3{margin:0;font-size:15px}
+#sb2 .sb-booking-group__heading p{margin:2px 0 0;font-size:11px}
+#sb2 .sb-booking-group__count{font-variant-numeric:tabular-nums;font-size:12px;min-width:25px;text-align:center;border:1px solid var(--line);border-radius:999px;padding:3px 7px}
+#sb2 .sb-booking-group .sb-booking-list{display:grid;gap:8px}
+#sb2 .sb-booking-card,#sb2 .sb-booking-card .sb-booking-info{min-width:0}
+html:not([data-sb-theme="light"]) #sb2 .sb-booking-shortcuts button svg{color:#E4AB94!important;filter:none}
+@media(max-width:430px){
+ #sb2 .sb-booking-shortcuts{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ #sb2 .sb-booking-shortcuts button{min-height:112px;padding:13px 12px!important}
+ #sb2 .sb-booking-choose{padding:14px}
+}
+@media(max-width:340px){#sb2 .sb-booking-shortcuts button{padding:11px 9px!important}}
+@media(prefers-reduced-motion:reduce){#sb2 .sb-booking-shortcuts button{transition:none!important}}

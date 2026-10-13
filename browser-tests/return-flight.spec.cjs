@@ -5,7 +5,7 @@ test('direct booking tab offers exactly six contextual choices and keeps editor 
  await page.goto('/',{waitUntil:'domcontentloaded'});
  await page.locator('[data-view="bookings"]').click();
  await expect(page.locator('[data-bk-preset]')).toHaveCount(6);
- await expect(page.locator('[data-bk-preset="return"]')).toBeVisible();
+ await expect(page.locator('[data-bk-preset="return"]')).toBeVisible();await expect(page.locator('[data-bk-preset="return"]')).toContainText('Rückflug');
  await expect(page.locator('[data-bk-preset="inbound"]')).toBeVisible();
  await expect(page.locator('#sb-bookings-editor')).not.toHaveAttribute('open');
  await page.locator('[data-bk-preset="return"]').click();
@@ -38,7 +38,7 @@ test('return flight can be saved with a layover, edited and reconciled without c
  await stop.locator('[data-bk-layover-overnight]').selectOption('included');
  page.once('dialog',d=>d.accept());
  await page.locator('[data-bk-save]').click();
- await expect(page.locator('.sb-booking-list')).toContainText('Rückreise');
+ await expect(page.locator('[data-bk-group="return"]')).toContainText('Rückflug');
  const snap=await page.evaluate(()=>{
   const m=JSON.parse(localStorage.getItem('southbound-v3'));
   const p=window.SouthboundItinerary.plan({stops:STOPS,start:m.tripStart,days:m.days,order:m.routeOrder,excluded:m.excluded});
@@ -69,4 +69,19 @@ test('coming from an itinerary stage bypasses category chooser and opens matchin
  await expect(page.locator('#sb-bookings-editor')).toHaveAttribute('open');
  await expect(field(page,'type')).toHaveValue('lodging');
  await expect(field(page,'stageId')).toHaveValue('1');
+});
+
+test('booking hub has two columns and the favicon follows light/dark theme',async({page})=>{
+ await page.setViewportSize({width:320,height:780});await page.goto('/',{waitUntil:'domcontentloaded'});
+ await page.locator('[data-view="bookings"]').click();
+ const cards=page.locator('[data-bk-preset]');await expect(cards).toHaveCount(6);
+ const positions=await cards.evaluateAll(nodes=>nodes.map(n=>({top:n.getBoundingClientRect().top,left:n.getBoundingClientRect().left})));
+ expect(Math.abs(positions[0].top-positions[1].top)).toBeLessThan(2);
+ expect(positions[1].left).toBeGreaterThan(positions[0].left);
+ expect(positions[2].top).toBeGreaterThan(positions[0].top);
+ for(const mode of ['light','dark']){
+  if(await page.locator('html').getAttribute('data-sb-theme')!==mode)await page.locator('#sb-theme-toggle').click();
+  await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href',mode==='light'?'./icon.svg':'./icon-dark.svg');
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(322);
+ }
 });
