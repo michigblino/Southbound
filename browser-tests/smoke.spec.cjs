@@ -223,15 +223,14 @@ test('stage card opens the correct lodging booking editor and reflects confirmat
  await expect(field('paidEUR')).toHaveValue('20');
 });
 test('stage card warns when a confirmed booking no longer matches its travel date',async({page})=>{
- await page.goto('/',{waitUntil:'domcontentloaded'});
- await expect.poll(()=>page.evaluate(()=>!!localStorage.getItem('southbound-v3'))).toBe(true);
- await expect.poll(()=>page.evaluate(()=>!!localStorage.getItem('southbound-v3'))).toBe(true);
- await page.evaluate(()=>{
+ await page.addInitScript(()=>{
+  const key='sb-stale-ticket-fixture';if(sessionStorage.getItem(key))return;
   const m=JSON.parse(localStorage.getItem('southbound-v3')||'{}');
   m.bookingLedger=[{id:'mismatch',type:'transport',status:'confirmed',stageId:1,fromStageId:0,title:'Altes Busticket',provider:'Bus Beispiel',startDate:'2027-03-01',endDate:'',totalEUR:42,paidEUR:42,refundedEUR:0,reference:'AB123',recordedElsewhere:false}];
-  localStorage.setItem('southbound-v3',JSON.stringify(m));
+  localStorage.setItem('southbound-v3',JSON.stringify(m));sessionStorage.setItem(key,'1');
  });
- await page.reload({waitUntil:'domcontentloaded'});
+ await page.goto('/',{waitUntil:'domcontentloaded'});
+ await expect.poll(()=>page.evaluate(()=>JSON.parse(localStorage.getItem('southbound-v3')||'{}').bookingLedger?.[0]?.id)).toBe('mismatch');
  await page.locator('[data-view="stages"]').click();
  await page.locator('#sb-stage-1 summary').first().click();
  await expect(page.locator('#sb-stage-1 [data-stage-action="transport"]')).toContainText('Prüfen');
