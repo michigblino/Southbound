@@ -9,7 +9,7 @@ function evaluate(host,profileInput={}){
  const p=normalizeProfile(profileInput),reasons=[],unknown=[];
  if(!host||typeof host!=='object')return {status:'excluded',reasons:['invalid-host'],unknown:[]};
  const h=host.hoursPerWeek;
- if(h===null||h===undefined||h==='')unknown.push('hours');else if(!Number.isFinite(Number(h)))unknown.push('hours');else if(Number(h)>p.maxHoursPerWeek)reasons.push('hours-over-limit');
+ if(h===null||h===undefined||h==='')unknown.push('hours');else if(!Number.isFinite(Number(h)))unknown.push('hours');else if(Number(h)>p.maxHoursPerWeek)unknown.push('hours-over-preference');
  if(host.distanceKm!==undefined&&host.distanceKm!==null&&Number.isFinite(Number(host.distanceKm))){if(Number(host.distanceKm)>p.radiusKm)reasons.push('outside-radius');}else unknown.push('distance');
  if(host.minStayDays!==undefined&&host.minStayDays!==null){if(Number(host.minStayDays)>p.maxStayDays)reasons.push('minimum-stay-too-long');}else unknown.push('minimum-stay');
  if(host.maxStayDays!==undefined&&host.maxStayDays!==null){if(Number(host.maxStayDays)<p.minStayDays)reasons.push('maximum-stay-too-short');}

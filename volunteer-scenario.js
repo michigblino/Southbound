@@ -16,21 +16,24 @@ function compare({stops=[],start,stopId,proposedDays,host={},options={},budget={
  const vol={...(options.vol||{}),[stopId]:hostConfirmed};
  const days={...(options.days||{}),[stopId]:n};
  const candidate=itinerary.plan({...opts,days,vol,volunteerDetails});
+ const ledger=g.SouthboundBookingLedger,records=options.bookings;
+ const reprice=(plan,volStatus,hostDetails)=>ledger&&Array.isArray(records)&&records.length?ledger.reconcile({items:plan.items,bookings:records,vol:volStatus,volunteerDetails:hostDetails,legacyPaidByStop:budget.paidByStop||{}}):{items:plan.items,extraPaid:0,accountedPaidByStop:budget.paidByStop||{},bookingIntegrity:true,warnings:[]};
+ const baselineBookings=reprice(baseline,options.vol||{},options.volunteerDetails||{}),proposedBookings=reprice(candidate,vol,volunteerDetails);
  // Host meals are not assumed free: require an explicit daily amount for a priced comparison.
  const hostFood=amount(host.foodPerDay);
  // The canonical itinerary already prices confirmed host meals; never apply them twice.
  const timingOpts={start,stops,quotes:options.quotes||{},transferDaysByStop:options.transferDaysByStop||{}};
- const beforeTiming=timing.evaluate({...timingOpts,items:baseline.items,volunteerDetails:options.volunteerDetails||{},isVolunteer:i=>options.vol?.[i]===true&&options.volunteerDetails?.[i]?.confirmed===true});
- const afterTiming=timing.evaluate({...timingOpts,items:candidate.items,volunteerDetails,isVolunteer:i=>vol[i]===true&&volunteerDetails[i]?.confirmed===true});
+ const beforeTiming=timing.evaluate({...timingOpts,items:baselineBookings.items,volunteerDetails:options.volunteerDetails||{},isVolunteer:i=>options.vol?.[i]===true&&options.volunteerDetails?.[i]?.confirmed===true});
+ const afterTiming=timing.evaluate({...timingOpts,items:proposedBookings.items,volunteerDetails,isVolunteer:i=>vol[i]===true&&volunteerDetails[i]?.confirmed===true});
  const shared={...budget};
- const beforeBudget=snapshot({...shared,items:baseline.items,waitingCost:beforeTiming.waiting.total,waitingComplete:beforeTiming.waiting.complete,timingFeasible:beforeTiming.feasible});
+ const beforeBudget=snapshot({...shared,items:baselineBookings.items,paid:Number(shared.paid||0)+baselineBookings.extraPaid,paidByStop:baselineBookings.accountedPaidByStop,bookingIntegrity:baselineBookings.bookingIntegrity,waitingCost:beforeTiming.waiting.total,waitingComplete:beforeTiming.waiting.complete,timingFeasible:beforeTiming.feasible});
  // Candidate host fees are already included in candidate.items[].stay; do not count them twice.
- const afterBudget=snapshot({...shared,items:candidate.items,waitingCost:afterTiming.waiting.total,waitingComplete:afterTiming.waiting.complete,timingFeasible:afterTiming.feasible});
+ const afterBudget=snapshot({...shared,items:proposedBookings.items,paid:Number(shared.paid||0)+proposedBookings.extraPaid,paidByStop:proposedBookings.accountedPaidByStop,bookingIntegrity:proposedBookings.bookingIntegrity,waitingCost:afterTiming.waiting.total,waitingComplete:afterTiming.waiting.complete,timingFeasible:afterTiming.feasible});
  const extraDays=Math.max(0,n-target.days);
  const dateShift=afterTiming.schedule.finish!==beforeTiming.schedule.finish;
  const extraCosts=amount(host.extraCosts);
  const knownExtras=extraCosts!==null;
- const netImpactCalculable=beforeBudget.complete&&afterBudget.complete&&hostConfirmed&&hostFood!==null&&knownExtras&&beforeTiming.feasible&&afterTiming.feasible;
+ const netImpactCalculable=beforeBudget.complete&&afterBudget.complete&&hostConfirmed&&hostFood!==null&&knownExtras&&beforeTiming.feasible&&afterTiming.feasible&&baselineBookings.bookingIntegrity&&proposedBookings.bookingIntegrity;
  const costDelta=netImpactCalculable?Math.round((afterBudget.totalEstimate-beforeBudget.totalEstimate)*100)/100:null;
  const reasons=[];
  if(!hostConfirmed)reasons.push('unconfirmed-host-or-price');
@@ -39,6 +42,7 @@ function compare({stops=[],start,stopId,proposedDays,host={},options={},budget={
  if(hostConfirmed&&hostFood===null)reasons.push('unknown-host-meals');
  if(!beforeTiming.feasible||!afterTiming.feasible)reasons.push('unverified-route-timing');
  if(!beforeBudget.complete||!afterBudget.complete)reasons.push('incomplete-all-in-budget');
+ if(!baselineBookings.bookingIntegrity||!proposedBookings.bookingIntegrity)reasons.push('unreconciled-bookings');
  return {valid:true,stopId,extraDays,dateShift,baseline:{itinerary:baseline,timing:beforeTiming,budget:beforeBudget},proposed:{itinerary:candidate,timing:afterTiming,budget:afterBudget},netImpactCalculable,costDelta,reasons};
 }
 g.SouthboundVolunteerScenario={compare};

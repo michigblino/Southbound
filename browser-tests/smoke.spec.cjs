@@ -74,3 +74,74 @@ test('ticket save binds route/date and retains old record after trip date change
  expect(output.stored.price).toBe(42);
  expect(output.accepted).toBeNull();
 });
+
+
+test('booking center persists a confirmed transfer, adjusts itinerary and handles refund',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('/',{waitUntil:'domcontentloaded'});
+ await page.locator('[data-view="bookings"]').click();
+ await expect(page.locator('#sb-bookings-editor')).toBeVisible();
+ const field=k=>page.locator('[data-bk="'+k+'"]');
+ await field('type').selectOption('transport');
+ await field('status').selectOption('confirmed');
+ await field('stageId').selectOption('1');
+ await field('title').fill('Bus Test A → B');
+ await field('provider').fill('Test Operator');
+ await field('reference').fill('TEST-123');
+ await field('totalEUR').fill('42');
+ await field('paidEUR').fill('12');
+ expect(await field('startDate').inputValue()).toBe('2026-12-31');
+ expect(await field('fromStageId').inputValue()).toBe('0');
+ page.once('dialog',dialog=>dialog.accept());
+ await page.locator('[data-bk-save]').click();
+ await expect(page.locator('.sb-booking-card')).toContainText('Bus Test A');
+ const snap=await page.evaluate(()=>{
+  const m=JSON.parse(localStorage.getItem('southbound-v3'));
+  const p=window.SouthboundItinerary.plan({stops:STOPS,start:m.tripStart,fx:Number(m.fx?.usdEur)||0,quotes:m.hostelQuotes,transportOffers:m.transportOffers,vol:m.vol,volunteerDetails:m.volunteerDetails,excluded:m.excluded,days:m.days,order:m.routeOrder});
+  const r=window.SouthboundBookingLedger.reconcile({items:p.items,bookings:m.bookingLedger,vol:m.vol,volunteerDetails:m.volunteerDetails});
+  return {bookings:m.bookingLedger.length,booking:m.bookingLedger[0],leg:r.items.find(x=>x.i===1).leg,extraPaid:r.extraPaid,payment:r.paidByStop[1]};
+ });
+ expect(snap.bookings).toBe(1);
+ expect(snap.booking.status).toBe('confirmed');
+ expect(snap.leg).toBe(42);expect(snap.extraPaid).toBe(12);expect(snap.payment).toBe(12);
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('[data-view="bookings"]').click();
+ await expect(page.locator('.sb-booking-card')).toContainText('Bus Test A');
+ await page.locator('[data-bk-edit]').first().click();
+ await field('status').selectOption('cancelled');
+ await field('refundedEUR').fill('8');
+ await page.locator('[data-bk-save]').click();
+ const after=await page.evaluate(()=>{
+  const m=JSON.parse(localStorage.getItem('southbound-v3'));
+  const p=window.SouthboundItinerary.plan({stops:STOPS,start:m.tripStart,transportOffers:m.transportOffers,days:m.days,order:m.routeOrder,excluded:m.excluded});
+  const r=window.SouthboundBookingLedger.reconcile({items:p.items,bookings:m.bookingLedger});
+  return {booking:m.bookingLedger[0],leg:r.items[1].leg,original:p.items[1].leg,paid:r.extraPaid,integrity:r.bookingIntegrity};
+ });
+ expect(after.booking.status).toBe('cancelled');expect(after.booking.refundedEUR).toBe(8);
+ expect(after.leg).toBe(after.original);expect(after.paid).toBe(4);
+ expect(after.integrity).toBe(true);expect(errors).toEqual([]);
+});
+test('above-preference volunteering is confirmable after a warning',async({page})=>{
+ await page.goto('/',{waitUntil:'domcontentloaded'});
+ await page.locator('[data-view="stages"]').click();
+ await page.locator('#sb-stage-0 summary').click();
+ await page.locator('#sb-stage-0 [data-vol-confirm="0"]').click();
+ await page.locator('#sb-vol-host').fill('Host 35h');
+ await page.locator('#sb-vol-from').fill('2027-01-02');
+ await page.locator('#sb-vol-to').fill('2027-01-05');
+ await page.locator('#sb-vol-night').fill('0');
+ await page.locator('#sb-vol-hours').fill('35');
+ await page.locator('#sb-vol-food').fill('0');
+ await page.locator('#sb-vol-extra').fill('0');
+ page.once('dialog',dialog=>{expect(dialog.message()).toContain('über deinem Wunschlimit');dialog.accept()});
+ await page.locator('#sb-vol-save').click();
+ const hours=await page.evaluate(()=>JSON.parse(localStorage.getItem('southbound-v3')).volunteerDetails[0].hoursPerWeek);
+ expect(hours).toBe(35);
+});
+test('booking center fits mobile viewport',async({page})=>{
+ await page.setViewportSize({width:390,height:844});
+ await page.goto('/',{waitUntil:'domcontentloaded'});
+ await page.locator('[data-view="bookings"]').click();
+ const width=await page.evaluate(()=>({scroll:document.documentElement.scrollWidth,client:document.documentElement.clientWidth}));
+ expect(width.scroll).toBeLessThanOrEqual(width.client+2);
+});

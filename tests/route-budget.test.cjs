@@ -55,3 +55,9 @@ test('priced host extras already included in stay are not charged a second time'
  const r=snapshot({...base,items:[{i:0,stay:250,leg:20,hostExtras:50,hostFoodKnown:true}]});
  assert.equal(r.totalEstimate,590);
 });
+
+test('unmatched confirmed booking blocks verified total even if all other costs exist',()=>{
+ const r=snapshot({...base,bookingIntegrity:false});
+ assert.equal(r.complete,false);assert.equal(r.goalStatus,'unverified');
+ assert.ok(r.incompleteReasons.includes('booking-records-need-review'));
+});
