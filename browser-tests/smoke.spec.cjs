@@ -86,6 +86,7 @@ test('booking center persists a confirmed transfer, adjusts itinerary and handle
  await page.goto('/',{waitUntil:'domcontentloaded'});
  await expect.poll(()=>page.evaluate(()=>!!localStorage.getItem('southbound-v3'))).toBe(true);
  await page.locator('[data-view="bookings"]').click();
+ await page.locator('#sb-bookings-editor summary').click();
  await expect(page.locator('#sb-bookings-editor')).toBeVisible();
  const field=k=>page.locator('[data-bk="'+k+'"]');
  await field('type').selectOption('transport');
@@ -179,6 +180,7 @@ test('deleting a paid booking warns that its payment history would be lost',asyn
  await page.goto('/',{waitUntil:'domcontentloaded'});
  await expect.poll(()=>page.evaluate(()=>!!localStorage.getItem('southbound-v3'))).toBe(true);
  await page.locator('[data-view="bookings"]').click();
+ await page.locator('#sb-bookings-editor summary').click();
  await page.locator('[data-bk="title"]').fill('Deposit');
  await page.locator('[data-bk="provider"]').fill('Test provider');
  await page.locator('[data-bk="paidEUR"]').fill('25');
