@@ -10,7 +10,7 @@ test('budget integrity panel passes keyed fixed costs to shared snapshot',()=>{a
 
 test('overview distinguishes primary all-in subtotal from optional risk simulation',()=>{assert.match(html,/data-sb-all-in-total/);assert.match(html,/Zusätzliche Preisrisiko-Simulation \(kein All-in-Budget\)/);assert.match(html,/<details class="panel"><summary><b>Zusätzliche Preisrisiko-Simulation/);assert.doesNotMatch(html,/budgetGap=t\.mid/)});
 
-test('STH/BND app icon is used by favicon and PWA manifest',()=>{const icon=fs.readFileSync(path.join(root,'icon.svg'),'utf8'),manifest=JSON.parse(fs.readFileSync(path.join(root,'manifest.webmanifest'),'utf8'));assert.match(icon,/>STH<\/text>/);assert.match(icon,/>BND<\/text>/);assert.match(icon,/M85 122H427M85 405H427/);assert.ok(html.includes('href="./icon.svg"'));assert.ok(manifest.icons.some(x=>x.src==='./icon.svg'));assert.ok(html.includes('icon-dark.svg'));assert.ok(sw.includes('icon-dark.svg'));assert.ok(sw.includes('woodcut-pattern.svg'))});
+test('STH/BND app icon is used by favicon and PWA manifest',()=>{const icon=fs.readFileSync(path.join(root,'icon.svg'),'utf8'),manifest=JSON.parse(fs.readFileSync(path.join(root,'manifest.webmanifest'),'utf8'));assert.match(icon,/>STH<\/text>/);assert.match(icon,/>BND<\/text>/);assert.match(icon,/M85 122H427M85 405H427/);assert.ok(html.includes('href="./icon.svg"'));assert.ok(manifest.icons.some(x=>x.src==='./icon.svg'));assert.ok(html.includes('icon-dark.svg'));assert.ok(sw.includes('icon-dark.svg'));assert.ok(sw.includes('woodcut-pattern.svg'));assert.ok(sw.includes('icon-maskable.svg'));assert.ok(manifest.icons.some(x=>x.src==='./icon-maskable.svg'&&x.purpose==='maskable'));assert.ok(html.includes('favicon.href=theme'));const dark=fs.readFileSync(path.join(root,'icon-dark.svg'),'utf8');assert.match(dark,/>STH<\/text>/);assert.match(dark,/>BND<\/text>/)});
 
 test('volunteer recommendations do not stop when gross savings seem to cover budget gap',()=>{assert.match(html,/if\(selected\.length>=5\)break/);assert.doesNotMatch(html,/if\(gap>0&&covered>=gap\)break/);assert.match(html,/zusätzliche Tage mit noch zu kalkulierenden Kosten/);assert.match(html,/nicht<\/b> von der Budgetlücke abgezogen/)});
 
@@ -33,4 +33,13 @@ test('Mist/Stone and Shadow/Autumn are real CSS tokens and offline assets',()=>{
  assert.ok(sw.includes('design-system.css'));
  const pattern=fs.readFileSync(path.join(root,'woodcut-pattern.svg'),'utf8');
  assert.match(pattern,/<svg /);assert.match(pattern,/<path /);
+});
+
+test('booking cards expose a return flight and saved bookings are grouped',()=>{
+ const booking=fs.readFileSync(path.join(root,'booking-ui.js'),'utf8');
+ const css=fs.readFileSync(path.join(root,'design-system.css'),'utf8');
+ assert.match(booking,/data-bk-preset="return"[^\n]*<b>Rückflug<\/b>/);
+ assert.match(booking,/data-bk-group/);
+ for(const key of ['inbound','return','transport','lodging','volunteering','activity'])assert.ok(booking.includes("key:'"+key+"'"));
+ assert.match(css,/\.sb-booking-groups/);
 });
