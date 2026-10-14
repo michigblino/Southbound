@@ -137,3 +137,16 @@ test('sourced manual offer shortlist is bundled and never asserts live bookabili
  assert.ok(backup.includes('offerWatchlist'));
  assert.match(html,/southbound-v3/);
 });
+
+
+test('provider discovery files are packaged and never imply live data on static hosting',()=>{
+ const discovery=fs.readFileSync(path.join(root,'offer-discovery.js'),'utf8');
+ for(const name of ['offer-discovery.js?v=83','offer-discovery.css']){
+  assert.ok(html.includes(name));assert.ok(sw.includes(name));
+ }
+ assert.ok(html.includes('offer-shortlist.js?v=82'));
+ assert.ok(sw.includes('southbound-v83'));
+ assert.ok(discovery.includes('/api/offers/v1/search'));
+ assert.ok(discovery.includes('availabilityConfirmed:true'));
+ assert.ok(!discovery.includes('API_KEY='));
+});
