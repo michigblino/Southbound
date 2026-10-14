@@ -42,7 +42,7 @@ jobs:
       - name: Verify public Southbound page and PWA assets
         run: |
           curl --fail --silent --show-error --retry 5 --retry-delay 4 --retry-all-errors https://southbound.realguesser.app/ -o /tmp/southbound.html
-          grep -q 'Southbound' /tmp/southbound.html
+          grep -q 'The Worn Road' /tmp/southbound.html
           curl --fail --silent --show-error --retry 5 --retry-delay 4 https://southbound.realguesser.app/manifest.webmanifest -o /tmp/southbound.webmanifest
-          grep -q '"short_name": "Southbound"' /tmp/southbound.webmanifest
+          grep -q '"short_name": "The Worn Road"' /tmp/southbound.webmanifest
           curl --fail --silent --show-error https://southbound.realguesser.app/sw.js -o /dev/null
