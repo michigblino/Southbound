@@ -1,0 +1,48 @@
+name: Southbound → Cloudflare
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '*.html'
+      - '*.js'
+      - '*.css'
+      - '*.svg'
+      - '*.webmanifest'
+      - 'wrangler.jsonc'
+      - 'scripts/build-cloudflare.cjs'
+      - '.github/workflows/cloudflare.yml'
+
+jobs:
+  publish:
+    # Enable only after the Cloudflare account, zone and credentials are configured.
+    if: ${{ vars.SOUTHBOUND_CF_DEPLOY_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    concurrency:
+      group: southbound-cloudflare-production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate client JavaScript and build public assets
+        run: |
+          node --test tests/cloudflare-build.test.cjs
+          node scripts/build-cloudflare.cjs
+      - name: Publish only the separate Southbound Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.SOUTHBOUND_CF_API_TOKEN }}
+          accountId: ${{ secrets.SOUTHBOUND_CF_ACCOUNT_ID }}
+          wranglerVersion: '4'
+          command: deploy --config wrangler.jsonc
+      - name: Verify public Southbound page and PWA assets
+        run: |
+          curl --fail --silent --show-error --retry 5 --retry-delay 4 --retry-all-errors https://southbound.realguesser.app/ -o /tmp/southbound.html
+          grep -q 'Southbound' /tmp/southbound.html
+          curl --fail --silent --show-error --retry 5 --retry-delay 4 https://southbound.realguesser.app/manifest.webmanifest -o /tmp/southbound.webmanifest
+          grep -q '"short_name": "Southbound"' /tmp/southbound.webmanifest
+          curl --fail --silent --show-error https://southbound.realguesser.app/sw.js -o /dev/null
