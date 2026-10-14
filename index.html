@@ -219,10 +219,26 @@ function sbBudgetVariantsPanel(items,total,riskMarkup=''){
    completed:Object.fromEntries(items.map(x=>[x.i,isCompletedStop(x.i)||!!m.visited?.[x.i]])),
    preferences:m.travelPreferences};
  const out=calc({...common,goal:Number(m.goal)||8000,baselineTotal:total}),bed=bedCalc({...common,visited:m.visited});
+ const reprice=window.SouthboundTripReprice;
+ const actuals=m.actuals||{},extraPaid=(m.extraStops||[]).reduce((a,x)=>a+(Number(x.cost)||0),0);
+ const repriced=reprice?.compare({
+  stops:STOPS,start:m.tripStart,fx:Number(m.fx?.usdEur)||0,
+  quotes:m.hostelQuotes,transportOffers:m.transportOffers,
+  vol:m.vol,volunteerDetails:m.volunteerDetails,excluded:m.excluded,days:m.days,order:m.routeOrder,
+  bookings:m.bookingLedger,actuals,extraPaid,reserve:Math.max(0,Number(m.reserve)||0),
+  goal:Number(m.goal)||8000,cap:Number(m.cap)||12000,fixedCosts:m.fixedCosts||{},
+  completed:common.completed,transferDaysByStop:m.transferDaysByStop||{},originRequired:!!m.tripOrigin
+ },out.options);
  const tripDays=items.filter(x=>!x.isReturn).reduce((v,x)=>v+(Number(x.days)||0),0);
- const variants=[{mode:'current',name:'Deine Route',forecast:total,modelSaving:0,daysDelta:0,hostNights:0,actions:[],durationSaving:0,hostSaving:0},...out.options];
+ const variantReprice=(v,i)=>repriced?{...v,forecast:repriced.alternatives[i].forecast,
+   modelSaving:repriced.alternatives[i].hypotheticalSaving,daysDelta:repriced.alternatives[i].daysDelta,
+   hostNights:repriced.alternatives[i].hostNights,repriceResult:repriced.alternatives[i]}:v;
+ const variants=[{mode:'current',name:'Deine Route',forecast:repriced?.baseline.estimatedTotal??total,
+  modelSaving:0,daysDelta:0,hostNights:0,actions:[],durationSaving:0,hostSaving:0,
+  repriceResult:repriced?.baseline},...out.options.map(variantReprice)];
  const chosen=variants.some(x=>x.mode===sbSavingsVariantChoice)?sbSavingsVariantChoice:'volunteer';
- const best=out.options.reduce((a,b)=>!a||b.forecast<a.forecast?b:a,null);
+ const best=variants.slice(1).reduce((a,b)=>!a||b.forecast<a.forecast?b:a,null);
+ const mismatch=repriced&&Math.abs(repriced.baseline.estimatedTotal-total)>0.01;
  const fmt=x=>x!==null&&x!==undefined&&Number.isFinite(Number(x))?E(Number(x)):'Offen';
  const saving=x=>Math.max(0,Number(x)||0);
  const tabs=variants.map(v=>{
@@ -237,7 +253,28 @@ function sbBudgetVariantsPanel(items,total,riskMarkup=''){
   const current=v.mode==='current';
   const gap=v.forecast===null?null:Math.max(0,v.forecast-out.goal);
   const daysLeft=tripDays+v.daysDelta;
-  const short=Math.max(0,Math.round(v.durationSaving||0)),host=Math.max(0,Math.round(v.hostSaving||0));
+  const ledger=v.repriceResult,initial=repriced?.baseline;
+  const costGroups=[
+   ['Aufenthalte',l=>l.label.startsWith('Aufenthalt ')],
+   ['Transfers',l=>l.label.startsWith('Transfer ')],
+   ['Fixkosten',l=>['Rückreise','Versicherung','Visa','Ausrüstung'].includes(l.label)],
+   ['Warte- und Zusatzkosten',l=>l.label==='Wartekosten'||l.label==='Zusätzliche Szenariokosten']
+  ];
+  const sumGroup=(r,test)=>r?r.snapshot.lines.filter(test).reduce((a,l)=>a+(Number(l.amount)||0),0):0;
+  const costBreakdown=ledger&&initial?costGroups.map(([name,test])=>'<div><span>'+name+'</span><b>'+fmt(sumGroup(initial,test))+' → '+fmt(sumGroup(ledger,test))+'</b></div>').join(''):'';
+  const provenance=ledger&&window.SouthboundPriceEvidence?.evaluate({
+   items:ledger.items,ledger:ledger.ledger,snapshot:ledger.snapshot,
+   quotes:m.hostelQuotes,fixedCosts:ledger.priceInputs.fixedCosts});
+  const sourceCounts=provenance?'<span>Gebucht '+provenance.totals.booked+'</span><span>Datierte Angebote '+provenance.totals['dated-offer']+
+   '</span><span>Eigene Angaben '+provenance.totals.manual+'</span><span>Modell '+provenance.totals.model+
+   '</span><span>Offen '+provenance.totals.unknown+'</span>':'';
+  const provenancePanel=provenance?'<details class="sb-decision-disclosure sb-evidence">'+
+   '<summary>Wie verlässlich sind die Preise?<span>Quellen ansehen</span></summary>'+
+   '<p class="small">Gebucht bedeutet nur, dass eine bestätigte Nutzereingabe der Route zugeordnet wurde – keine externe Anbieterprüfung. Alle Werte und Quellen sind lokal aus deinen Einträgen abgeleitet.</p>'+
+   '<div class="sb-evidence-tiers">'+sourceCounts+'</div>'+
+   '<div class="sb-evidence-lines">'+provenance.rows.map(row=>'<div><span><b>'+safe(row.label)+'</b>'+
+   '<small>'+safe(row.source)+(row.provider?' · '+safe(row.provider):'')+(row.checkedAt?' · geprüft '+safe(row.checkedAt):'')+'</small></span>'+
+   '<b>'+(row.amount===null?'Preis offen':fmt(row.amount))+'</b></div>').join('')+'</div></details>':'';
   const changes=(v.actions||[]).map(a=>'<div class="sb-decision-change"><span><b>'+safe(a.name)+'</b>'+
    '<small>'+a.from+' → '+a.to+' Tage'+(a.hostNights?' · '+a.hostNights+' angenommene Host-Nächte':'')+'</small></span><b>'+fmt(a.delta)+'</b></div>').join('');
   return '<div class="sb-variant-detail" data-sb-variant-content="'+v.mode+'" id="sb-variant-detail-'+v.mode+'"'+(v.mode!==chosen?' hidden':'')+'>'+
@@ -246,10 +283,13 @@ function sbBudgetVariantsPanel(items,total,riskMarkup=''){
     '<div class="sb-decision-stats"><div><span>Rechnerisch günstiger</span><b>'+fmt(v.modelSaving)+'</b></div><div><span>Noch über '+fmt(out.goal)+' Ziel</span><b>'+fmt(gap)+'</b></div>'+
     '<div><span>Reisezeit</span><b>'+daysLeft+' / '+tripDays+' Tage</b></div></div></div>'+
     '<div class="sb-decision-benefits">'+(current?'Aktuelle Reise, noch nicht vollständig bepreist.':'Achtung: '+(v.daysDelta<0?Math.abs(v.daysDelta)+' Reisetage entfallen. ':'Die Reisezeit bleibt erhalten. ')+v.hostNights+' hypothetische Host-Nächte; keine Zusagen oder neuen Transferpreise geprüft.')+'</div>'+
-    (!current?'<details class="sb-decision-disclosure"><summary>Wie entsteht diese Ersparnis?<span>Details anzeigen</span></summary>'+
-      '<div class="sb-variant-split"><div><span>Veränderte Aufenthalte</span><b>'+fmt(short)+'</b></div>'+
-      '<div><span>Angenommene freie Host-Unterkünfte</span><b>'+fmt(host)+'</b></div>'+
-      '<div class="sb-variant-split__total"><span>Gemeinsame Modelländerung</span><b>'+fmt(v.modelSaving)+'</b></div></div></details>':'')+
+    (!current?'<details class="sb-decision-disclosure"><summary>Wie entsteht die neue Gesamtsumme?<span>Alle Kostenarten</span></summary>'+
+      '<div class="sb-variant-split">'+costBreakdown+
+      '<div><span>Bereits erfasste Ausgaben</span><b>'+fmt(initial?.snapshot.paid)+' → '+fmt(ledger?.snapshot.paid)+'</b></div>'+
+      '<div><span>Reserve</span><b>'+fmt(initial?.snapshot.reserve)+' → '+fmt(ledger?.snapshot.reserve)+'</b></div>'+
+      '<div class="sb-variant-split__total"><span>Gesamte neue Budgetprognose</span><b>'+fmt(v.forecast)+'</b></div></div>'+
+      '<p class="small">Alle Kosten neu bewertet. Unbestätigte Host-Nächte und geänderte Abfahrtstage machen das Ergebnis unsicher; keine buchbare Preisgarantie.</p></details>':'')+
+    provenancePanel+
     (changes?'<details class="sb-decision-disclosure sb-variant-changes"><summary>Was müsste sich ändern?<span>'+v.actions.length+' Etappen</span></summary>'+
      '<div class="sb-decision-changes">'+changes+'</div></details>':'')+
    '</div>';
@@ -263,7 +303,8 @@ function sbBudgetVariantsPanel(items,total,riskMarkup=''){
   '<p class="small">Vergleiche Kosten <b>und Reisedauer</b>. Die Varianten sind Rechenmodelle, keine buchbaren Angebote.</p></div>'+
   '<div class="sb-variant-picker" role="group" aria-label="Sparvariante auswählen">'+tabs+'</div>'+
   '<div class="sb-variant-results">'+panels+'</div>'+
-  '<p class="sb-decision-caution">Die günstigste Variante kann deutlich kürzer sein. Deshalb ist „Viel Volunteering“ als Ausgangspunkt gewählt. Ohne bestätigte Hosts und neue Verbindungen ist noch keine Nettoersparnis nachgewiesen.</p>'+
+  '<p class="sb-decision-caution">'+(mismatch?'Die Ausgangssumme der Neuberechnung weicht von der Budgetkarte ab; bitte die Eingaben prüfen. ':'' )+
+  'Jede Variante wird vollständig neu berechnet. Die günstigste Variante kann kürzer sein; kostenlose Host-Nächte sind nur Annahmen. Preise und Ausgaben müssen anhand konkreter Angebote geprüft werden.</p>'+
   '<details class="sb-hub-detail" id="sb-savings-lodging"><summary><span><b>Volunteering: nur Unterkunftskosten</b><small>Isoliertes Potenzial, nicht zusätzlich abziehen</small></span><span aria-hidden="true">⌄</span></summary>'+
   '<div class="sb-hub-detail__body"><div class="sb-hub-lodging-figure"><strong>'+fmt(bed.grossAccommodationCeiling)+'</strong>'+
   '<span>Brutto-Unterkunftspotenzial bei '+bed.eligibleNights+' hypothetischen Host-Nächten auf der heutigen Route – kein zusätzlicher Rabatt.</span></div>'+
