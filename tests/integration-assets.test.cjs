@@ -12,7 +12,7 @@ test('overview distinguishes primary all-in subtotal from optional risk simulati
 
 test('STH/BND app icon is used by favicon and PWA manifest',()=>{const icon=fs.readFileSync(path.join(root,'icon.svg'),'utf8'),manifest=JSON.parse(fs.readFileSync(path.join(root,'manifest.webmanifest'),'utf8'));assert.match(icon,/>STH<\/text>/);assert.match(icon,/>BND<\/text>/);assert.match(icon,/M85 122H427M85 405H427/);assert.ok(html.includes('href="./icon.svg"'));assert.ok(manifest.icons.some(x=>x.src==='./icon.svg'));assert.ok(html.includes('icon-dark.svg'));assert.ok(sw.includes('icon-dark.svg'));assert.ok(sw.includes('woodcut-pattern.svg'));assert.ok(sw.includes('icon-maskable.svg'));assert.ok(manifest.icons.some(x=>x.src==='./icon-maskable.svg'&&x.purpose==='maskable'));assert.ok(html.includes('favicon.href=theme'));const dark=fs.readFileSync(path.join(root,'icon-dark.svg'),'utf8');assert.match(dark,/>STH<\/text>/);assert.match(dark,/>BND<\/text>/)});
 
-test('volunteer recommendations do not stop when gross savings seem to cover budget gap',()=>{assert.match(html,/if\(selected\.length>=5\)break/);assert.doesNotMatch(html,/if\(gap>0&&covered>=gap\)break/);assert.match(html,/zusätzliche Tage mit noch zu kalkulierenden Kosten/);assert.match(html,/nicht<\/b> von der Budgetlücke abgezogen/)});
+test('volunteer recommendations do not stop when gross savings seem to cover budget gap',()=>{assert.match(html,/if\(selected\.length>=5\)break/);assert.doesNotMatch(html,/if\(gap>0&&covered>=gap\)break/);assert.match(html,/zusätzliche Tage – Kosten offen/);assert.match(html,/Brutto-Unterkunftspotenziale sind keine Nettoersparnisse/)});
 
 test('STH/BND visual theme supports persistent dark and light modes',()=>{assert.match(html,/data-sb-theme/);assert.match(html,/southbound-theme/);assert.match(html,/prefers-color-scheme: light/);assert.match(html,/sb-theme-toggle/);assert.match(html,/--bg:#f4f1e9/);assert.match(html,/--bg:#111310/)});
 
@@ -60,7 +60,7 @@ test('four budget shortcuts and scenario planning are connected to their real mo
 
 test('savings hub uses one shared booked itinerary and no standalone second maximum',()=>{
  assert.ok(html.includes("function sbBudgetVariantsPanel(items,total,riskMarkup=''"));
- assert.match(html,/const lodging=lo\(\{\.\.\.shared,visited:m\.visited\}\)/);
+ assert.match(html,/const common=\\{items,bookings:m\\.bookingLedger/);assert.match(html,/bed=bedCalc\\(\\{\\.\\.\\.common,visited:m\\.visited\\}\\)/);
  assert.match(html,/data-sb-variant-content/);
  assert.match(html,/id="sb-savings-lodging"/);
  assert.doesNotMatch(html,/function sbSavingsPotentialPanel\(/);
