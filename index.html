@@ -264,7 +264,7 @@ function sbBudgetVariantsPanel(items,total,riskMarkup=''){
   const costBreakdown=ledger&&initial?costGroups.map(([name,test])=>'<div><span>'+name+'</span><b>'+fmt(sumGroup(initial,test))+' → '+fmt(sumGroup(ledger,test))+'</b></div>').join(''):'';
   const provenance=ledger&&window.SouthboundPriceEvidence?.evaluate({
    items:ledger.items,ledger:ledger.ledger,snapshot:ledger.snapshot,
-   quotes:m.hostelQuotes,fixedCosts:ledger.priceInputs.fixedCosts});
+   quotes:m.hostelQuotes,fixedCosts:ledger.priceInputs.fixedCosts,fx:Number(m.fx?.usdEur)||0});
   const sourceCounts=provenance?'<span>Gebucht '+provenance.totals.booked+'</span><span>Datierte Angebote '+provenance.totals['dated-offer']+
    '</span><span>Eigene Angaben '+provenance.totals.manual+'</span><span>Modell '+provenance.totals.model+
    '</span><span>Offen '+provenance.totals.unknown+'</span>':'';
@@ -273,7 +273,7 @@ function sbBudgetVariantsPanel(items,total,riskMarkup=''){
    '<p class="small">Gebucht bedeutet nur, dass eine bestätigte Nutzereingabe der Route zugeordnet wurde – keine externe Anbieterprüfung. Alle Werte und Quellen sind lokal aus deinen Einträgen abgeleitet.</p>'+
    '<div class="sb-evidence-tiers">'+sourceCounts+'</div>'+
    '<div class="sb-evidence-lines">'+provenance.rows.map(row=>'<div><span><b>'+safe(row.label)+'</b>'+
-   '<small>'+safe(row.source)+(row.provider?' · '+safe(row.provider):'')+(row.checkedAt?' · geprüft '+safe(row.checkedAt):'')+'</small></span>'+
+   '<small>'+safe(row.source)+(row.provider?' · '+safe(row.provider):'')+(row.checkedAt?' · geprüft '+safe(row.checkedAt):'')+(row.notes?' · '+safe(row.notes):'')+'</small></span>'+
    '<b>'+(row.amount===null?'Preis offen':fmt(row.amount))+'</b></div>').join('')+'</div></details>':'';
   // Show ONLY changes actually applied by full repricing, not obsolete per-stop tip values.
   const oldStages=new Map((initial?.items||[]).map(x=>[x.i,x]));
