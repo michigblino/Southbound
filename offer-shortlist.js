@@ -65,6 +65,7 @@ function render({route=[],offers=[]}={}){
  }).join(''):'<p class="small oq-empty">Noch keine Angebote vorgemerkt. Trage zwei echte Anbieterpreise für dieselben Daten ein, um sie zu vergleichen.</p>';
  return '<section class="panel oq-wrap" id="sb-offer-compare"><div class="eyebrow">PREISE & ANGEBOTE</div><h2>Angebote vergleichen</h2>'+
   '<p class="small">Unterkünfte und Transfers mit exakten Daten, Personenzahl, Preis inkl. Gebühren und Anbieterlink vergleichen. <b>Nur manuell erfasste Preisnotizen – keine Live-Abfrage, keine Verfügbarkeits- oder Buchungsbestätigung.</b> Dein Reisebudget bleibt unverändert, bis du separat eine tatsächliche Buchung einträgst.</p>'+
+  (g.SouthboundOfferDiscovery?.render({route})||'')+
   '<details class="oq-add" id="sb-offer-add"><summary>Neues Angebot vormerken</summary><div class="oq-fields">'+
   '<label>Art<select data-oq="type"><option value="lodging">Unterkunft</option><option value="transport">Transfer</option></select></label>'+
   '<label>Etappe<select data-oq="stageId">'+select+'</select></label>'+
@@ -84,6 +85,7 @@ function render({route=[],offers=[]}={}){
 }
 function bind(root,{route=[],getOffers=()=>[],storeOffers=()=>{},onSaved=()=>{}}={}){
  const panel=root.querySelector('#sb-offer-compare');if(!panel)return;
+ g.SouthboundOfferDiscovery?.bind(panel,{route});
  const field=k=>panel.querySelector('[data-oq="'+k+'"]'),feedback=panel.querySelector('[data-oq-feedback]');
  const stage=()=>stageAt(route,Number(field('stageId').value));
  const sync=()=>{

@@ -1,0 +1,19 @@
+/* Source-linked discovery. No visually implied checkout when no provider is connected. */
+#sb2 .oq-discovery{padding:17px;border:1px solid var(--sb-glass-border);border-radius:18px;margin:16px 0 20px;background:var(--sb-gradient-tile)}
+#sb2 .oq-discovery h3{font-size:18px;margin:6px 0 6px}
+#sb2 .oq-discovery-fields{display:grid;grid-template-columns:1fr 1.2fr .6fr;gap:10px;margin:13px 0 10px}
+#sb2 .oq-discovery-fields label{display:grid;gap:6px;min-width:0;font-size:12px;color:var(--muted);font-weight:680}
+#sb2 .oq-discovery-fields :is(select,input){width:100%;min-width:0;min-height:44px;color:var(--text);background:var(--sb-field)}
+#sb2 .oq-discovery-context{font-size:12px;font-weight:720;line-height:1.5;color:var(--text)}
+#sb2 .oq-discovery-links{display:flex;flex-wrap:wrap;gap:8px;margin:11px 0 14px}
+#sb2 .oq-discovery-links a{border:1px solid var(--line);border-radius:12px;padding:10px 13px;text-decoration:none;font-size:12px;font-weight:750;background:var(--sb-surface);color:var(--text)}
+#sb2 .oq-discovery-links a:hover{border-color:var(--sb-focus)}
+#sb2 .oq-discovery button:disabled{opacity:.55;cursor:not-allowed}
+#sb2 .oq-discovery-message{font-size:12px;line-height:1.6;margin:12px 0;color:var(--text)}
+#sb2 .oq-discovery-results{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+#sb2 .oq-discovery-card{padding:13px;min-width:0;border:1px solid var(--line);border-radius:14px;background:var(--panel2);display:grid;gap:6px}
+#sb2 .oq-discovery-card strong{font-size:13px;overflow-wrap:anywhere}
+#sb2 .oq-discovery-card span{font-size:17px;font-weight:800}
+#sb2 .oq-discovery-card small{font-size:11px;color:var(--muted)}
+#sb2 .oq-discovery-card a{font-size:12px;color:var(--text);text-decoration:underline}
+@media(max-width:640px){#sb2 .oq-discovery-fields{grid-template-columns:1fr 1fr}#sb2 .oq-discovery-fields label:first-child{grid-column:1/-1}#sb2 .oq-discovery-results{grid-template-columns:1fr}}
