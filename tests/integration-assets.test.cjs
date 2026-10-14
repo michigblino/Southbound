@@ -72,7 +72,7 @@ test('PWA app cache-busts new decision layout and flight modules',()=>{
  assert.ok(html.includes('design-system.css?v=78'));
  assert.ok(html.includes('route-budget-variants.js?v=77'));
  assert.ok(html.includes('journey-flights.js?v=77'));
- for(const file of ['design-system.css?v=77','route-budget-variants.js?v=77','journey-flights.js?v=77'])assert.ok(sw.includes(file));
+ for(const file of ['design-system.css?v=78','route-budget-variants.js?v=77','journey-flights.js?v=77'])assert.ok(sw.includes(file));
  assert.ok(html.includes('sbJourneyFlightRows()'));
 });
 
