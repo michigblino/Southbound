@@ -4,9 +4,9 @@ const fs=require('node:fs'),path=require('node:path');
 const root=path.resolve(__dirname,'..');
 for(const mod of ['transport-estimate','cost-references','itinerary','booking-finance','booking-ledger','trip-calendar','wait-costs','route-timing','budget-engine','route-budget','route-budget-variants','trip-reprice','price-evidence'])require(path.join(root,mod+'.js'));
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
-const start=html.indexOf('const STOPS='),end=html.indexOf(';',start);
+const start=html.indexOf('const STOPS='),end=html.indexOf('];',start);
 if(start<0||end<0)throw Error('Public stop definitions not found');
-const stops=JSON.parse(html.slice(start+'const STOPS='.length,end));
+const stops=JSON.parse(html.slice(start+'const STOPS='.length,end+1));
 const file=process.argv[2];
 if(!file){process.stderr.write('Usage: node scripts/audit-local-export.cjs /path/to/southbound-backup.json\n');process.exitCode=2;}
 else {
