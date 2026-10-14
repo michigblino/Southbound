@@ -1,7 +1,7 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const root=path.resolve(__dirname,'..'),html=fs.readFileSync(path.join(root,'index.html'),'utf8'),sw=fs.readFileSync(path.join(root,'sw.js'),'utf8');
 const modules=['budget-engine.js','route-budget.js','trip-calendar.js','wait-costs.js','route-timing.js','volunteer-matching.js','volunteer-scenario.js','volunteer-economics.js','state-backup.js','currency-rates.js','booking-finance.js','booking-ledger.js','booking-ui.js','stage-card.js','savings-potential.js','route-budget-variants.js','journey-flights.js','trip-reprice.js','price-evidence.js','budget-feasibility.js','price-readiness.js'];
-test('all budgeting and scheduling modules are referenced in HTML',()=>{for(const name of modules)assert.ok(html.includes('src="./'+name+'"')||html.includes('src="./'+name+'?v=77"')||html.includes('src="./'+name+'?v=78"')||html.includes('src="./'+name+'?v=79"'),name+' missing from index.html')});
+test('all budgeting and scheduling modules are referenced in HTML',()=>{for(const name of modules)assert.ok(html.includes('src="./'+name+'"')||html.includes('src="./'+name+'?v=77"')||html.includes('src="./'+name+'?v=78"')||html.includes('src="./'+name+'?v=81"'),name+' missing from index.html')});
 test('offline cache includes all critical calculation modules',()=>{for(const name of modules)assert.ok(sw.includes(name),name+' missing from sw.js')});
 test('offline cache has a versioned cache identifier',()=>assert.match(sw,/southbound-v\d+/));
 test('legacy traveler storage key preserved',()=>assert.ok(html.includes('southbound-v3')));
@@ -10,11 +10,30 @@ test('budget integrity panel passes keyed fixed costs to shared snapshot',()=>{a
 
 test('overview distinguishes primary all-in subtotal from optional risk simulation',()=>{assert.match(html,/data-sb-all-in-total/);assert.match(html,/Zusätzliche Preisrisiko-Simulation \(kein All-in-Budget\)/);assert.match(html,/id="sb-savings-risk"><summary><b>Zusätzliche Preisrisiko-Simulation/);assert.doesNotMatch(html,/budgetGap=t\.mid/)});
 
-test('STH/BND app icon is used by favicon and PWA manifest',()=>{const icon=fs.readFileSync(path.join(root,'icon.svg'),'utf8'),manifest=JSON.parse(fs.readFileSync(path.join(root,'manifest.webmanifest'),'utf8'));assert.match(icon,/>STH<\/text>/);assert.match(icon,/>BND<\/text>/);assert.match(icon,/M85 122H427M85 405H427/);assert.ok(html.includes('href="./icon.svg"'));assert.ok(manifest.icons.some(x=>x.src==='./icon.svg'));assert.ok(html.includes('icon-dark.svg'));assert.ok(sw.includes('icon-dark.svg'));assert.ok(sw.includes('woodcut-pattern.svg'));assert.ok(sw.includes('icon-maskable.svg'));assert.ok(manifest.icons.some(x=>x.src==='./icon-maskable.svg'&&x.purpose==='maskable'));assert.ok(html.includes('favicon.href=theme'));const dark=fs.readFileSync(path.join(root,'icon-dark.svg'),'utf8');assert.match(dark,/>STH<\/text>/);assert.match(dark,/>BND<\/text>/)});
+test('The Worn Road icons preserve the complete wordmark and manifest identity',()=>{
+ const icons=['icon.svg','icon-dark.svg','icon-maskable.svg'].map(name=>fs.readFileSync(path.join(root,name),'utf8'));
+ const manifest=JSON.parse(fs.readFileSync(path.join(root,'manifest.webmanifest'),'utf8'));
+ for(const icon of icons){
+  for(const word of ['THE','WORN','ROAD'])assert.ok(icon.includes('>'+word+'</text>'),word+' missing');
+  assert.match(icon,/The Worn Road/);
+ }
+ assert.match(icons[1],/#BDA17B/);
+ assert.ok(html.includes('href="./icon.svg"'));
+ assert.ok(html.includes('icon-dark.svg'));
+ assert.ok(sw.includes('icon-dark.svg'));
+ assert.ok(sw.includes('icon-maskable.svg'));
+ assert.ok(sw.includes('woodcut-pattern.svg'));
+ assert.equal(manifest.name,'The Worn Road – Reiseplaner');
+ assert.equal(manifest.short_name,'The Worn Road');
+ assert.equal(manifest.theme_color,'#192A21');
+ assert.ok(manifest.icons.some(x=>x.src==='./icon.svg'));
+ assert.ok(manifest.icons.some(x=>x.src==='./icon-maskable.svg'&&x.purpose==='maskable'));
+ assert.ok(html.includes('favicon.href=theme'));
+});
 
 test('volunteer recommendations do not stop when gross savings seem to cover budget gap',()=>{assert.match(html,/if\(selected\.length>=5\)break/);assert.doesNotMatch(html,/if\(gap>0&&covered>=gap\)break/);assert.match(html,/zusätzliche Tage – Kosten offen/);assert.match(html,/Brutto-Unterkunftspotenziale sind keine Nettoersparnisse/)});
 
-test('STH/BND visual theme supports persistent dark and light modes',()=>{assert.match(html,/data-sb-theme/);assert.match(html,/southbound-theme/);assert.match(html,/prefers-color-scheme: light/);assert.match(html,/sb-theme-toggle/);assert.match(html,/--bg:#f4f1e9/);assert.match(html,/--bg:#111310/)});
+test('The Worn Road visual theme supports persistent dark and light modes',()=>{assert.match(html,/data-sb-theme/);assert.match(html,/southbound-theme/);assert.match(html,/prefers-color-scheme: light/);assert.match(html,/sb-theme-toggle/);assert.match(html,/--bg:#f4f1e9/);assert.match(html,/--bg:#111310/)});
 
 test('stage card CSS and booking status UI are included in offline build',()=>{
  assert.ok(html.includes('href="./stage-card.css"'));
@@ -23,9 +42,9 @@ test('stage card CSS and booking status UI are included in offline build',()=>{
  assert.ok(html.includes('data-stage-action'));
 });
 
-test('Mist/Stone and Shadow/Autumn are real CSS tokens and offline assets',()=>{
+test('The Worn Road dark forest and light Mist/Stone palettes have offline assets',()=>{
  const css=fs.readFileSync(path.join(root,'design-system.css'),'utf8');
- for(const color of ['#90AFC5','#336B87','#2A3132','#763626'])assert.ok(css.includes(color),'missing user palette '+color);
+ for(const color of ['#90AFC5','#336B87','#192A21','#CBB18B'])assert.ok(css.includes(color),'missing user palette '+color);
  assert.match(css,/backdrop-filter:blur/);
  assert.match(css,/woodcut-pattern\.svg/);
  assert.match(css,/prefers-reduced-motion/);
@@ -69,10 +88,10 @@ test('savings hub uses one shared booked itinerary and no standalone second maxi
 
 test('PWA app cache-busts new decision layout and flight modules',()=>{
  const sw=fs.readFileSync(path.join(root,'sw.js'),'utf8');
- assert.ok(html.includes('design-system.css?v=79'));
+ assert.ok(html.includes('design-system.css?v=81'));
  assert.ok(html.includes('route-budget-variants.js?v=77'));
  assert.ok(html.includes('journey-flights.js?v=77'));
- for(const file of ['design-system.css?v=79','route-budget-variants.js?v=77','journey-flights.js?v=77'])assert.ok(sw.includes(file));
+ for(const file of ['design-system.css?v=81','route-budget-variants.js?v=77','journey-flights.js?v=77'])assert.ok(sw.includes(file));
  assert.ok(html.includes('sbJourneyFlightRows()'));
 });
 
@@ -82,16 +101,26 @@ test('scenario forecasts reprice with complete booking and pricing pipeline, no 
  assert.ok(html.includes('repriced.alternatives[i].forecast'));
  assert.ok(html.includes('costBreakdown'));
  assert.ok(html.includes('Wie verlässlich sind die Preise?'));
- assert.ok(sw.includes('trip-reprice.js?v=79'));
+ assert.ok(sw.includes('trip-reprice.js?v=81'));
  assert.ok(sw.includes('price-evidence.js?v=78'));
 });
 
-test('budget viability suggestions are shown only as guarded comparisons with real missing fares',()=>{
+test('name change preserves traveler records and offline asset revision',()=>{
+ assert.match(html,/localStorage\.getItem\('southbound-v3'\)/);
+ assert.match(html,/SouthboundBookingLedger/);
+ assert.match(html,/The Worn Road/);
+ assert.match(html,/the-worn-road-backup\.json/);
+ assert.ok(sw.includes('southbound-v80'));
+});
+
+
+test('budget viability checks never represent missing transfers as bookable fares',()=>{
  assert.ok(html.includes('SouthboundBudgetFeasibility'));
  assert.ok(html.includes('SouthboundPriceReadiness'));
  assert.ok(html.includes('newConnections'));
  assert.ok(html.includes('Ticketpreis offen'));
  assert.ok(html.includes('id="sb-savings-reroutes"'));
  assert.ok(html.includes('id="sb-savings-price-readiness"'));
- for(const name of ['budget-feasibility.js?v=79','price-readiness.js?v=79','trip-reprice.js?v=79'])assert.ok(sw.includes(name));
+ for(const asset of ['budget-feasibility.js?v=81','price-readiness.js?v=81','trip-reprice.js?v=81'])assert.ok(sw.includes(asset));
+ assert.ok(html.includes('The Worn Road'));
 });

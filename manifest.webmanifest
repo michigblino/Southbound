@@ -1,11 +1,11 @@
 {
-  "name": "Southbound – Reiseplaner",
-  "short_name": "Southbound",
+  "name": "The Worn Road – Reiseplaner",
+  "short_name": "The Worn Road",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#2A3132",
-  "theme_color": "#2A3132",
+  "background_color": "#192A21",
+  "theme_color": "#192A21",
   "icons": [
     {
       "src": "./icon.svg",

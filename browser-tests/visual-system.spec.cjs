@@ -24,25 +24,25 @@ async function metrics(page){
   };
  });
 }
-test('daylight and graphite palettes keep visible text and surfaces readable',async({page})=>{
+test('daylight and pine-forest palettes keep visible text and surfaces readable',async({page})=>{
  await page.goto('/',{waitUntil:'domcontentloaded'});
  await expect(page.locator('#sb-theme-toggle')).toBeVisible();
  for(const mode of ['light','dark']){
   if(await page.locator('html').getAttribute('data-sb-theme')!==mode)await page.locator('#sb-theme-toggle').click();
   await expect(page.locator('html')).toHaveAttribute('data-sb-theme',mode);
-  await expect.poll(()=>page.evaluate(()=>getComputedStyle(document.body).color),{timeout:3000}).toBe(mode==='light'?'rgb(23, 56, 76)':'rgb(247, 240, 236)');
+  await expect.poll(()=>page.evaluate(()=>getComputedStyle(document.body).color),{timeout:3000}).toBe(mode==='light'?'rgb(23, 56, 76)':'rgb(245, 235, 221)');
   const m=await metrics(page);
-  expect(m.rootBackground,mode+' body token').toBe(mode==='light'?'#E4EFF5':'#2A3132');
+  expect(m.rootBackground,mode+' body token').toBe(mode==='light'?'#E4EFF5':'#192A21');
   expect(m.surface).not.toBe(m.rootBackground);
-  expect(contrast(m.textComputed,mode==='light'?'rgb(228,239,245)':'rgb(42,49,50)'),mode+' body contrast').toBeGreaterThan(7);
+  expect(contrast(m.textComputed,mode==='light'?'rgb(228,239,245)':'rgb(25,42,33)'),mode+' body contrast').toBeGreaterThan(7);
   const button=page.locator('#sb2 .topnav button.active');
   const css=await button.evaluate(b=>({font:getComputedStyle(b).color,bg:getComputedStyle(b).backgroundColor}));
-  expect(contrast(css.font,mode==='light'?'rgb(51,107,135)':'rgb(118,54,38)')).toBeGreaterThan(4.5);
+  expect(contrast(css.font,mode==='light'?'rgb(51,107,135)':'rgb(107,86,60)')).toBeGreaterThan(4.5);
   await page.locator('[data-view="bookings"]').click();
   const shortcut=page.locator('[data-bk-preset="return"]');
   await expect(shortcut).toBeVisible();
   const data=await shortcut.evaluate(el=>({font:getComputedStyle(el).color,bg:getComputedStyle(el).backgroundColor}));
-  expect(contrast(data.font,mode==='light'?'rgb(235,246,251)':'rgb(53,57,57)'),mode+' shortcut contrast').toBeGreaterThan(4.5);
+  expect(contrast(data.font,mode==='light'?'rgb(235,246,251)':'rgb(38,55,43)'),mode+' shortcut contrast').toBeGreaterThan(4.5);
  }
 });
 test('mobile header theme toggle stays inside brand, navigation does not overflow 320-430px',async({page})=>{
