@@ -12,7 +12,7 @@ const icons={
 const titles={transport:'Transfer',lodging:'Unterkunft',volunteering:'Volunteering',activity:'Erlebnisse'};
 const subs={transport:'Ticket prüfen, erfassen oder bearbeiten',lodging:'Buchung und Übernachtungskosten verwalten',volunteering:'Host-Zusage oder Bewerbung verwalten',activity:'Ausflug vormerken und Kosten erfassen'};
 const rank={confirmed:4,requested:3,planned:2,cancelled:1};
-function summarize({item,previous=null,bookings=[],ledger={},hostConfirmed=false,hostHours=null,maxVolunteerHours=30,manualTicket=false,hostelQuote=false}={}){
+function summarize({item,previous=null,bookings=[],ledger={},hostConfirmed=false,hostHours=null,maxVolunteerHours=30,manualTicket=false,hostelQuote=false,formatPrice=n=>Number(n).toLocaleString('de-DE',{style:'currency',currency:'EUR'})}={}){
  if(!item||!Number.isInteger(item.i))return null;
  const valid=Array.isArray(bookings)?bookings.filter(b=>b&&(
   (b.stageId===item.i&&!(b.journeyReturn&&!item.isReturn))||
@@ -65,7 +65,9 @@ function summarize({item,previous=null,bookings=[],ledger={},hostConfirmed=false
   const lodgingTotal=hostConfirmed?Number(item.waitingDays)||0:Number(item.days)||0;
   const lodgingSubtitle=lodgingConfirmed.length?hostConfirmed?
    lodgingNights+' Wartetage vor Host gebucht':lodgingNights+' von '+lodgingTotal+' Nächten bestätigt; Rest geschätzt':subs[type];
-  const subtitle=exceed?'Achtung: '+hostHours+' Std./Woche über Wunschlimit ('+maxVolunteerHours+')':type==='transport'&&!previous?'Anreiseflug zum ersten Reiseziel verwalten':type==='lodging'?lodgingSubtitle:subs[type];
+  const transferCost=type==='transport'?(item.leg===null||item.leg===undefined?'Preis offen':formatPrice(item.leg)):null;
+  const transferSource=type==='transport'?(warning?'Verbindung prüfen':confirmed?'Bestätigung selbst eingetragen':item.transportOffer||manualTicket?'Anbieterpreis selbst notiert':'Modellschätzung · kein Ticket'):'';
+  const subtitle=exceed?'Achtung: '+hostHours+' Std./Woche über Wunschlimit ('+maxVolunteerHours+')':type==='transport'&&!previous?'Anreiseflug zum ersten Reiseziel verwalten':type==='transport'?'Transferpreis '+transferCost+' · '+transferSource+' · Details in Transferkarte':type==='lodging'?lodgingSubtitle:subs[type];
   result.rows.push({type,title:type==='transport'&&item.isReturn?'Rückreise':type==='transport'&&!previous?'Anreise':titles[type],
    subtitle:type==='transport'&&item.isReturn?'Rückflug und Buchung zum Heimatort verwalten':subtitle,
    label,kind,disabled,editId:selected?.id||'',exceedsHourPreference:exceed});

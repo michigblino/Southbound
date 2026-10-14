@@ -84,3 +84,11 @@ test('explicit homecoming stage displays its return booking instead of mislabeli
  const stillAway=make({bookings:[back],ledger:{matched:['return-1'],warnings:[]}});
  assert.equal(status(stillAway,'transport').label,'Offen');
 });
+
+
+test('stage transport uses the itinerary price, shows its source, and points to transfer card',()=>{
+ const x=make({item:{...item,leg:73},formatPrice:n=>'€'+n});
+ assert.match(status(x,'transport').subtitle,/€73/);
+ assert.match(status(x,'transport').subtitle,/Transferkarte/);
+ assert.match(card.render(x),/€73/);
+});

@@ -93,13 +93,13 @@ function resultMarkup(result){
   '<small>'+safe(x.provider)+' · Anbieterabfrage '+safe(x.checkedAt)+' · Verfügbarkeit erneut prüfen</small>'+
   '<a href="'+safe(x.sourceUrl)+'" target="_blank" rel="noopener noreferrer">Beim Anbieter prüfen ↗</a></article>').join('')+'</div>';
 }
-function render({route=[]}={}){
+function render({route=[],initialType='lodging',initialStageId=null}={}){
  if(!route.length)return '';
- const active=route.find((x,i)=>i>0)||route[0];
+ const active=route.find(x=>x.i===initialStageId)||route.find((x,i)=>i>0)||route[0];
  const options=route.map(s=>'<option value="'+s.i+'"'+(s.i===active.i?' selected':'')+'>'+safe(s.name)+' · '+safe(s.start)+'</option>').join('');
  return '<section class="oq-discovery" id="sb-provider-discovery"><div class="eyebrow">ANGEBOTE FINDEN</div><h3>Passende Anbieter durchsuchen</h3>'+
  '<p class="small">Suchdaten aus deiner Reiseetappe übernehmen. <b>Es ist noch kein Live-Preispartner verbunden.</b> Anbieterlinks funktionieren trotzdem. Preise werden nicht automatisch in dein Budget übernommen.</p>'+
- '<div class="oq-discovery-fields"><label>Suche nach<select data-od="type"><option value="lodging">Unterkünften</option><option value="transport">Bussen / Transfers</option></select></label>'+
+ '<div class="oq-discovery-fields"><label>Suche nach<select data-od="type"><option value="lodging"'+(initialType==='lodging'?' selected':'')+'>Unterkünften</option><option value="transport"'+(initialType==='transport'?' selected':'')+'>Bussen / Transfers</option></select></label>'+
  '<label>Etappe<select data-od="stageId">'+options+'</select></label>'+
  '<label>Reisende<input data-od="people" type="number" min="1" max="12" value="1"></label></div>'+
  '<p class="oq-discovery-context" data-od-context></p><div class="oq-discovery-links" data-od-links></div>'+
