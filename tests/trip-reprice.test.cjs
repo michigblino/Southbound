@@ -37,3 +37,24 @@ test('repricing is pure; identical plans reconcile to identical totals',()=>{
  const x=JSON.stringify(defaults),a=reprice(defaults),b=reprice({...defaults,proposal:{mode:'current',actions:[]}});
  assert.equal(a.estimatedTotal,b.estimatedTotal);assert.equal(JSON.stringify(defaults),x);
 });
+
+test('skipping a stop preserves days, changes connection, and keeps new ticket price unknown',()=>{
+ const base=reprice(defaults),rerouted=reprice({...defaults,proposal:{
+  mode:'redistribute',excludeIds:[1],dayOverrides:{2:33},actions:[]
+ }});
+ assert.deepEqual(rerouted.items.map(x=>x.i),[0,2]);
+ assert.equal(rerouted.items.reduce((a,x)=>a+x.days,0),base.items.reduce((a,x)=>a+x.days,0));
+ assert.equal(rerouted.items[1].leg,null);
+ assert.equal(rerouted.connectionUnpriced,true);
+ assert.ok(rerouted.snapshot.unknownTransfers.includes(2));
+ assert.equal(rerouted.complete,false);
+ assert.ok(rerouted.warnings.some(w=>String(w).includes('new-connection-unpriced')));
+ assert.equal(defaults.days[2],undefined);
+});
+test('cannot omit booked or initial/final stages for a misleading saving',()=>{
+ const bookings=[{stageId:1,type:'transport',status:'confirmed',paidEUR:50,refundedEUR:0}];
+ const r=reprice({...defaults,bookings,proposal:{mode:'reroute',excludeIds:[0,1,2]}});
+ assert.deepEqual(r.items.map(x=>x.i),[0,1,2]);
+ assert.equal(r.connectionUnpriced,false);
+ assert.ok(r.warnings.some(x=>/kann nicht ausgelassen/.test(x)));
+});
