@@ -1,7 +1,7 @@
 /* Origin of entered prices, not independent verification or a guarantee. */
 (function(g){'use strict';
 const valid=n=>n!==null&&n!==undefined&&n!==''&&Number.isFinite(Number(n))&&Number(n)>=0;
-function evaluate({items=[],ledger={},snapshot={},quotes={},fixedCosts={}}={}){
+function evaluate({items=[],ledger={},snapshot={},quotes={},fixedCosts={},fx=0}={}){
  const matched=new Set(ledger.matched||[]),bookings=(ledger.records||[]).filter(b=>b.status==='confirmed'&&matched.has(b.id)),byId=id=>bookings.find(b=>b.id===id),stages=new Map(items.map(x=>[x.i,x]));
  const classify=line=>{
   const match=/^(Aufenthalt|Transfer) (\d+)$/.exec(line.label||'');
@@ -12,7 +12,10 @@ function evaluate({items=[],ledger={},snapshot={},quotes={},fixedCosts={}}={}){
    if(match[1]==='Transfer'){
     const record=byId(item?.bookingTransport?.id||item?.bookingInbound?.id);
     if(record){kind='booked';source='Nutzerbuchung';provider=record.provider;url=record.url||'';}
-    else if(item?.transportOffer){kind='dated-offer';source='Manuell geprüftes datumsgebundenes Angebot';provider=item.transportOffer.operator;checkedAt=item.transportOffer.checkedAt;url=item.transportOffer.url||'';}
+    else if(item?.transportOffer){kind='dated-offer';source='Manuell geprüftes datumsgebundenes Angebot';provider=item.transportOffer.operator;checkedAt=item.transportOffer.checkedAt;url=item.transportOffer.url||'';
+      const age=(Date.now()-Date.parse(checkedAt+'T12:00:00Z'))/86400000;
+      if(Number.isFinite(age)&&age>7)notes='Alter Preisstand – erneut prüfen';
+    }else if(kind!=='unknown')source='Southbound-Distanzmodell, kein buchbares Ticket';
    }else {
     const lodgings=item?.bookingLodgings||[],confirmed=lodgings.map(x=>byId(x.id)).filter(Boolean);
     if(confirmed.length){
@@ -21,6 +24,11 @@ function evaluate({items=[],ledger={},snapshot={},quotes={},fixedCosts={}}={}){
      source=kind==='booked'?'Nutzerbuchung':'Teils gebucht, Rest modelliert';provider=confirmed.map(x=>x.provider).join(', ');
     }else if(valid(quotes[item?.i]?.night)){kind='manual';source='Eigene Hostelpreisangabe';}
     if(item?.hypotheticalHostNights){kind='model';source='Hypothetischer Host-Aufenthalt';notes='Host nicht bestätigt';}
+    else if(kind==='model'&&Number(fx)>0&&g.SouthboundCostReferences?.sample(item?.i)?.lodging>0){
+     source='Öffentlicher Stadtpreis-Referenzwert von 2026 (USD) × gespeicherter Wechselkurs';
+     url=g.SouthboundCostReferences.url||'';
+     notes='Kein verfügbares oder buchbares Hostelangebot';
+    }
    }
   }else if(/^(Rückreise|Versicherung|Visa|Ausrüstung)$/.test(line.label||'')){
    const k={Rückreise:'return',Versicherung:'insurance',Visa:'visas',Ausrüstung:'equipment'}[line.label];
