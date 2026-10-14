@@ -60,7 +60,7 @@ test('four budget shortcuts and scenario planning are connected to their real mo
 
 test('savings hub uses one shared booked itinerary and no standalone second maximum',()=>{
  assert.ok(html.includes("function sbBudgetVariantsPanel(items,total,riskMarkup=''"));
- assert.match(html,/const common=\\{items,bookings:m\\.bookingLedger/);assert.match(html,/bed=bedCalc\\(\\{\\.\\.\\.common,visited:m\\.visited\\}\\)/);
+ assert.ok(html.includes('const common={items,bookings:m.bookingLedger'));assert.ok(html.includes('bed=bedCalc({...common,visited:m.visited})'));
  assert.match(html,/data-sb-variant-content/);
  assert.match(html,/id="sb-savings-lodging"/);
  assert.doesNotMatch(html,/function sbSavingsPotentialPanel\(/);
