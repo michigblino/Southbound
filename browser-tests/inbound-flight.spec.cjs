@@ -4,6 +4,7 @@ test('Munich incoming flight with overnight Casablanca can be entered and paid o
  await page.setViewportSize({width:390,height:844});
  await page.goto('/',{waitUntil:'domcontentloaded'});
  await page.locator('[data-view="bookings"]').click();
+ if(!(await page.locator('#sb-booking-records').evaluate(el=>el.open)))await page.locator('#sb-booking-records > summary').click();
  await expect(page.locator('[data-bk-preset="inbound"]')).toBeVisible();
  await page.locator('[data-bk-preset="inbound"]').click();await page.locator('[data-bk-all]').click();
  await expect(f(page,'journeyOrigin')).toHaveValue('inbound');
@@ -48,6 +49,7 @@ test('Munich incoming flight with overnight Casablanca can be entered and paid o
 test('separate layover hotel remains a visible budget warning; old hotel form is focused by category',async({page})=>{
  await page.goto('/',{waitUntil:'domcontentloaded'});
  await page.locator('[data-view="bookings"]').click();
+ if(!(await page.locator('#sb-booking-records').evaluate(el=>el.open)))await page.locator('#sb-booking-records > summary').click();
  await page.locator('[data-bk-preset="inbound"]').click();await page.locator('[data-bk-all]').click();
  await f(page,'startDate').fill('2026-12-26');
  await f(page,'status').selectOption('confirmed');

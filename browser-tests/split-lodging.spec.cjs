@@ -13,6 +13,7 @@ test('two confirmed hostels share a stop and only their own nights reprice the b
  });
  const save=async(name,from,to,total,paid)=>{
   await page.locator('[data-view="bookings"]').click();
+ if(!(await page.locator('#sb-booking-records').evaluate(el=>el.open)))await page.locator('#sb-booking-records > summary').click();
  if(!(await page.locator('#sb-bookings-editor').evaluate(el=>el.open)))await page.locator('#sb-bookings-editor > summary').click();
   await field(page,'type').selectOption('lodging');
   await field(page,'stageId').selectOption('1');
@@ -57,6 +58,7 @@ test('two overlapping hostel bookings remain saved but are flagged and do not ov
  });
  await page.reload({waitUntil:'domcontentloaded'});
  await page.locator('[data-view="bookings"]').click();
+ if(!(await page.locator('#sb-booking-records').evaluate(el=>el.open)))await page.locator('#sb-booking-records > summary').click();
  await expect(page.locator('.sb-booking-card')).toHaveCount(2);
  await expect(page.locator('#sb-bookings-editor')).toHaveCount(1);
  const result=await page.evaluate(()=>{

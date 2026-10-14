@@ -4,6 +4,7 @@ test('direct booking tab offers exactly six contextual choices and keeps editor 
  await page.setViewportSize({width:390,height:844});
  await page.goto('/',{waitUntil:'domcontentloaded'});
  await page.locator('[data-view="bookings"]').click();
+ if(!(await page.locator('#sb-booking-records').evaluate(el=>el.open)))await page.locator('#sb-booking-records > summary').click();
  await expect(page.locator('[data-bk-preset]')).toHaveCount(6);
  await expect(page.locator('[data-bk-preset="return"]')).toBeVisible();await expect(page.locator('[data-bk-preset="return"]')).toContainText('Rückflug');
  await expect(page.locator('[data-bk-preset="inbound"]')).toBeVisible();
@@ -20,6 +21,7 @@ test('direct booking tab offers exactly six contextual choices and keeps editor 
 test('return flight can be saved with a layover, edited and reconciled without counting twice',async({page})=>{
  await page.goto('/',{waitUntil:'domcontentloaded'});
  await page.locator('[data-view="bookings"]').click();
+ if(!(await page.locator('#sb-booking-records').evaluate(el=>el.open)))await page.locator('#sb-booking-records > summary').click();
  await page.locator('[data-bk-preset="return"]').click();await page.locator('[data-bk-all]').click();
  const date=await field(page,'startDate').inputValue();
  expect(date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
@@ -65,15 +67,16 @@ test('coming from an itinerary stage bypasses category chooser and opens matchin
  await page.locator('[data-view="stages"]').click();
  await page.locator('#sb-stage-1 summary').first().click();
  await page.locator('#sb-stage-1 [data-stage-action="lodging"]').click();
- await expect(page.locator('[data-bk-preset]')).toHaveCount(0);
- await expect(page.locator('#sb-bookings-editor')).toHaveAttribute('open');
- await expect(field(page,'type')).toHaveValue('lodging');
- await expect(field(page,'stageId')).toHaveValue('1');
+ await expect(page.locator('#sb-provider-discovery')).toBeVisible();
+ await expect(page.locator('[data-od="type"]')).toHaveValue('lodging');
+ await expect(page.locator('[data-od="stageId"]')).toHaveValue('1');
+ await expect(page.locator('#sb-booking-records')).not.toHaveAttribute('open');
 });
 
 test('booking hub has two columns and the favicon follows light/dark theme',async({page})=>{
  await page.setViewportSize({width:320,height:780});await page.goto('/',{waitUntil:'domcontentloaded'});
  await page.locator('[data-view="bookings"]').click();
+ if(!(await page.locator('#sb-booking-records').evaluate(el=>el.open)))await page.locator('#sb-booking-records > summary').click();
  const cards=page.locator('[data-bk-preset]');await expect(cards).toHaveCount(6);
  const positions=await cards.evaluateAll(nodes=>nodes.map(n=>({top:n.getBoundingClientRect().top,left:n.getBoundingClientRect().left})));
  expect(Math.abs(positions[0].top-positions[1].top)).toBeLessThan(2);
@@ -81,7 +84,7 @@ test('booking hub has two columns and the favicon follows light/dark theme',asyn
  expect(positions[2].top).toBeGreaterThan(positions[0].top);
  for(const mode of ['light','dark']){
   if(await page.locator('html').getAttribute('data-sb-theme')!==mode)await page.locator('#sb-theme-toggle').click();
-  await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href',mode==='light'?'./icon.svg':'./icon-dark.svg');
+  await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href',mode==='light'?'./icon.svg?v=84':'./icon-dark.svg');
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(322);
  }
 });
@@ -90,6 +93,7 @@ test('guided booking wizard separates dates, price, and confirmation without sav
  await page.setViewportSize({width:360,height:780});
  await page.goto('/',{waitUntil:'domcontentloaded'});
  await page.locator('[data-view="bookings"]').click();
+ if(!(await page.locator('#sb-booking-records').evaluate(el=>el.open)))await page.locator('#sb-booking-records > summary').click();
  await page.locator('[data-bk-preset="inbound"]').click();
  const editor=page.locator('#sb-bookings-editor');
  await expect(editor).toHaveAttribute('data-bk-guided','true');
@@ -116,6 +120,7 @@ test('guided booking wizard separates dates, price, and confirmation without sav
 test('guided inbound booking saves a real local record only after the confirmation step',async({page})=>{
  await page.goto('/',{waitUntil:'domcontentloaded'});
  await page.locator('[data-view="bookings"]').click();
+ if(!(await page.locator('#sb-booking-records').evaluate(el=>el.open)))await page.locator('#sb-booking-records > summary').click();
  await page.locator('[data-bk-preset="inbound"]').click();
  const k=name=>page.locator('#sb-bookings-editor [data-bk="'+name+'"]');
  await k('startDate').fill('2026-12-26');

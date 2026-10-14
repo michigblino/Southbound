@@ -4,6 +4,7 @@ const tx=(page,k)=>page.locator('#sb-bookings-editor [data-bk-tx="'+k+'"]');
 test('manual BRL quote and BRL deposit use different exchange rates with evidence',async({page})=>{
  await page.goto('/',{waitUntil:'domcontentloaded'});
  await page.locator('[data-view="bookings"]').click();
+ if(!(await page.locator('#sb-booking-records').evaluate(el=>el.open)))await page.locator('#sb-booking-records > summary').click();
  await page.locator('#sb-bookings-editor > summary').click();
  await page.locator('[data-bk-payment-details] summary').click();
  await f(page,'type').selectOption('transport');
@@ -54,6 +55,7 @@ test('adding a dated EUR payment retains prior aggregate payments',async({page})
  });
  await page.reload({waitUntil:'domcontentloaded'});
  await page.locator('[data-view="bookings"]').click();
+ if(!(await page.locator('#sb-booking-records').evaluate(el=>el.open)))await page.locator('#sb-booking-records > summary').click();
  await page.locator('[data-bk-edit]').first().click();
  await page.locator('[data-bk-payment-details] summary').click();
  await expect(f(page,'paidEUR')).toHaveValue('25');
@@ -73,6 +75,7 @@ test('adding a dated EUR payment retains prior aggregate payments',async({page})
 test('journal-linked payment requires its own reference and refund remains separate',async({page})=>{
  await page.goto('/',{waitUntil:'domcontentloaded'});
  await page.locator('[data-view="bookings"]').click();
+ if(!(await page.locator('#sb-booking-records').evaluate(el=>el.open)))await page.locator('#sb-booking-records > summary').click();
  await page.locator('#sb-bookings-editor > summary').click();
  await page.locator('[data-bk-payment-details] summary').click();
  await f(page,'title').fill('Bus with linked journal payment');
@@ -92,6 +95,7 @@ test('the new currency and payment fields fit a 360px mobile booking view',async
  await page.setViewportSize({width:360,height:740});
  await page.goto('/',{waitUntil:'domcontentloaded'});
  await page.locator('[data-view="bookings"]').click();
+ if(!(await page.locator('#sb-booking-records').evaluate(el=>el.open)))await page.locator('#sb-booking-records > summary').click();
  await page.locator('#sb-bookings-editor > summary').click();
  await page.locator('[data-bk-payment-details] summary').click();
  await f(page,'currency').fill('COP');

@@ -55,37 +55,33 @@ test('confirmed host is saved with fees and may be revoked without erasing detai
  expect(host.confirmed).toBe(false);
  expect(host.extraCosts).toBe(35);
 });
-test('ticket save binds route/date and retains old record after trip date changes',async({page})=>{
+test('one transfer booking path uses the exact same price in stage, connection and booking search',async({page})=>{
  await page.goto('/',{waitUntil:'domcontentloaded'});
- await expect.poll(()=>page.evaluate(()=>!!localStorage.getItem('southbound-v3'))).toBe(true);
  await page.locator('[data-view="stages"]').click();
- await page.locator('.sb-link details').first().locator('summary').click();
- await page.locator('[data-ticket-price="1"]').fill('42');
- await page.locator('[data-ticket-operator="1"]').fill('Test Bus');
- await page.locator('[data-ticket-url="1"]').fill('https://example.com/ticket');
- await page.locator('[data-ticket-date="1"]').fill('2026-12-31');
- await page.locator('[data-ticket-checked="1"]').fill('2026-10-12');
- await page.locator('[data-ticket-save="1"]').click();
- let record=await page.evaluate(()=>JSON.parse(localStorage.getItem('southbound-v3')).transportOffers[1]);
- expect(record).toMatchObject({fromId:0,toId:1,price:42,departureDate:'2026-12-31'});
- await page.locator('#sb-trip-start').fill('2027-01-10');
- await page.locator('#sb-trip-start').press('Tab');
- const output=await page.evaluate(()=>{
-   const s=JSON.parse(localStorage.getItem('southbound-v3'));
-   const p=window.SouthboundItinerary.plan({stops:STOPS,start:s.tripStart,transportOffers:s.transportOffers,days:s.days||{},order:s.routeOrder||[],excluded:s.excluded||{}});
-   return {stored:s.transportOffers[1],tripStart:s.tripStart,accepted:p.items.find(x=>x.i===1)?.transportOffer};
- });
- expect(output.tripStart).toBe('2027-01-10');
- expect(output.stored.price).toBe(42);
- expect(output.accepted).toBeNull();
+ const stage=page.locator('#sb-stage-1');
+ await stage.locator('summary').first().click();
+ const row=stage.locator('[data-stage-action="transport"]');
+ const subtitle=await row.locator('.sb-stage-dashboard__description small').textContent();
+ await row.click();
+ const transfer=page.locator('#sb-transfer-1');
+ await expect(transfer).toHaveAttribute('open');
+ const transferPrice=(await transfer.locator('[data-transfer-price="1"]').textContent()).trim();
+ expect(subtitle).toContain(transferPrice);
+ await transfer.locator('[data-transfer-book="1"]').click();
+ await expect(page.locator('#sb-provider-discovery')).toBeVisible();
+ await expect(page.locator('[data-od="type"]')).toHaveValue('transport');
+ await expect(page.locator('[data-od="stageId"]')).toHaveValue('1');
+ await expect(page.locator('#sb-booking-records')).not.toHaveAttribute('open');
+ const state=await page.evaluate(()=>JSON.parse(localStorage.getItem('southbound-v3')||'{}'));
+ expect(state.bookingLedger||[]).toHaveLength(0);
 });
-
 
 test('booking center persists a confirmed transfer, adjusts itinerary and handles refund',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('/',{waitUntil:'domcontentloaded'});
  await expect.poll(()=>page.evaluate(()=>!!localStorage.getItem('southbound-v3'))).toBe(true);
  await page.locator('[data-view="bookings"]').click();
+ if(!(await page.locator('#sb-booking-records').evaluate(el=>el.open)))await page.locator('#sb-booking-records > summary').click();
  await page.locator('#sb-bookings-editor > summary').click();
  await expect(page.locator('#sb-bookings-editor')).toBeVisible();
  const field=k=>page.locator('[data-bk="'+k+'"]');
@@ -113,6 +109,7 @@ test('booking center persists a confirmed transfer, adjusts itinerary and handle
  expect(snap.leg).toBe(42);expect(snap.extraPaid).toBe(12);expect(snap.payment).toBe(12);
  await page.reload({waitUntil:'domcontentloaded'});
  await page.locator('[data-view="bookings"]').click();
+ if(!(await page.locator('#sb-booking-records').evaluate(el=>el.open)))await page.locator('#sb-booking-records > summary').click();
  await expect(page.locator('.sb-booking-card')).toContainText('Bus Test A');
  await page.locator('[data-bk-edit]').first().click();
  await field('status').selectOption('cancelled');
@@ -151,6 +148,7 @@ test('booking center fits mobile viewport',async({page})=>{
  await page.goto('/',{waitUntil:'domcontentloaded'});
  await expect.poll(()=>page.evaluate(()=>!!localStorage.getItem('southbound-v3'))).toBe(true);
  await page.locator('[data-view="bookings"]').click();
+ if(!(await page.locator('#sb-booking-records').evaluate(el=>el.open)))await page.locator('#sb-booking-records > summary').click();
  const width=await page.evaluate(()=>({scroll:document.documentElement.scrollWidth,client:document.documentElement.clientWidth}));
  expect(width.scroll).toBeLessThanOrEqual(width.client+2);
 });
@@ -161,7 +159,9 @@ test('stage shortcut opens booking editor with correct stop and deletion needs c
  await expect.poll(()=>page.evaluate(()=>!!localStorage.getItem('southbound-v3'))).toBe(true);
  await page.locator('[data-view="stages"]').click();
  await page.locator('#sb-stage-2 summary').click();
- await page.locator('#sb-stage-2 [data-open-booking="2"]').click();
+ await page.locator('#sb-stage-2 [data-stage-action="lodging"]').click();
+ await expect(page.locator('[data-od="stageId"]')).toHaveValue('2');
+ await page.locator('[data-sb-record-booking]').click();
  await expect(page.locator('[data-view="bookings"].active')).toBeVisible();
  await expect(page.locator('[data-bk="stageId"]')).toHaveValue('2');
  await page.locator('[data-bk="title"]').fill('Test booking');
@@ -180,6 +180,7 @@ test('deleting a paid booking warns that its payment history would be lost',asyn
  await page.goto('/',{waitUntil:'domcontentloaded'});
  await expect.poll(()=>page.evaluate(()=>!!localStorage.getItem('southbound-v3'))).toBe(true);
  await page.locator('[data-view="bookings"]').click();
+ if(!(await page.locator('#sb-booking-records').evaluate(el=>el.open)))await page.locator('#sb-booking-records > summary').click();
  await page.locator('#sb-bookings-editor > summary').click();
  await page.locator('[data-bk="title"]').fill('Deposit');
  await page.locator('[data-bk="provider"]').fill('Test provider');
@@ -201,6 +202,8 @@ test('stage card opens the correct lodging booking editor and reflects confirmat
  await expect(page.locator('#sb-stage-1 [data-stage-action="transport"]')).toBeVisible();
  await expect(page.locator('#sb-stage-1 .sb-stage-dashboard__row')).toHaveCount(4);
  await row.click();
+ await expect(page.locator('[data-od="stageId"]')).toHaveValue('1');
+ await page.locator('[data-sb-record-booking]').click();
  await expect(page.locator('#sb-bookings-editor')).toBeVisible();
  const field=k=>page.locator('#sb-bookings-editor [data-bk="'+k+'"]');
  expect(await field('type').inputValue()).toBe('lodging');
@@ -219,6 +222,8 @@ test('stage card opens the correct lodging booking editor and reflects confirmat
  if(!(await stage.evaluate(el=>el.open)))await stage.locator('summary').first().click();
  await expect(stage.locator('[data-stage-action="lodging"]')).toContainText('Bestätigt');
  await stage.locator('[data-stage-action="lodging"]').click();
+ await page.locator('[data-sb-record-booking]').click();
+ await page.locator('[data-bk-edit]').first().click();
  await expect(field('title')).toHaveValue('Hostel Booking Regression');
  await expect(field('paidEUR')).toHaveValue('20');
 });

@@ -1,7 +1,7 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const root=path.resolve(__dirname,'..'),html=fs.readFileSync(path.join(root,'index.html'),'utf8'),sw=fs.readFileSync(path.join(root,'sw.js'),'utf8');
 const modules=['budget-engine.js','route-budget.js','trip-calendar.js','wait-costs.js','route-timing.js','volunteer-matching.js','volunteer-scenario.js','volunteer-economics.js','state-backup.js','currency-rates.js','booking-finance.js','booking-ledger.js','booking-ui.js','stage-card.js','savings-potential.js','route-budget-variants.js','journey-flights.js','trip-reprice.js','price-evidence.js','budget-feasibility.js','price-readiness.js'];
-test('all budgeting and scheduling modules are referenced in HTML',()=>{for(const name of modules)assert.ok(html.includes('src="./'+name+'"')||html.includes('src="./'+name+'?v=77"')||html.includes('src="./'+name+'?v=78"')||html.includes('src="./'+name+'?v=81"'),name+' missing from index.html')});
+test('all budgeting and scheduling modules are referenced in HTML',()=>{for(const name of modules)assert.ok(html.includes('src="./'+name+'"')||html.includes('src="./'+name+'?v=77"')||html.includes('src="./'+name+'?v=78"')||html.includes('src="./'+name+'?v=81"')||html.includes('src="./'+name+'?v=84"'),name+' missing from index.html')});
 test('offline cache includes all critical calculation modules',()=>{for(const name of modules)assert.ok(sw.includes(name),name+' missing from sw.js')});
 test('offline cache has a versioned cache identifier',()=>assert.match(sw,/southbound-v\d+/));
 test('legacy traveler storage key preserved',()=>assert.ok(html.includes('southbound-v3')));
@@ -36,7 +36,7 @@ test('volunteer recommendations do not stop when gross savings seem to cover bud
 test('The Worn Road visual theme supports persistent dark and light modes',()=>{assert.match(html,/data-sb-theme/);assert.match(html,/southbound-theme/);assert.match(html,/prefers-color-scheme: light/);assert.match(html,/sb-theme-toggle/);assert.match(html,/--bg:#f4f1e9/);assert.match(html,/--bg:#111310/)});
 
 test('stage card CSS and booking status UI are included in offline build',()=>{
- assert.ok(html.includes('href="./stage-card.css"'));
+ assert.ok(html.includes('href="./stage-card.css?v=84"'));
  assert.ok(sw.includes('stage-card.css','design-system.css'));
  assert.ok(html.includes('SouthboundStageCard.summarize'));
  assert.ok(html.includes('data-stage-action'));
@@ -88,10 +88,10 @@ test('savings hub uses one shared booked itinerary and no standalone second maxi
 
 test('PWA app cache-busts new decision layout and flight modules',()=>{
  const sw=fs.readFileSync(path.join(root,'sw.js'),'utf8');
- assert.ok(html.includes('design-system.css?v=81'));
+ assert.ok(html.includes('design-system.css?v=84'));
  assert.ok(html.includes('route-budget-variants.js?v=77'));
  assert.ok(html.includes('journey-flights.js?v=77'));
- for(const file of ['design-system.css?v=81','route-budget-variants.js?v=77','journey-flights.js?v=77'])assert.ok(sw.includes(file));
+ for(const file of ['design-system.css?v=84','route-budget-variants.js?v=77','journey-flights.js?v=77'])assert.ok(sw.includes(file));
  assert.ok(html.includes('sbJourneyFlightRows()'));
 });
 
@@ -110,7 +110,7 @@ test('name change preserves traveler records and offline asset revision',()=>{
  assert.match(html,/SouthboundBookingLedger/);
  assert.match(html,/The Worn Road/);
  assert.match(html,/the-worn-road-backup\.json/);
- assert.ok(sw.includes('southbound-v83'));
+ assert.ok(sw.includes('southbound-v84'));
 });
 
 
@@ -127,11 +127,11 @@ test('budget viability checks never represent missing transfers as bookable fare
 
 
 test('sourced manual offer shortlist is bundled and never asserts live bookability',()=>{
- assert.ok(html.includes('offer-shortlist.js?v=82'));
+ assert.ok(html.includes('offer-shortlist.js?v=84'));
  assert.ok(html.includes('offer-shortlist.css'));
  assert.ok(html.includes('SouthboundOfferShortlist.render'));
  assert.ok(html.includes('SouthboundOfferShortlist.bind'));
- assert.ok(sw.includes('offer-shortlist.js?v=82'));
+ assert.ok(sw.includes('offer-shortlist.js?v=84'));
  assert.ok(sw.includes('offer-shortlist.css'));
  const backup=fs.readFileSync(path.join(root,'state-backup.js'),'utf8');
  assert.ok(backup.includes('offerWatchlist'));
@@ -141,12 +141,23 @@ test('sourced manual offer shortlist is bundled and never asserts live bookabili
 
 test('provider discovery files are packaged and never imply live data on static hosting',()=>{
  const discovery=fs.readFileSync(path.join(root,'offer-discovery.js'),'utf8');
- for(const name of ['offer-discovery.js?v=83','offer-discovery.css']){
+ for(const name of ['offer-discovery.js?v=84','offer-discovery.css']){
   assert.ok(html.includes(name));assert.ok(sw.includes(name));
  }
- assert.ok(html.includes('offer-shortlist.js?v=82'));
- assert.ok(sw.includes('southbound-v83'));
+ assert.ok(html.includes('offer-shortlist.js?v=84'));
+ assert.ok(sw.includes('southbound-v84'));
  assert.ok(discovery.includes('/api/offers/v1/search'));
  assert.ok(discovery.includes('availabilityConfirmed:true'));
  assert.ok(!discovery.includes('API_KEY='));
+});
+
+
+test('only one transfer purchase path uses the reconciled leg price, with preserved manual records',()=>{
+ const dark=fs.readFileSync(path.join(root,'icon-dark.svg'),'utf8');
+ const light=fs.readFileSync(path.join(root,'icon.svg'),'utf8');
+ assert.match(light,/#E4EFF5/);assert.match(light,/#336B87/);
+ assert.equal((light.match(/<path /g)||[]).length,(dark.match(/<path /g)||[]).length);
+ for(const key of ['data-transfer-book','sb-transfer-card','data-transfer-price','formatPrice:E','id="sb-booking-records"'])assert.ok(html.includes(key),key);
+ assert.ok(!html.includes('data-ticket-save="'));
+ assert.ok(sw.includes('southbound-v84'));
 });

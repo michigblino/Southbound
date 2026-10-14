@@ -39,7 +39,7 @@ const typeCopy={
  activity:{hint:'Erlebnis: Erfasse den Veranstaltungstag und wähle, ob der Preis in der Aktivitätenpauschale enthalten oder zusätzlich einzuplanen ist.',captions:{stageId:'Ort / Etappe',title:'Erlebnis / Ausflug',provider:'Veranstalter',startDate:'Datum des Erlebnisses',reference:'Ticket- oder Buchungsnummer'},placeholders:{title:'z. B. Wanderung mit Guide',provider:'Name des Veranstalters',reference:'Ticketcode'}}
 };
 const baseCaptions={stageId:'Ziel / Etappe',title:'Bezeichnung',provider:'Anbieter / Host',startDate:'Beginn / Abfahrt',endDate:'Ende / Check-out',reference:'Referenz / Bestätigung'};
-function render({route=[],bookings=[],ledger,baseCurrency='EUR',fxQuotes=null,tripOrigin='München (MUC)',fromStage=false}={}){
+function render({route=[],bookings=[],ledger,baseCurrency='EUR',fxQuotes=null,tripOrigin='München (MUC)',fromStage=false,compact=false}={}){
  const available=route.filter(x=>x&&x.i!==undefined),defaultId=available[0]?.i??0;
  const lastTravel=[...available].reverse().find(x=>!x.isReturn&&Number(x.days)>0)||available.at(-1);
  const opts=available.map(x=>'<option value="'+x.i+'">'+esc(x.name)+'</option>').join('');
@@ -47,7 +47,7 @@ function render({route=[],bookings=[],ledger,baseCurrency='EUR',fxQuotes=null,tr
  const records=Array.isArray(bookings)?bookings:[];
  const total=ledger?.recordedPayment||0,real=ledger?.extraPaid||0;
  const firstSavedGroup=bookingGroups.find(group=>records.some(b=>bookingCategory(b)===group.key))?.key;
- const chooser=(fromStage?'':'<div class="panel sb-booking-choose"><div class="eyebrow">BUCHUNGEN / SCHNELLSTART</div><h2>Was möchtest du buchen?</h2><p class="small">Wähle eine Kategorie – die passenden Felder öffnen sich direkt. Bestätigungen und Preise trägst du selbst ein.</p><div class="sb-booking-shortcuts">'+
+ const chooser=(fromStage||compact?'':'<div class="panel sb-booking-choose"><div class="eyebrow">BUCHUNGEN / SCHNELLSTART</div><h2>Was möchtest du buchen?</h2><p class="small">Wähle eine Kategorie – die passenden Felder öffnen sich direkt. Bestätigungen und Preise trägst du selbst ein.</p><div class="sb-booking-shortcuts">'+
  '<button type="button" data-bk-preset="inbound">'+shortcutIcon('inbound')+'<b>Anreiseflug</b><small>Ab Heimatflughafen</small></button>'+
  '<button type="button" data-bk-preset="return">'+shortcutIcon('return')+'<b>Rückflug</b><small>Zurück nach Hause</small></button>'+
  '<button type="button" data-bk-preset="transport">'+shortcutIcon('transport')+'<b>Transfer</b><small>Bus, Bahn, Flug</small></button>'+

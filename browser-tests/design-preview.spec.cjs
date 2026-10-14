@@ -12,7 +12,7 @@ test('capture isolated 390px light and dark Southbound UI for physical Android r
   await expect(page.locator('#sb2 .topnav button')).toHaveCount(4);
   for(const section of ['overview','stages','bookings']){
    await page.locator('[data-view="'+section+'"]').click();
-   if(section==='bookings')await expect(page.locator('[data-bk-preset]')).toHaveCount(6);
+   if(section==='bookings'){await expect(page.locator('#sb-provider-discovery')).toBeVisible();await expect(page.locator('#sb-booking-records')).not.toHaveAttribute('open');}
    await page.locator('#sb2 .topnav').screenshot({path:path.join(output,section+'-'+mode+'-nav.png'),animations:'disabled'});
    await page.screenshot({path:path.join(output,section+'-'+mode+'.png'),animations:'disabled'});
   }
