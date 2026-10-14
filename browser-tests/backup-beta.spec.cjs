@@ -18,7 +18,7 @@ test('active beta cockpit exports a complete, versioned backup of saved bookings
  const downloadPromise=page.waitForEvent('download');
  await page.locator('#sb-export').click();
  const download=await downloadPromise;
- expect(download.suggestedFilename()).toBe('southbound-backup.json');
+ expect(download.suggestedFilename()).toBe('the-worn-road-backup.json');
  const body=JSON.parse(fs.readFileSync(await download.path(),'utf8'));
  expect(body.version).toBe(4);
  expect(body.state.goal).toBe(8100);

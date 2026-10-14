@@ -1,5 +1,5 @@
 const {test,expect}=require('@playwright/test');
-const ACCENT={light:{primary:'#336B87',background:'#E4EFF5'},dark:{primary:'#763626',background:'#2A3132'}};
+const ACCENT={light:{primary:'#336B87',background:'#E4EFF5'},dark:{primary:'#E0C59C',background:'#192A21'}};
 async function mode(page,next){
  if(await page.locator('html').getAttribute('data-sb-theme')!==next){
   await page.locator('#sb-theme-toggle').click();
@@ -11,13 +11,13 @@ async function mode(page,next){
  await expect.poll(async()=>page.locator('#sb2 .sb-overview-hero').evaluate(x=>
    Number(getComputedStyle(x,'::after').opacity)),{timeout:2500}).toBe(next==='light'?0:1);
 }
-test('the four requested brand swatches power actual UI tokens, not an unrelated mockup',async({page})=>{
+test('the rebranded forest-and-sand palette powers actual UI tokens, not an unrelated mockup',async({page})=>{
  await page.goto('/',{waitUntil:'domcontentloaded'});
  await expect(page.locator('#sb-theme-toggle')).toBeVisible();
  for(const selected of ['light','dark']){
   await mode(page,selected);
   await expect.poll(()=>page.evaluate(()=>getComputedStyle(document.body).color),{timeout:3000})
-   .toBe(selected==='light'?'rgb(23, 56, 76)':'rgb(247, 240, 236)');
+   .toBe(selected==='light'?'rgb(23, 56, 76)':'rgb(245, 235, 221)');
   const base=await page.evaluate(()=>{
    const sheet=getComputedStyle(document.documentElement);
    return {
@@ -38,7 +38,7 @@ test('the four requested brand swatches power actual UI tokens, not an unrelated
   ]);
   const computed={...base,glass,navGlass,heroWoodcut:hero.woodcut,woodcutOpacity:hero.opacity,visibleIcon,hiddenIcon};
   expect(computed.mist).toBe('#90AFC5');expect(computed.stone).toBe('#336B87');
-  expect(computed.shadow).toBe('#2A3132');expect(computed.autumn).toBe('#763626');
+  expect(computed.shadow).toBe('#192A21');expect(computed.autumn).toBe('#CBB18B');
   expect(computed.accent).toBe(ACCENT[selected].primary);
   expect(computed.bg).toBe(ACCENT[selected].background);
   expect(computed.glass).toContain('blur');
@@ -48,7 +48,7 @@ test('the four requested brand swatches power actual UI tokens, not an unrelated
   expect(computed.visibleIcon).toBe(1);expect(computed.hiddenIcon).toBe(0);
  }
 });
-test('accent background and theme-aware STH/BND brand crossfade smoothly without changing stored trip',async({page})=>{
+test('accent background and theme-aware The Worn Road wordmark crossfade smoothly without changing stored trip',async({page})=>{
  await page.goto('/',{waitUntil:'domcontentloaded'});
  await mode(page,'light');
  const initial=await page.evaluate(()=>JSON.stringify(JSON.parse(localStorage.getItem('southbound-v3')||'{}')));
