@@ -227,7 +227,7 @@ function sbBudgetVariantsPanel(items,total,riskMarkup=''){
   vol:m.vol,volunteerDetails:m.volunteerDetails,excluded:m.excluded,days:m.days,order:m.routeOrder,
   bookings:m.bookingLedger,actuals,extraPaid,reserve:Math.max(0,Number(m.reserve)||0),
   goal:Number(m.goal)||8000,cap:Number(m.cap)||12000,fixedCosts:m.fixedCosts||{},
-  completed:common.completed,transferDaysByStop:m.transferDaysByStop||{},originRequired:!!m.tripOrigin
+  completed:common.completed,transferDaysByStop:m.transferDaysByStop||{},originRequired:!!m.tripOrigin,unrecorded:unrecordedCompleted().length
  },out.options);
  const tripDays=items.filter(x=>!x.isReturn).reduce((v,x)=>v+(Number(x.days)||0),0);
  const variantReprice=(v,i)=>repriced?{...v,forecast:repriced.alternatives[i].forecast,
