@@ -4,6 +4,7 @@ const field=(page,key)=>page.locator('#sb-bookings-editor [data-bk="'+key+'"]');
 test('form only shows the fields relevant to the selected booking category',async({page})=>{
  await page.goto('/',{waitUntil:'domcontentloaded'});
  await page.locator('[data-view="bookings"]').click();
+ if(!(await page.locator('#sb-booking-records').evaluate(el=>el.open)))await page.locator('#sb-booking-records > summary').click();
  await page.locator('#sb-bookings-editor > summary').click();
  await expect(field(page,'fromStageId')).toBeVisible();
  await expect(field(page,'endDate')).toBeHidden();
@@ -28,6 +29,7 @@ test('form only shows the fields relevant to the selected booking category',asyn
 test('switching to lodging does not save hidden transport or activity-specific values',async({page})=>{
  await page.goto('/',{waitUntil:'domcontentloaded'});
  await page.locator('[data-view="bookings"]').click();
+ if(!(await page.locator('#sb-booking-records').evaluate(el=>el.open)))await page.locator('#sb-booking-records > summary').click();
  await page.locator('#sb-bookings-editor > summary').click();
  await field(page,'type').selectOption('transport');
  await field(page,'stageId').selectOption('1');
@@ -67,6 +69,7 @@ test('contextual booking form fits 360px mobile width',async({page})=>{
  await page.setViewportSize({width:360,height:740});
  await page.goto('/',{waitUntil:'domcontentloaded'});
  await page.locator('[data-view="bookings"]').click();
+ if(!(await page.locator('#sb-booking-records').evaluate(el=>el.open)))await page.locator('#sb-booking-records > summary').click();
  await page.locator('#sb-bookings-editor > summary').click();
  await field(page,'type').selectOption('volunteering');
  await expect(field(page,'endDate')).toBeVisible();

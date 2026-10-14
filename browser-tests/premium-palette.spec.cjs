@@ -74,6 +74,7 @@ test('frosted controls and patterned hero stay responsive on narrow Android widt
   await page.setViewportSize({width,height:844});
   await page.goto('/',{waitUntil:'domcontentloaded'});
   await page.locator('[data-view="bookings"]').click();
+ if(!(await page.locator('#sb-booking-records').evaluate(el=>el.open)))await page.locator('#sb-booking-records > summary').click();
   await expect(page.locator('[data-bk-preset]')).toHaveCount(6);
   const dims=await page.evaluate(()=>({
    scroll:document.documentElement.scrollWidth,

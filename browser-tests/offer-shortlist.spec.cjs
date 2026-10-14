@@ -30,6 +30,7 @@ test('quote shortlist stays within phone width',async({page})=>{
  await page.setViewportSize({width:360,height:780});
  await page.goto('/',{waitUntil:'domcontentloaded'});
  await page.locator('[data-view="bookings"]').click();
+ await page.locator('.oq-legacy summary').click();
  await page.locator('#sb-offer-add summary').click();
  await expect(page.locator('[data-oq-save]')).toBeVisible();
  const widths=await page.evaluate(()=>({scroll:document.documentElement.scrollWidth,visible:document.documentElement.clientWidth}));

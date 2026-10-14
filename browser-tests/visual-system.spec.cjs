@@ -39,6 +39,7 @@ test('daylight and pine-forest palettes keep visible text and surfaces readable'
   const css=await button.evaluate(b=>({font:getComputedStyle(b).color,bg:getComputedStyle(b).backgroundColor}));
   expect(contrast(css.font,mode==='light'?'rgb(51,107,135)':'rgb(107,86,60)')).toBeGreaterThan(4.5);
   await page.locator('[data-view="bookings"]').click();
+ if(!(await page.locator('#sb-booking-records').evaluate(el=>el.open)))await page.locator('#sb-booking-records > summary').click();
   const shortcut=page.locator('[data-bk-preset="return"]');
   await expect(shortcut).toBeVisible();
   const data=await shortcut.evaluate(el=>({font:getComputedStyle(el).color,bg:getComputedStyle(el).backgroundColor}));
@@ -59,6 +60,7 @@ test('mobile header theme toggle stays inside brand, navigation does not overflo
   expect(tops.size,'Navigation should be one single row').toBe(1);
   for(const position of m.buttonPositions){expect(position.width).toBeGreaterThan(49);expect(position.height).toBeGreaterThan(43);}
   await page.locator('[data-view="bookings"]').click();
+ if(!(await page.locator('#sb-booking-records').evaluate(el=>el.open)))await page.locator('#sb-booking-records > summary').click();
   await expect(page.locator('[data-bk-preset]')).toHaveCount(6);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+2);
   const card=page.locator('[data-bk-preset="inbound"]');
