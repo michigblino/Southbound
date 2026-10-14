@@ -221,14 +221,25 @@ function sbBudgetVariantsPanel(items,total,riskMarkup=''){
  const out=calc({...common,goal:Number(m.goal)||8000,baselineTotal:total}),bed=bedCalc({...common,visited:m.visited});
  const reprice=window.SouthboundTripReprice;
  const actuals=m.actuals||{},extraPaid=(m.extraStops||[]).reduce((a,x)=>a+(Number(x.cost)||0),0);
- const repriced=reprice?.compare({
+ const repriceInputs={
   stops:STOPS,start:m.tripStart,fx:Number(m.fx?.usdEur)||0,
   quotes:m.hostelQuotes,transportOffers:m.transportOffers,
   vol:m.vol,volunteerDetails:m.volunteerDetails,excluded:m.excluded,days:m.days,order:m.routeOrder,
   bookings:m.bookingLedger,actuals,extraPaid,reserve:Math.max(0,Number(m.reserve)||0),
   goal:Number(m.goal)||8000,cap:Number(m.cap)||12000,fixedCosts:m.fixedCosts||{},
   completed:common.completed,transferDaysByStop:m.transferDaysByStop||{},originRequired:!!m.tripOrigin,unrecorded:unrecordedCompleted().length
- },out.options);
+ };
+ const repriced=reprice?.compare(repriceInputs,out.options);
+ const viabilityEngine=window.SouthboundBudgetFeasibility;
+ const alternatePlans=viabilityEngine?.alternatives({stops:STOPS,items:repriced?.baseline.items||items,
+  bookings:m.bookingLedger,excluded:m.excluded,completed:common.completed,preferences:m.travelPreferences,
+  vol:m.vol,volunteerDetails:m.volunteerDetails})||[];
+ const reroutes=reprice&&alternatePlans.length?reprice.compare(repriceInputs,alternatePlans).alternatives:[];
+ const viability=viabilityEngine?.verdict({baseline:repriced?.baseline,alternatives:[...(repriced?.alternatives||[]),...reroutes],
+  goal:Number(m.goal)||8000});
+ const proof=window.SouthboundPriceReadiness?.readiness({items:repriced?.baseline.items||items,
+  snapshot:repriced?.baseline.snapshot,ledger:repriced?.baseline.ledger,quotes:m.hostelQuotes,
+  fixedCosts:repriced?.baseline.priceInputs.fixedCosts||m.fixedCosts||{},today:new Date().toISOString().slice(0,10)});
  const tripDays=items.filter(x=>!x.isReturn).reduce((v,x)=>v+(Number(x.days)||0),0);
  const variantReprice=(v,i)=>repriced?{...v,forecast:repriced.alternatives[i].forecast,
    modelSaving:repriced.alternatives[i].hypotheticalSaving,daysDelta:repriced.alternatives[i].daysDelta,
@@ -300,6 +311,30 @@ function sbBudgetVariantsPanel(items,total,riskMarkup=''){
      '<div class="sb-decision-changes">'+changes+'</div></details>':'')+
    '</div>';
  }).join('');
+ const feasibilityMarkup=viability?'<div class="sb-goal-status" data-sb-goal-status="'+safe(viability.status)+'">'+
+  '<div><span class="sb-goal-status__eyebrow">BUDGET-REALITÄTSCHECK</span><h3>'+safe(viability.heading)+'</h3>'+
+  '<p>'+safe(viability.message)+'</p></div>'+
+  '<div class="sb-goal-status__numbers"><b>'+(viability.gap===null?'Noch offen':fmt(viability.gap))+'</b>'+
+  '<small>'+(viability.gap===null?'Keine zuverlässige Vergleichssumme':'Modell-Lücke zu '+fmt(viability.goal))+'</small></div></div>':'';
+ const rerouteMarkup=alternatePlans.length?'<details class="sb-hub-detail sb-reroute-options" id="sb-savings-reroutes">'+
+  '<summary><span><b>Andere Stopps für dasselbe Reisezeitbudget</b><small>Konkrete Änderungen, noch keine bestätigten neuen Verbindungen</small></span><span aria-hidden="true">⌄</span></summary>'+
+  '<div class="sb-hub-detail__body"><p class="small">Diese Vorschläge erhalten die Reisedauer. Sie überspringen ungebuchte, nicht festgelegte Stopps und verteilen deren Tage auf andere Orte. Neue Anschlussverbindungen gelten preislich als unbekannt, nicht als kostenlos. Änderungen werden nicht automatisch übernommen.</p>'+
+  '<div class="sb-reroute-list">'+alternatePlans.map((p,i)=>{
+   const rec=reroutes[i],fareUnknown=rec?.connectionUnpriced||rec?.snapshot?.unknownTransfers?.length>0;
+   return '<article class="sb-reroute-card"><div class="sb-reroute-card__top"><div><b>'+safe(p.name)+'</b>'+
+    '<small>'+safe(p.removedStops.join(' und '))+' auslassen · Reisezeit beibehalten</small></div>'+
+    '<span>'+(fareUnknown?'Ticketpreis offen':'Erneut kalkuliert')+'</span></div>'+
+    '<p>Die frei werdenden Tage: '+Object.entries(p.dayOverrides).map(([id,n])=>safe(STOPS[Number(id)]?.[0]||id)+' '+n+' Tage').join(' · ')+'</p>'+
+    '<p class="small">Neue Verbindung: '+(rec?.newConnections||[]).map(c=>safe(c.fromName)+' → '+safe(c.toName)).join(', ')+'. Neue Ticketpreise, Fahrzeiten und Sicherheit müssen geprüft werden.</p>'+
+    '<div class="sb-reroute-result"><span>'+(fareUnknown?'Zwischensumme, kein Endpreis':'Vorläufiges Modellbudget')+'</span>'+
+    '<strong>'+(rec?fmt(rec.estimatedTotal):'Offen')+'</strong></div></article>';
+  }).join('')+'</div></div></details>':'';
+ const proofMarkup=proof?'<details class="sb-hub-detail sb-price-check" id="sb-savings-price-readiness">'+
+  '<summary><span><b>Diese Preise fehlen für eine belastbare Planung</b><small>'+proof.quoteGap+' Unterkunftspreise · '+proof.transferGap+' Transfers ohne belegten Anbieterpreis</small></span><span aria-hidden="true">⌄</span></summary>'+
+  '<div class="sb-hub-detail__body"><p class="small">Aktuell keine Anbieter-API verbunden. Ein Preis ohne passende Reisedaten, Personenzahl, Gebühren und frischen Anbieter-Nachweis bleibt eine Schätzung.</p>'+
+  '<div class="sb-price-check__list">'+proof.tasks.slice(0,7).map(t=>'<div><span><b>'+safe(t.name)+'</b>'+
+   '<small>'+safe(t.note)+'</small></span><strong>'+(t.estimate?fmt(t.estimate)+' modelliert':'Preis offen')+'</strong></div>').join('')+'</div>'+
+  '</div></details>':'';
  const bedRows=bed.candidates.slice().sort((a,b)=>items.findIndex(x=>x.i===a.i)-items.findIndex(x=>x.i===b.i));
  const tips=allSavingAdvice().slice(0,5);
  const tipRows=tips.map(a=>'<button type="button" class="sb-saving-tip sb-hub-tip" data-saving="'+safe(a.id)+'"><span class="sb-saving-main"><b>'+safe(a.title)+'</b>'+
@@ -307,6 +342,7 @@ function sbBudgetVariantsPanel(items,total,riskMarkup=''){
  return '<section class="panel sb-budget-variants sb-savings-hub" id="sb-budget-variants">'+
   '<div class="eyebrow">DEINE SPARZENTRALE</div><div class="sb-savings-head"><h2>So kannst du deine Reise günstiger machen</h2>'+
   '<p class="small">Vergleiche Kosten <b>und Reisedauer</b>. Die Varianten sind Rechenmodelle, keine buchbaren Angebote.</p></div>'+
+  feasibilityMarkup+
   '<div class="sb-variant-picker" role="group" aria-label="Sparvariante auswählen">'+tabs+'</div>'+
   '<div class="sb-variant-results">'+panels+'</div>'+
   '<p class="sb-decision-caution">'+(mismatch?'Die Ausgangssumme der Neuberechnung weicht von der Budgetkarte ab; bitte die Eingaben prüfen. ':'' )+
@@ -319,6 +355,7 @@ function sbBudgetVariantsPanel(items,total,riskMarkup=''){
   '<details class="sb-hub-detail" id="sb-savings-tips"><summary><span><b>Weitere gezielte Spartipps</b><small>Einzeln prüfen – keine doppelten Ersparnisse</small></span><span aria-hidden="true">⌄</span></summary>'+
   '<div class="sb-hub-detail__body"><p class="small">Tipps können dieselben Aufenthaltstage betreffen und werden nicht zur ausgewählten Variante addiert.</p>'+
   '<div class="sb-hub-tips">'+(tipRows||'<p class="small">Keine zusätzlichen Tipps verfügbar.</p>')+'</div></div></details>'+
+  rerouteMarkup+proofMarkup+
   (riskMarkup||'')+
   '<p class="small sb-savings-hub__footer">Budgetangaben sind unvollständig. '+out.constraints.unknownFareCount+' Transferpreispositionen offen; Kosten für Flug, Aufenthalt, Einreise und Versicherungen bitte mit echten Angeboten prüfen.</p>'+
   '</section>'+savingDialogMarkup();
