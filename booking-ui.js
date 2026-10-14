@@ -58,7 +58,7 @@ function render({route=[],bookings=[],ledger,baseCurrency='EUR',fxQuotes=null,tr
  ['insurance','equipment','visas'].map(k=>'<button type="button" data-bk-fixed-preset="'+k+'">'+shortcutIcon(k)+'<b>'+fixedLabels[k]+'</b><small>Fixkosten erfassen</small></button>').join('')+
  '</div></details></div>');
  return chooser+'<div class="panel"><div class="eyebrow">Buchungen · Beta</div><h2>Deine Buchungszentrale</h2>'+
- '<p class="small">Tickets, Host-Anfragen, Unterkünfte und Ausflüge festhalten. Noch <b>keine Buchung und keine Zahlung innerhalb von Southbound</b>. Bestätigt bedeutet hier: von dir als bestätigt eingetragen, nicht unabhängig vom Anbieter verifiziert. Aktuelle Kurse sind Tages-Referenzwerte, nicht automatisch dein tatsächlicher Bankkurs.</p>'+
+ '<p class="small">Tickets, Host-Anfragen, Unterkünfte und Ausflüge festhalten. Noch <b>keine Buchung und keine Zahlung innerhalb von The Worn Road</b>. Bestätigt bedeutet hier: von dir als bestätigt eingetragen, nicht unabhängig vom Anbieter verifiziert. Aktuelle Kurse sind Tages-Referenzwerte, nicht automatisch dein tatsächlicher Bankkurs.</p>'+
  '<div class="sb-booking-stats"><div><small>Gespeicherte Einträge</small><b>'+records.length+'</b></div><div><small>Als bestätigt erfasst</small><b>'+Number(ledger?.confirmed||0)+'</b></div><div><small>Zahlungen (netto) in Buchungen</small><b>'+euro(total)+'</b></div></div>'+
  '<p class="small">Davon '+euro(real)+' noch nicht im Reisejournal verbucht – nur dieser Teil wird zusätzlich als bereits bezahlt gezählt. Bereits anderswo erfasste Beträge werden nicht erneut addiert. Wechselkurse, Zahlungen und Journal-Referenzen sind von dir eingetragen und nicht automatisch überprüft.</p>'+
  (warnings.length?'<div class="note"><b>'+warnings.length+' Buchung(en) prüfen</b><p class="small">Unpassende Buchungen ändern deine Reisekosten nicht stillschweigend.</p>'+warnings.slice(0,8).map(w=>'<p class="small">'+esc(w.id)+': '+esc(w.reason)+'</p>').join('')+'</div>':'')+
@@ -101,7 +101,7 @@ function render({route=[],bookings=[],ledger,baseCurrency='EUR',fxQuotes=null,tr
  '<div class="sb-booking-stopovers" data-bk-for="transport" data-bk-conditional="flight" hidden style="display:none"><h3>Zwischenstopps / Layover</h3><p class="small">Übernachtungen im Ticket sind abgedeckt; separate oder unbekannte Hotelkosten bleiben im All-in-Budget offen, bis sie separat erfasst sind.</p><div data-bk-stopover-list></div><button type="button" data-bk-add-stopover>+ Zwischenstopp hinzufügen</button></div>'+
  '<label>Preiswährung (ISO-Code)<input data-bk="currency" maxlength="3" value="'+esc(baseCurrency)+'" placeholder="EUR, BRL, COP, USD ..."></label>'+
  '<label>Gesamtpreis inkl. Gebühren (gewählte Währung)<input type="number" min="0" step="any" data-bk="totalEUR" placeholder="Leer = unbekannt"></label>'+
- '<div data-bk-fx hidden style="display:none"><p class="small">Southbound trägt den letzten verfügbaren Tages-Referenzkurs automatisch ein. <b>1 Einheit der Preiswährung = wie viele EUR?</b> Für tatsächlich gezahlte Beträge den Bank-/Kartenauszug bevorzugen. Kurs, Quelle und Datum bleiben editierbar.</p>'+
+ '<div data-bk-fx hidden style="display:none"><p class="small">The Worn Road trägt den letzten verfügbaren Tages-Referenzkurs automatisch ein. <b>1 Einheit der Preiswährung = wie viele EUR?</b> Für tatsächlich gezahlte Beträge den Bank-/Kartenauszug bevorzugen. Kurs, Quelle und Datum bleiben editierbar.</p>'+
  '<label>EUR je Währungseinheit<input type="number" data-bk="rateEUR" min="0" step="any" placeholder="z. B. 0.16 (nur Beispiel)"></label>'+
  '<label>Kursdatum<input type="date" data-bk="rateCheckedAt"></label>'+
  '<label>Quelle des Kurses<input data-bk="rateSource" maxlength="160" placeholder="z. B. Bankabrechnung"></label></div>'+
@@ -195,7 +195,7 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>n
   const out=form.querySelector('[data-bk-payment-list]');
   out.innerHTML=events.length?events.map((p,i)=>'<div class="sb-booking-card"><div class="sb-booking-info"><b>'+
    esc(p.kind==='refund'?'Erstattung':'Zahlung')+' · '+esc(p.date)+'</b><small>'+
-   esc(p.amount)+' '+esc(p.currency)+' · '+(p.recordedElsewhere?'im Reisejournal erfasst':'in Southbound erfasst')+'</small></div>'+
+   esc(p.amount)+' '+esc(p.currency)+' · '+(p.recordedElsewhere?'im Reisejournal erfasst':'in The Worn Road erfasst')+'</small></div>'+
    '<button type="button" data-bk-remove-payment="'+i+'">Entfernen</button></div>').join(''):
    '<p class="small">Keine Einzelzahlungen hinterlegt. Bestehende pauschale Beträge bleiben erhalten.</p>';
   out.querySelectorAll('[data-bk-remove-payment]').forEach(button=>button.addEventListener('click',()=>{
@@ -402,7 +402,7 @@ function bind(root,{route=[],getBookings,storeBookings,onSaved,getFxQuotes=()=>n
  if(deleteButton)deleteButton.addEventListener('click',()=>{
   const record=(getBookings()||[]).find(x=>x.id===editing);if(!record)return;
   const paid=Math.max(0,Number(record.paidEUR||0)-Number(record.refundedEUR||0));
-  const message=paid>0?'Achtung: Für diese Buchung sind '+euro(paid)+' netto bezahlt erfasst. Der Eintrag und seine Zahlung würden aus Southbound verschwinden. Bitte einen tatsächlichen Storno/Refund stattdessen bearbeiten, sofern die Zahlung weiterhin besteht. Wirklich löschen?':'Eintrag „'+record.title+'“ dauerhaft aus Southbound entfernen?';
+  const message=paid>0?'Achtung: Für diese Buchung sind '+euro(paid)+' netto bezahlt erfasst. Der Eintrag und seine Zahlung würden aus The Worn Road verschwinden. Bitte einen tatsächlichen Storno/Refund stattdessen bearbeiten, sofern die Zahlung weiterhin besteht. Wirklich löschen?':'Eintrag „'+record.title+'“ dauerhaft aus The Worn Road entfernen?';
   if(!confirm(message))return;
   storeBookings((getBookings()||[]).filter(x=>x.id!==record.id));onSaved();
  });

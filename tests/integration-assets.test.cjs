@@ -110,7 +110,7 @@ test('name change preserves traveler records and offline asset revision',()=>{
  assert.match(html,/SouthboundBookingLedger/);
  assert.match(html,/The Worn Road/);
  assert.match(html,/the-worn-road-backup\.json/);
- assert.ok(sw.includes('southbound-v81'));
+ assert.ok(sw.includes('southbound-v82'));
 });
 
 
@@ -123,4 +123,17 @@ test('budget viability checks never represent missing transfers as bookable fare
  assert.ok(html.includes('id="sb-savings-price-readiness"'));
  for(const asset of ['budget-feasibility.js?v=81','price-readiness.js?v=81','trip-reprice.js?v=81'])assert.ok(sw.includes(asset));
  assert.ok(html.includes('The Worn Road'));
+});
+
+
+test('sourced manual offer shortlist is bundled and never asserts live bookability',()=>{
+ assert.ok(html.includes('offer-shortlist.js?v=82'));
+ assert.ok(html.includes('offer-shortlist.css'));
+ assert.ok(html.includes('SouthboundOfferShortlist.render'));
+ assert.ok(html.includes('SouthboundOfferShortlist.bind'));
+ assert.ok(sw.includes('offer-shortlist.js?v=82'));
+ assert.ok(sw.includes('offer-shortlist.css'));
+ const backup=fs.readFileSync(path.join(root,'state-backup.js'),'utf8');
+ assert.ok(backup.includes('offerWatchlist'));
+ assert.match(html,/southbound-v3/);
 });

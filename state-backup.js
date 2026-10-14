@@ -6,7 +6,7 @@
 const MAX_BYTES=8*1024*1024;
 const DANGEROUS=new Set(['__proto__','constructor','prototype']);
 const OBJECT_FIELDS=['days','vol','visited','excluded','actuals','volunteerDetails','hostelQuotes','transportOffers','fixedCosts','travelPreferences','priceRanges','fx','dailyRatesCache','transferDaysByStop','volunteerCounts','departures'];
-const ARRAY_FIELDS=['bookingLedger','customStops','extraStops','routeOrder','routeOffers','priceHistory'];
+const ARRAY_FIELDS=['bookingLedger','customStops','extraStops','routeOrder','routeOffers','priceHistory','offerWatchlist'];
 const isPlain=x=>x!==null&&typeof x==='object'&&!Array.isArray(x)&&Object.getPrototypeOf(x)===Object.prototype;
 function inspect(obj,depth=0){
  if(depth>22)throw Error('Backup ist zu tief verschachtelt');
@@ -35,6 +35,16 @@ function validateState(state){
   throw Error('Budgetobergrenze kleiner als Ziel');
  if(state.baseCurrency!==undefined&&!/^[A-Z]{3}$/.test(String(state.baseCurrency)))
   throw Error('Ungültige Basiswährung');
+ if(state.offerWatchlist!==undefined&&state.offerWatchlist!==null){
+  if(state.offerWatchlist.length>100)throw Error('Zu viele Preisnotizen im Backup');
+  for(const q of state.offerWatchlist){
+   if(!isPlain(q)||typeof q.id!=='string'||!q.id.trim()||
+      !['transport','lodging'].includes(q.type)||!Number.isInteger(q.stageId)||
+      typeof q.sourceUrl!=='string'||!/^https:\/\//.test(q.sourceUrl)||
+      !Number.isFinite(q.totalEUR)||q.totalEUR<0)
+    throw Error('Ungültige Preisnotiz im Backup');
+  }
+ }
  if(state.bookingLedger!==undefined&&state.bookingLedger!==null){
   for(const record of state.bookingLedger){
    if(!isPlain(record)||typeof record.id!=='string'||!record.id.trim()||!['transport','lodging','volunteering','activity'].includes(record.type))

@@ -1,0 +1,36 @@
+const {test,expect}=require('@playwright/test');
+test('quote shortlist keeps sourced manual offers apart from bookings and persists after reload',async({page})=>{
+ await page.goto('/',{waitUntil:'domcontentloaded'});
+ await page.locator('[data-view="bookings"]').click();
+ const panel=page.locator('#sb-offer-compare');
+ await expect(panel).toBeVisible();
+ await expect(panel).toContainText('keine Live-Abfrage');
+ await panel.locator('#sb-offer-add summary').click();
+ const pick=panel.locator('[data-oq="stageId"]');
+ await pick.selectOption('1');
+ await panel.locator('[data-oq="provider"]').fill('Hostel Example');
+ await panel.locator('[data-oq="sourceUrl"]').fill('https://example.org/hostel');
+ await panel.locator('[data-oq="baseEUR"]').fill('100');
+ await panel.locator('[data-oq="feesEUR"]').fill('12');
+ await expect(panel.locator('[data-oq-total]')).toContainText('112');
+ await panel.locator('[data-oq-save]').click();
+ await expect(page.locator('.oq-card')).toContainText('Hostel Example');
+ const state=await page.evaluate(()=>JSON.parse(localStorage.getItem('southbound-v3')||'{}'));
+ expect(state.offerWatchlist).toHaveLength(1);
+ expect(state.offerWatchlist[0].totalEUR).toBe(112);
+ expect(state.offerWatchlist[0].availabilityConfirmed).toBe(false);
+ expect(state.offerWatchlist[0].booked).toBe(false);
+ expect(state.bookingLedger||[]).toHaveLength(0);
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('[data-view="bookings"]').click();
+ await expect(page.locator('.oq-card')).toContainText('Hostel Example');
+});
+test('quote shortlist stays within phone width',async({page})=>{
+ await page.setViewportSize({width:360,height:780});
+ await page.goto('/',{waitUntil:'domcontentloaded'});
+ await page.locator('[data-view="bookings"]').click();
+ await page.locator('#sb-offer-add summary').click();
+ await expect(page.locator('[data-oq-save]')).toBeVisible();
+ const widths=await page.evaluate(()=>({scroll:document.documentElement.scrollWidth,visible:document.documentElement.clientWidth}));
+ expect(widths.scroll).toBeLessThanOrEqual(widths.visible+2);
+});
