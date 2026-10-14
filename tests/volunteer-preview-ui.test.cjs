@@ -10,7 +10,10 @@ test('host dialog warns above preferred hours, validates explicit costs and perm
  assert.match(html,/nightRaw===''|nightRaw===\x27\x27/);
  assert.doesNotMatch(html,/if\(night>0\)m\.hostelQuotes\[selected\]/);
 });
-test('manual ticket save includes route identity and date matching',()=>{
- assert.match(html,/fromId:previous\.i,toId:i/);
- assert.match(html,/departureDate!==\(current\.arrival\|\|current\.start\)/);
+test('transfer entry uses single itinerary amount and external booking handoff, not a duplicate manual ticket form',()=>{
+ assert.match(html,/data-transfer-book/);
+ assert.match(html,/data-transfer-price/);
+ assert.match(html,/x\.leg===null\?'Preis offen':E\(x\.leg\)/);
+ assert.doesNotMatch(html,/data-ticket-save/);
+ assert.doesNotMatch(html,/data-ticket-price/);
 });
