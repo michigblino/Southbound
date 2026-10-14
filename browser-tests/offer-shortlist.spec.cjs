@@ -5,6 +5,7 @@ test('quote shortlist keeps sourced manual offers apart from bookings and persis
  const panel=page.locator('#sb-offer-compare');
  await expect(panel).toBeVisible();
  await expect(panel).toContainText('keine Live-Abfrage');
+ await panel.locator('.oq-legacy summary').click();
  await panel.locator('#sb-offer-add summary').click();
  const pick=panel.locator('[data-oq="stageId"]');
  await pick.selectOption('1');

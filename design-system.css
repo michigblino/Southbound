@@ -1302,3 +1302,29 @@ html:not([data-sb-theme="light"]) #sb2 .sb-booking-shortcuts button svg{color:#E
 #sb2 .sb-goal-status__numbers{min-width:0;align-items:flex-start;text-align:left;flex-direction:row;flex-wrap:wrap;gap:8px}
 #sb2 .sb-goal-status__numbers small{align-self:center}
 #sb2 .sb-price-check__list>div{align-items:flex-start;flex-direction:column;gap:6px}}
+
+/* Unified booking v84 — provider search first, historical records on demand. */
+#sb2 .sb-booking-home{display:grid;gap:12px}
+#sb2 .sb-booking-intro{padding:20px 22px;margin:0}
+#sb2 .sb-booking-intro h2{margin:4px 0 8px;font-size:clamp(22px,3vw,29px);letter-spacing:-.04em}
+#sb2 .sb-booking-home #sb-offer-compare{margin:0;display:grid;gap:12px}
+#sb2 .sb-booking-home #sb-offer-compare>p.small{display:none}
+#sb2 .sb-booking-home #sb-provider-discovery{margin:0;padding:clamp(16px,3vw,24px)}
+#sb2 .sb-booking-home .oq-legacy,#sb2 .sb-booking-records{border:1px solid var(--line);border-radius:18px;background:var(--panel2);min-width:0}
+#sb2 .sb-booking-home .oq-legacy{padding:0 14px 12px}
+#sb2 .sb-booking-home .oq-legacy>summary,#sb2 .sb-booking-records>summary{cursor:pointer;list-style:none;padding:15px 8px;font-size:13px;font-weight:750}
+#sb2 .sb-booking-home .oq-legacy>summary::-webkit-details-marker,#sb2 .sb-booking-records>summary::-webkit-details-marker{display:none}
+#sb2 .sb-booking-records{padding:0 14px 15px;background:var(--panel)}
+#sb2 .sb-booking-records>summary{display:flex;gap:7px;flex-direction:column;font-size:14px}
+#sb2 .sb-booking-records>summary small{font-weight:450;font-size:11px;color:var(--muted)}
+#sb2 .sb-booking-records>.panel{margin:12px 0}
+#sb2 .sb-booking-home .oq-record-cta{width:100%;min-height:44px;border-radius:13px!important;background:var(--sb-surface);border:1px solid var(--line);color:var(--text);font-size:13px;font-weight:750}
+#sb2 .sb-transfer-booking{margin-top:12px;display:grid;gap:12px;padding:15px;border:1px solid var(--line);border-radius:16px;background:var(--panel2)}
+#sb2 .sb-transfer-booking__total{display:grid;gap:3px}
+#sb2 .sb-transfer-booking__total small{font-size:10px;color:var(--muted);font-weight:780;letter-spacing:.08em}
+#sb2 .sb-transfer-booking__total strong{font-variant-numeric:tabular-nums;font-size:25px;letter-spacing:-.035em}
+#sb2 .sb-transfer-booking__total span{color:var(--muted);font-size:11px}
+#sb2 .sb-transfer-booking button{min-height:44px;border-radius:12px}
+#sb2 .sb-transfer-booking a{font-size:12px;color:var(--text);text-underline-offset:3px}
+#sb2 .sb-booking-records:focus-within,#sb2 .sb-booking-home .oq-legacy:focus-within{border-color:var(--sb-focus)}
+@media(max-width:420px){#sb2 .sb-booking-intro{padding:15px}#sb2 .sb-transfer-booking{padding:11px}}
