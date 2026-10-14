@@ -59,7 +59,7 @@ function render({route=[],offers=[]}={}){
   return '<article class="oq-card"><div class="oq-card-head"><div><strong>'+safe(q.provider||'Unbekannter Anbieter')+'</strong><small>'+safe(context)+' · '+label+'</small></div><span class="oq-chip">'+safe(badge)+'</span></div>'+
    '<div class="oq-card-cost"><strong>'+(Number.isFinite(q.totalEUR)?euro(q.totalEUR):'Preis offen')+'</strong><small>Gesamt inkl. eingetragener Gebühren · '+safe(q.people)+' Pers.</small></div>'+
    '<p class="oq-card-meta">'+safe(q.startDate||'?')+' – '+safe(q.endDate||'?')+' · geprüft '+safe(q.checkedAt||'?')+'</p>'+
-   (q.valid?(!q.fresh?'<p class="oq-warn">Preisstand älter als 24 Stunden. Erneut beim Anbieter prüfen.</p>':''):'<p class="oq-warn">Nicht zur aktuellen Route passend. '+safe((q.issues||[]).join(' · '))+'</p>')+
+   (q.valid?(!q.fresh?'<p class="oq-warn">Preisstand älter als einen Kalendertag. Erneut beim Anbieter prüfen.</p>':''):'<p class="oq-warn">Nicht zur aktuellen Route passend. '+safe((q.issues||[]).join(' · '))+'</p>')+
    '<div class="oq-card-actions">'+(urlOk(q.sourceUrl)?'<a href="'+safe(q.sourceUrl)+'" target="_blank" rel="noopener noreferrer">Angebot beim Anbieter prüfen ↗</a>':'<span>Kein gültiger Anbieterlink</span>')+
    '<button type="button" data-oq-remove="'+safe(q.id)+'" aria-label="Preisnotiz entfernen">Entfernen</button></div></article>';
  }).join(''):'<p class="small oq-empty">Noch keine Angebote vorgemerkt. Trage zwei echte Anbieterpreise für dieselben Daten ein, um sie zu vergleichen.</p>';
