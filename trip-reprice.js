@@ -9,7 +9,7 @@ const expense=entry=>{const e=entry||{};return ['lodging','transport','food','ot
  +(Array.isArray(e.activities)?e.activities.reduce((a,x)=>a+(pos(x?.cost)||0),0):0)};
 function reprice({stops=[],start='2026-12-28',fx=0,quotes={},transportOffers={},vol={},volunteerDetails={},
  excluded={},days={},order=[],bookings=[],actuals={},extraPaid=0,reserve=0,goal=8000,cap=12000,
- fixedCosts={},completed={},transferDaysByStop={},originRequired=false,proposal=null}={}){
+ fixedCosts={},completed={},transferDaysByStop={},originRequired=false,unrecorded=0,proposal=null}={}){
  const itinerary=g.SouthboundItinerary,ledgerModule=g.SouthboundBookingLedger,timingModule=g.SouthboundRouteTiming,budgetModule=g.SouthboundRouteBudget;
  if(!itinerary||!ledgerModule||!timingModule||!budgetModule)throw Error('Repricing dependencies unavailable');
  const appliedDays={...days},locked=new Set(),warnings=[];
@@ -59,7 +59,7 @@ function reprice({stops=[],start='2026-12-28',fx=0,quotes={},transportOffers={},
   returnPaymentEUR:book.returnPaymentEUR,fixedPaymentEUR:book.fixedPaymentEUR,
   paidByStop:book.accountedPaidByStop,paymentAllocationsByStop:book.typedPaidByStop,
   completed,waitingCost:time.waiting.total,waitingComplete:time.waiting.complete,waitingPaid,
-  timingFeasible:time.feasible,bookingIntegrity:book.bookingIntegrity,unrecorded:0
+  timingFeasible:time.feasible,bookingIntegrity:book.bookingIntegrity,unrecorded
  });
  const hypothetical=Object.keys(hostProposal).length>0;
  const unsettled=[...warnings,...book.warnings.map(x=>x.reason),...snapshot.incompleteReasons];
