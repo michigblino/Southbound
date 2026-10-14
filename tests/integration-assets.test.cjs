@@ -1,7 +1,7 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const root=path.resolve(__dirname,'..'),html=fs.readFileSync(path.join(root,'index.html'),'utf8'),sw=fs.readFileSync(path.join(root,'sw.js'),'utf8');
-const modules=['budget-engine.js','route-budget.js','trip-calendar.js','wait-costs.js','route-timing.js','volunteer-matching.js','volunteer-scenario.js','volunteer-economics.js','state-backup.js','currency-rates.js','booking-finance.js','booking-ledger.js','booking-ui.js','stage-card.js','savings-potential.js','route-budget-variants.js','journey-flights.js'];
-test('all budgeting and scheduling modules are referenced in HTML',()=>{for(const name of modules)assert.ok(html.includes('src="./'+name+'"')||html.includes('src="./'+name+'?v=77"'),name+' missing from index.html')});
+const modules=['budget-engine.js','route-budget.js','trip-calendar.js','wait-costs.js','route-timing.js','volunteer-matching.js','volunteer-scenario.js','volunteer-economics.js','state-backup.js','currency-rates.js','booking-finance.js','booking-ledger.js','booking-ui.js','stage-card.js','savings-potential.js','route-budget-variants.js','journey-flights.js','trip-reprice.js','price-evidence.js'];
+test('all budgeting and scheduling modules are referenced in HTML',()=>{for(const name of modules)assert.ok(html.includes('src="./'+name+'"')||html.includes('src="./'+name+'?v=77"')||html.includes('src="./'+name+'?v=78"'),name+' missing from index.html')});
 test('offline cache includes all critical calculation modules',()=>{for(const name of modules)assert.ok(sw.includes(name),name+' missing from sw.js')});
 test('offline cache has a versioned cache identifier',()=>assert.match(sw,/southbound-v\d+/));
 test('legacy traveler storage key preserved',()=>assert.ok(html.includes('southbound-v3')));
@@ -69,9 +69,19 @@ test('savings hub uses one shared booked itinerary and no standalone second maxi
 
 test('PWA app cache-busts new decision layout and flight modules',()=>{
  const sw=fs.readFileSync(path.join(root,'sw.js'),'utf8');
- assert.ok(html.includes('design-system.css?v=77'));
+ assert.ok(html.includes('design-system.css?v=78'));
  assert.ok(html.includes('route-budget-variants.js?v=77'));
  assert.ok(html.includes('journey-flights.js?v=77'));
- for(const file of ['design-system.css?v=77','route-budget-variants.js?v=77','journey-flights.js?v=77'])assert.ok(sw.includes(file));
+ for(const file of ['design-system.css?v=78','route-budget-variants.js?v=77','journey-flights.js?v=77'])assert.ok(sw.includes(file));
  assert.ok(html.includes('sbJourneyFlightRows()'));
+});
+
+test('scenario forecasts reprice with complete booking and pricing pipeline, no subtotal subtraction',()=>{
+ assert.ok(html.includes('SouthboundTripReprice'));
+ assert.ok(html.includes('SouthboundPriceEvidence'));
+ assert.ok(html.includes('repriced.alternatives[i].forecast'));
+ assert.ok(html.includes('costBreakdown'));
+ assert.ok(html.includes('Wie verlässlich sind die Preise?'));
+ assert.ok(sw.includes('trip-reprice.js?v=78'));
+ assert.ok(sw.includes('price-evidence.js?v=78'));
 });

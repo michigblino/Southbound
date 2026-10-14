@@ -1252,3 +1252,15 @@ html:not([data-sb-theme="light"]) #sb2 .sb-booking-shortcuts button svg{color:#E
 @media(max-width:760px){#sb2 .sb-vol-candidates,#sb2 .sb-journey-flights{grid-template-columns:1fr}#sb2 .sb-decision-overview{grid-template-columns:1fr;gap:12px}#sb2 .sb-decision-stats{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}#sb2 .sb-decision-stats>div{display:flex;flex-direction:column;align-items:flex-start;gap:6px}}
 @media(max-width:560px){#sb2 .sb-savings-hub .sb-variant-picker{grid-template-columns:1fr!important;gap:7px!important}#sb2 .sb-savings-hub button.sb-variant-option{min-height:68px!important;padding:12px 14px!important;display:grid!important;align-items:center!important;grid-template-columns:minmax(0,1fr) auto!important}#sb2 .sb-savings-hub button.sb-variant-option.is-active{padding:11px 13px!important}#sb2 .sb-savings-hub button.sb-variant-option>strong{width:auto!important;padding:0!important;font-size:17px}#sb2 .sb-decision-stats{grid-template-columns:1fr;gap:2px}#sb2 .sb-decision-stats>div{flex-direction:row;align-items:center;justify-content:space-between}#sb2 .sb-vol-other{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){#sb2 .sb-variant-option,#sb2 .sb-hub-tip{transition:none!important}}
+
+/* Source audit within an individual scenario: one disclosure, not another competing price. */
+#sb2 .sb-evidence{margin-top:9px}
+#sb2 .sb-evidence-tiers{display:flex;gap:7px;flex-wrap:wrap;padding:11px 1px 9px}
+#sb2 .sb-evidence-tiers span{font-size:11px;padding:6px 9px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);color:var(--text)}
+#sb2 .sb-evidence-lines{max-height:290px;overflow-y:auto;border:1px solid var(--line);border-radius:12px;margin-top:8px}
+#sb2 .sb-evidence-lines>div{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--line)}
+#sb2 .sb-evidence-lines>div:last-child{border-bottom:0}
+#sb2 .sb-evidence-lines>div>span{display:flex;flex-direction:column;gap:4px;min-width:0}
+#sb2 .sb-evidence-lines b{font-size:12px;font-weight:730}
+#sb2 .sb-evidence-lines small{font-size:11px;color:var(--muted);overflow-wrap:anywhere}
+#sb2 .sb-evidence-lines>div>b{font-variant-numeric:tabular-nums;white-space:nowrap}

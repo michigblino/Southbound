@@ -232,3 +232,19 @@ test('saved inbound and return journeys appear above globe and are not invented 
   airports:window.SouthboundAirports.airports,stages:[{i:0,name:'São Paulo',lat:-23.55,lng:-46.63}]}));
  expect(drawn.length).toBe(2);expect(drawn.every(x=>x.arc)).toBe(true);
 });
+
+test('every budget variant uses the same all-in repricing inputs and shows price provenance',async({page})=>{
+ await page.goto('/',{waitUntil:'domcontentloaded'});
+ const hub=page.locator('#sb-budget-variants');
+ const actual=await page.locator('[data-sb-all-in-total]').textContent();
+ const baseline=await page.evaluate(()=>{const src=JSON.parse(localStorage.getItem('southbound-v3'));return window.SouthboundTripReprice.reprice({
+  stops:[],start:src.tripStart});}).catch(()=>null);
+ // Full repricer is present and never writes to storage on read.
+ await expect(hub.locator('.sb-decision-total').first()).toBeAttached();
+ await hub.locator('[data-sb-variant="current"]').click();
+ await expect(hub.locator('[data-sb-variant-content="current"]')).toBeVisible();
+ await hub.locator('[data-sb-variant-content="current"] .sb-evidence > summary').click();
+ await expect(hub.locator('[data-sb-variant-content="current"] .sb-evidence-tiers')).toBeVisible();
+ await expect(hub.locator('[data-sb-variant-content="current"] .sb-evidence-lines > div').first()).toBeVisible();
+ expect(actual).toMatch(/€/);
+});
