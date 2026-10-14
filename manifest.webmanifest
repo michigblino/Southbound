@@ -1,6 +1,6 @@
 {
   "name": "The Worn Road – Reiseplaner",
-  "short_name": "Worn Road",
+  "short_name": "The Worn Road",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

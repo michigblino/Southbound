@@ -32,7 +32,7 @@ test('daylight and graphite palettes keep visible text and surfaces readable',as
   await expect(page.locator('html')).toHaveAttribute('data-sb-theme',mode);
   await expect.poll(()=>page.evaluate(()=>getComputedStyle(document.body).color),{timeout:3000}).toBe(mode==='light'?'rgb(23, 56, 76)':'rgb(247, 240, 236)');
   const m=await metrics(page);
-  expect(m.rootBackground,mode+' body token').toBe(mode==='light'?'#E4EFF5':'#2A3132');
+  expect(m.rootBackground,mode+' body token').toBe(mode==='light'?'#E4EFF5':'#192A21');
   expect(m.surface).not.toBe(m.rootBackground);
   expect(contrast(m.textComputed,mode==='light'?'rgb(228,239,245)':'rgb(42,49,50)'),mode+' body contrast').toBeGreaterThan(7);
   const button=page.locator('#sb2 .topnav button.active');

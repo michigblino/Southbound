@@ -1,10 +1,10 @@
 const {test,expect}=require('@playwright/test');
-test('Southbound loads without fatal page errors and retains storage key',async({page})=>{
+test('The Worn Road loads without fatal page errors and retains storage key',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('/',{waitUntil:'domcontentloaded'});
  await expect.poll(()=>page.evaluate(()=>!!localStorage.getItem('southbound-v3'))).toBe(true);
- await expect(page).toHaveTitle(/Southbound/);
- await expect(page.locator('body')).toContainText(/Southbound/i);
+ await expect(page).toHaveTitle(/The Worn Road/);
+ await expect(page.locator('body')).toContainText(/The Worn Road/i);
  await expect.poll(()=>page.evaluate(()=>typeof window.SouthboundRouteBudget?.snapshot)).toBe('function');
  await expect.poll(()=>page.evaluate(()=>typeof window.SouthboundVolunteerEconomics?.estimate)).toBe('function');
  expect(errors).toEqual([]);
