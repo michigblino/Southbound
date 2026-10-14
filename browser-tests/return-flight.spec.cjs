@@ -248,3 +248,21 @@ test('every budget variant uses the same all-in repricing inputs and shows price
  await expect(hub.locator('[data-sb-variant-content="current"] .sb-evidence-lines > div').first()).toBeVisible();
  expect(actual).toMatch(/€/);
 });
+
+test('no unverified budget goal success; alternate stops visibly require rechecked fares',async({page})=>{
+ await page.goto('/',{waitUntil:'domcontentloaded'});
+ const hub=page.locator('#sb-budget-variants');
+ await expect(hub.locator('.sb-goal-status')).toBeVisible();
+ await expect(hub.locator('.sb-goal-status')).not.toHaveAttribute('data-sb-goal-status','supported-under-goal');
+ const alt=hub.locator('#sb-savings-reroutes');
+ await expect(alt).toHaveCount(1);
+ await alt.locator('summary').click();
+ await expect(alt.locator('.sb-reroute-card').first()).toBeVisible();
+ await expect(alt).toContainText('Ticketpreis offen');
+ const audit=hub.locator('#sb-savings-price-readiness');
+ await expect(audit).toHaveCount(1);
+ await audit.locator('summary').click();
+ await expect(audit).toContainText('keine Anbieter-API verbunden');
+ const d=await page.evaluate(()=>({w:document.documentElement.scrollWidth,c:document.documentElement.clientWidth}));
+ expect(d.w).toBeLessThanOrEqual(d.c+2);
+});
