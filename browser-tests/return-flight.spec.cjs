@@ -184,10 +184,51 @@ test('one savings center compares scenarios without double-counting isolated lod
  await expect(hub.locator('#sb-savings-lodging')).toContainText('nicht zusätzlich');
  await hub.locator('#sb-savings-tips > summary').click();
  await expect(hub.locator('#sb-savings-tips .sb-hub-tip').first()).toBeVisible();
- await expect(hub.locator('#sb-savings-tips')).toContainText('nicht automatisch');
+ await expect(hub.locator('#sb-savings-tips')).toContainText('nicht zur ausgewählten Variante addiert');
  await expect(page.locator('#sb-savings-risk')).toHaveCount(1);
  await expect(page.locator('#sb-savings-risk')).not.toHaveAttribute('open');
  expect(await page.evaluate(()=>localStorage.getItem('southbound-v3'))).toBe(before);
  const sizes=await page.evaluate(()=>({scroll:document.documentElement.scrollWidth,client:document.documentElement.clientWidth}));
  expect(sizes.scroll).toBeLessThanOrEqual(sizes.client+2);
+});
+
+test('new savings and volunteering cards use premium grid layout and preserve touch widths',async({page})=>{
+ await page.setViewportSize({width:390,height:844});
+ await page.goto('/',{waitUntil:'domcontentloaded'});
+ const hub=page.locator('#sb-budget-variants');
+ const buttons=hub.locator('[data-sb-variant]');
+ await expect(buttons).toHaveCount(4);
+ const geometry=await buttons.evaluateAll(nodes=>nodes.map(el=>({x:el.getBoundingClientRect().x,y:el.getBoundingClientRect().y,w:el.getBoundingClientRect().width,display:getComputedStyle(el).display})));
+ expect(geometry.every(x=>x.display==='grid')).toBe(true);
+ expect(geometry[1].y).toBeGreaterThan(geometry[0].y+45);
+ expect(geometry.every(x=>x.w>200)).toBe(true);
+ await expect(hub.locator('.sb-decision-total')).toHaveCount(4);
+ const volunteers=page.locator('.sb-vol-opportunities');
+ await expect(volunteers).toBeVisible();
+ await expect(volunteers.locator('.sb-vol-candidate')).toHaveCount(5);
+ await expect(volunteers.locator('.sb-vol-candidate:visible')).toHaveCount(3);
+ const dim=await page.evaluate(()=>({scroll:document.documentElement.scrollWidth,width:document.documentElement.clientWidth}));
+ expect(dim.scroll).toBeLessThanOrEqual(dim.width+2);
+});
+test('saved inbound and return journeys appear above globe and are not invented without booking',async({page})=>{
+ await page.goto('/',{waitUntil:'domcontentloaded'});
+ await expect(page.locator('.sb-journey-flights')).toHaveCount(0);
+ await page.evaluate(()=>{
+  const state=JSON.parse(localStorage.getItem('southbound-v3'));
+  state.bookingLedger=[
+   {id:'inbound-saved',type:'transport',status:'planned',journeyOrigin:true,stageId:0,travelMode:'flight',originPlace:'München (MUC)',startDate:'2026-12-27',arrivalDate:'2026-12-28',provider:'Test Airline',destinationAirport:'GRU'},
+   {id:'return-saved',type:'transport',status:'confirmed',journeyReturn:true,stageId:0,travelMode:'flight',originPlace:'São Paulo',destinationPlace:'München (MUC)',startDate:'2027-10-20',arrivalDate:'2027-10-21',provider:'Test Airline'}
+  ];
+  localStorage.setItem('southbound-v3',JSON.stringify(state));
+ });
+ await page.reload({waitUntil:'domcontentloaded'});
+ const ribbons=page.locator('.sb-journey-flight');
+ await expect(ribbons).toHaveCount(2);
+ await expect(ribbons.first()).toContainText('Anreise');
+ await expect(ribbons.last()).toContainText('Abreise');
+ await expect(ribbons.first()).toContainText('Vorgemerkt');
+ await expect(ribbons.last()).toContainText('Bestätigt');
+ const drawn=await page.evaluate(()=>window.SouthboundJourneyFlights.flightDisplay({bookings:JSON.parse(localStorage.getItem('southbound-v3')).bookingLedger,
+  airports:window.SouthboundAirports.airports,stages:[{i:0,name:'São Paulo',lat:-23.55,lng:-46.63}]}));
+ expect(drawn.length).toBe(2);expect(drawn.every(x=>x.arc)).toBe(true);
 });
