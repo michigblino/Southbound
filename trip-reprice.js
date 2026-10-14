@@ -12,14 +12,33 @@ function reprice({stops=[],start='2026-12-28',fx=0,quotes={},transportOffers={},
  fixedCosts={},completed={},transferDaysByStop={},originRequired=false,unrecorded=0,proposal=null}={}){
  const itinerary=g.SouthboundItinerary,ledgerModule=g.SouthboundBookingLedger,timingModule=g.SouthboundRouteTiming,budgetModule=g.SouthboundRouteBudget;
  if(!itinerary||!ledgerModule||!timingModule||!budgetModule)throw Error('Repricing dependencies unavailable');
- const appliedDays={...days},locked=new Set(),warnings=[];
+ const appliedDays={...days},appliedExcluded={...excluded},locked=new Set(),warnings=[];
+ const originalIds=(order.length?order:stops.map((_,i)=>i)).filter(i=>stops[i]&&!excluded[i]);
+ const originalPrior=new Map(originalIds.map((id,k)=>[id,k?originalIds[k-1]:null]));
+ const removed=[];
  for(const b of bookings||[])if(b&&(b.status==='confirmed'||(pos(b.paidEUR)||0)>(pos(b.refundedEUR)||0))&&Number.isInteger(b.stageId))locked.add(b.stageId);
  const hostProposal={};
+ for(const id of proposal?.excludeIds||[]){
+  if(!Number.isInteger(id)||!stops[id]||excluded[id]||locked.has(id)||completed[id]===true||
+    (vol[id]===true&&volunteerDetails[id]?.confirmed===true)||stops[id][14]==='return'||
+    id===originalIds[0]||id===originalIds.at(-1)){
+   warnings.push('Etappe '+String(id)+' kann nicht ausgelassen werden');continue;
+  }
+  appliedExcluded[id]=true;removed.push(id);
+ }
+ for(const [key,value] of Object.entries(proposal?.dayOverrides||{})){
+  const id=Number(key),n=pos(value);
+  if(!Number.isInteger(id)||!Number.isInteger(n)||n<1||n>180||appliedExcluded[id]||locked.has(id)||completed[id]===true||
+   (vol[id]===true&&volunteerDetails[id]?.confirmed===true)){
+    warnings.push('Aufenthaltsänderung nicht zulässig: '+key);continue;
+  }
+  appliedDays[id]=n;
+ }
  for(const a of proposal?.actions||[]){
   if(!Number.isInteger(a?.i)||locked.has(a.i)||completed[a.i]===true||(vol[a.i]===true&&volunteerDetails[a.i]?.confirmed===true)){
    warnings.push('Etappe '+String(a?.i)+' bereits gebucht oder abgeschlossen; Änderung nicht übernommen');continue;
   }
-  if(!stops[a.i]||excluded[a.i]||stops[a.i][14]==='return')continue;
+  if(!stops[a.i]||appliedExcluded[a.i]||stops[a.i][14]==='return')continue;
   const proposed=pos(a.to);
   if(proposed===null||!Number.isInteger(proposed)||proposed<1||proposed>180){warnings.push('Ungültige Aufenthaltsdauer: '+a.i);continue;}
   appliedDays[a.i]=proposed;
@@ -34,10 +53,24 @@ function reprice({stops=[],start='2026-12-28',fx=0,quotes={},transportOffers={},
    hostProposal[a.i]=nights;
   }
  }
- const planned=itinerary.plan({stops,start,fx,quotes,transportOffers,vol,volunteerDetails,excluded,days:appliedDays,order});
+ const planned=itinerary.plan({stops,start,fx,quotes,transportOffers,vol,volunteerDetails,excluded:appliedExcluded,days:appliedDays,order});
  const past=Object.fromEntries(planned.items.map(x=>[x.i,expense(actuals[x.i])]));
  const book=ledgerModule.reconcile({items:planned.items,bookings,vol,volunteerDetails,legacyPaidByStop:past,legacyActualsByStop:actuals,originRequired});
- const items=book.items.map(item=>{
+ const newConnections=[],adjustedItems=book.items.map((item,k)=>{
+  if(k===0)return item;
+  const prior=book.items[k-1].i;
+  if(!removed.length||originalPrior.get(item.i)===prior)return item;
+  newConnections.push({from:prior,to:item.i,fromName:book.items[k-1].name,toName:item.name});
+  // Never implicitly "save" a fare by removing an intermediate stop.
+  // A rerouted ticket needs route- and date-specific verification first.
+  if(!item.transportOffer){
+   warnings.push('new-connection-unpriced: '+prior+' → '+item.i);
+   return {...item,leg:null,legMin:null,legMax:null,quality:'reroute-unpriced',
+    transportNote:'Neue Direktverbindung ohne datiertes Ticket; Preis und Fahrzeit offen'};
+  }
+  return item;
+ });
+ const items=adjustedItems.map(item=>{
   const nights=hostProposal[item.i]||0;
   if(!nights)return item;
   const bed=pos(item.regularBed);
@@ -70,6 +103,8 @@ function reprice({stops=[],start='2026-12-28',fx=0,quotes={},transportOffers={},
   hostNights:Object.values(hostProposal).reduce((a,x)=>a+x,0),
   paidAlready:snapshot.paid,lockedStages:[...locked],warnings:unsettled,
   changedConnections:items.filter(x=>!x.isReturn&&x.leg===null).map(x=>x.i),
+  newConnections,connectionUnpriced:newConnections.some(x=>items.find(i=>i.i===x.to)?.leg===null),
+  removedStops:removed,
   priceInputs:{quotes,transportOffers,fixedCosts:fixed,bookings:book.records}};
 }
 function compare(params={},variants=[]){
