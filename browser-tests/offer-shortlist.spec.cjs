@@ -5,7 +5,7 @@ test('quote shortlist keeps sourced manual offers apart from bookings and persis
  const panel=page.locator('#sb-offer-compare');
  await expect(panel).toBeVisible();
  await expect(panel).toContainText('keine Live-Abfrage');
- await panel.locator('.oq-legacy summary').click();
+ await panel.locator('.oq-legacy > summary').click();
  await panel.locator('#sb-offer-add summary').click();
  const pick=panel.locator('[data-oq="stageId"]');
  await pick.selectOption('1');
@@ -30,7 +30,7 @@ test('quote shortlist stays within phone width',async({page})=>{
  await page.setViewportSize({width:360,height:780});
  await page.goto('/',{waitUntil:'domcontentloaded'});
  await page.locator('[data-view="bookings"]').click();
- await page.locator('.oq-legacy summary').click();
+ await page.locator('.oq-legacy > summary').click();
  await page.locator('#sb-offer-add summary').click();
  await expect(page.locator('[data-oq-save]')).toBeVisible();
  const widths=await page.evaluate(()=>({scroll:document.documentElement.scrollWidth,visible:document.documentElement.clientWidth}));
