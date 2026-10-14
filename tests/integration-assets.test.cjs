@@ -110,7 +110,7 @@ test('name change preserves traveler records and offline asset revision',()=>{
  assert.match(html,/SouthboundBookingLedger/);
  assert.match(html,/The Worn Road/);
  assert.match(html,/the-worn-road-backup\.json/);
- assert.ok(sw.includes('southbound-v80'));
+ assert.ok(sw.includes('southbound-v81'));
 });
 
 
