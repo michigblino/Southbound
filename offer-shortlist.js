@@ -49,7 +49,7 @@ function evaluate(records,{route=[],now=today()}={}){
  for(const group of groups.values())if(group.length>=2)group.sort((a,b)=>a.totalEUR-b.totalEUR||String(a.id).localeCompare(String(b.id)))[0].lowest=true;
  return rows.sort((a,b)=>(a.stageId??999)-(b.stageId??999)||(a.startDate||'').localeCompare(b.startDate||'')||(a.totalEUR??Infinity)-(b.totalEUR??Infinity));
 }
-function render({route=[],offers=[],initialType='lodging',initialStageId=null}={}){
+function render({route=[],offers=[],initialType='lodging',initialStageId=null,notesOpen=false}={}){
  if(!route.length)return '';
  const now=today(),rows=evaluate(offers,{route,now}),first=route[0];
  const select=route.map(s=>'<option value="'+s.i+'">'+safe(s.name)+' · '+safe(s.start||'')+'</option>').join('');
@@ -66,7 +66,7 @@ function render({route=[],offers=[],initialType='lodging',initialStageId=null}={
  return '<section class="panel oq-wrap" id="sb-offer-compare"><div class="eyebrow">ANGEBOTE</div><h2>Anbieterangebote</h2>'+
   '<p class="small">Unterkünfte und Transfers mit exakten Daten, Personenzahl, Preis inkl. Gebühren und Anbieterlink vergleichen. <b>Nur manuell erfasste Preisnotizen – keine Live-Abfrage, keine Verfügbarkeits- oder Buchungsbestätigung.</b> Dein Reisebudget bleibt unverändert, bis du separat eine tatsächliche Buchung einträgst.</p>'+
   (g.SouthboundOfferDiscovery?.render({route,initialType,initialStageId})||'')+
-  '<details class="oq-legacy"><summary>Gespeicherte Preisnotizen verwalten</summary><p class="small">Ältere Angebotsnotizen bleiben erhalten. Nur tatsächliche externe Buchungen als bestätigt erfassen.</p>'+
+  '<details class="oq-legacy"'+(notesOpen?' open':'')+'><summary>Gespeicherte Preisnotizen verwalten</summary><p class="small">Ältere Angebotsnotizen bleiben erhalten. Nur tatsächliche externe Buchungen als bestätigt erfassen.</p>'+
   '<details class="oq-add" id="sb-offer-add"><summary>Neues Angebot vormerken</summary><div class="oq-fields">'+
   '<label>Art<select data-oq="type"><option value="lodging">Unterkunft</option><option value="transport">Transfer</option></select></label>'+
   '<label>Etappe<select data-oq="stageId">'+select+'</select></label>'+
