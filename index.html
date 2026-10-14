@@ -275,8 +275,14 @@ function sbBudgetVariantsPanel(items,total,riskMarkup=''){
    '<div class="sb-evidence-lines">'+provenance.rows.map(row=>'<div><span><b>'+safe(row.label)+'</b>'+
    '<small>'+safe(row.source)+(row.provider?' · '+safe(row.provider):'')+(row.checkedAt?' · geprüft '+safe(row.checkedAt):'')+'</small></span>'+
    '<b>'+(row.amount===null?'Preis offen':fmt(row.amount))+'</b></div>').join('')+'</div></details>':'';
-  const changes=(v.actions||[]).map(a=>'<div class="sb-decision-change"><span><b>'+safe(a.name)+'</b>'+
-   '<small>'+a.from+' → '+a.to+' Tage'+(a.hostNights?' · '+a.hostNights+' angenommene Host-Nächte':'')+'</small></span><b>'+fmt(a.delta)+'</b></div>').join('');
+  // Show ONLY changes actually applied by full repricing, not obsolete per-stop tip values.
+  const oldStages=new Map((initial?.items||[]).map(x=>[x.i,x]));
+  const realized=ledger?ledger.items.filter(x=>!x.isReturn).flatMap(x=>{
+   const before=oldStages.get(x.i),nights=x.hypotheticalHostNights||0;
+   return !before||(x.days===before.days&&!nights)?[]:[{name:x.name,from:before.days,to:x.days,hostNights:nights}];
+  }):(v.actions||[]);
+  const changes=realized.map(a=>'<div class="sb-decision-change"><span><b>'+safe(a.name)+'</b>'+
+   '<small>'+a.from+' → '+a.to+' Tage'+(a.hostNights?' · '+a.hostNights+' nicht bestätigte Host-Nächte':'')+'</small></span><small>Im Gesamtbudget neu berechnet</small></div>').join('');
   return '<div class="sb-variant-detail" data-sb-variant-content="'+v.mode+'" id="sb-variant-detail-'+v.mode+'"'+(v.mode!==chosen?' hidden':'')+'>'+
     '<div class="sb-decision-overview"><div><span class="sb-decision-label">'+(current?'HEUTIGE SCHÄTZUNG':v.mode==='volunteer'?'LANGREISE IM FOKUS':v.mode===best?.mode?'GÜNSTIGSTER MODELLWERT':'SPARALTERNATIVE')+'</span>'+
     '<h3>'+safe(v.name)+'</h3><strong class="sb-decision-total">'+fmt(v.forecast)+'</strong><small>Modelliertes Gesamtbudget inkl. Reserve</small></div>'+
@@ -290,7 +296,7 @@ function sbBudgetVariantsPanel(items,total,riskMarkup=''){
       '<div class="sb-variant-split__total"><span>Gesamte neue Budgetprognose</span><b>'+fmt(v.forecast)+'</b></div></div>'+
       '<p class="small">Alle Kosten neu bewertet. Unbestätigte Host-Nächte und geänderte Abfahrtstage machen das Ergebnis unsicher; keine buchbare Preisgarantie.</p></details>':'')+
     provenancePanel+
-    (changes?'<details class="sb-decision-disclosure sb-variant-changes"><summary>Was müsste sich ändern?<span>'+v.actions.length+' Etappen</span></summary>'+
+    (changes?'<details class="sb-decision-disclosure sb-variant-changes"><summary>Was müsste sich ändern?<span>'+realized.length+' Etappen</span></summary>'+
      '<div class="sb-decision-changes">'+changes+'</div></details>':'')+
    '</div>';
  }).join('');
