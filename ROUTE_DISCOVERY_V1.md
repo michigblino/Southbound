@@ -12,7 +12,7 @@ The travel brief includes origin, start date, budget target and cap, currency, m
 
 Every graph place and transport edge must include source provenance: HTTPS URL, title, checked date and source kind. Costs are classified as provider-live, official-tariff, historical-reference, model-estimate or unknown. Model estimates require an explicit method. Provider-live evidence older than one day is not used as a live price. Different currencies without a verified conversion are treated as unknown. Unknown fares never become zero.
 
-Places may provide daily-cost bands, stay-duration guidance, season flags and volunteer listings. Transport edges are directed and include mode, duration range, fare evidence, seasonality and route-specific safety evidence.
+Places may provide daily-cost bands, stay-duration guidance, season flags and volunteer listings. Transport edges are directed and include mode, duration range, fare evidence, seasonality and route-specific safety evidence. Seasonal checks consider the full plausible arrival/departure window created by prior travel-time ranges, rather than assuming the minimum travel duration.
 
 ## Output and safeguards
 
