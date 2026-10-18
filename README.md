@@ -1,11 +1,16 @@
 # The Worn Road
 
-Interaktiver, budgetorientierter Reiseplaner für Südamerika 2026–2027.
+Budgetorientierter Reiseplaner mit lokal gespeicherten persönlichen Reise- und Budgetdaten. Die Anwendung wird über GitHub Pages aus dem main-Branch bereitgestellt.
 
-Persönliche Reise- und Budgetdaten werden ausschließlich lokal im Browser gespeichert. Öffentliche Repository-Dateien enthalten keine privaten Reiseeinträge.
+## Route Discovery V1
 
-Die Anwendung wird über GitHub Pages aus dem `main`-Branch bereitgestellt.
+Ein global ausgelegter, quellenbasierter Routen-Discovery-Kern liegt in route-discovery.js. Er erzeugt aus einem strukturierten Reisebrief und einem quellennachgewiesenen Orts-/Transportgraphen vergleichbare Kandidaten für Budgetfokus, ausgewogene Reise und Abenteuer. Fehlende Fahrpreise bleiben unbekannt; unvollständige All-in-Kosten werden niemals als budgetbestätigt dargestellt.
 
-## Weiterentwicklung und Qualitätsprüfung
+Die Engine führt selbst keine Live-Abfragen durch und enthält keine hardcodierte Weltkarte. Das aktuelle GitHub-Pages-Deployment verfügt noch nicht über einen globalen Provider-Graphen oder live verbundene Transport-APIs. Details stehen in ROUTE_DISCOVERY_V1.md.
 
-Für Architektur, Datenquellen, bestätigte vs. geschätzte Preise, bekannte Kalkulationsrisiken, Testplan und den kompakten KI-Handoff siehe [AI_HANDOFF_AND_AUDIT.md](AI_HANDOFF_AND_AUDIT.md). **Die App zeigt derzeit überwiegend Schätzungen, keine live bestätigten Transferpreise oder Volunteering-Verfügbarkeiten.**
+## Qualitätsprüfung
+
+- Unit-Tests: npm run test:unit
+- Browser-Regressionen: npm run test:browser
+
+Die vorhandene Reiseroute, Buchungen und lokale Nutzerdaten bleiben getrennt von der Discovery-Engine. Cloudflare wird nicht verändert.
