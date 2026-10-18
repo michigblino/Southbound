@@ -16,7 +16,7 @@ Places may provide daily-cost bands, stay-duration guidance, season flags and vo
 
 ## Output and safeguards
 
-Each candidate carries place and leg sources, duration range, known cost subtotal, unknown cost lines, quality counts, season flags, safety evidence, volunteer matches and an explanation. If any required cost is unknown, all-in minimum/maximum remain null and budget status remains unknown. Target and cap are distinct. The lack of a warning is not a safety guarantee; conservative preferences can exclude routes with high-severity warnings in the supplied evidence.
+Each candidate carries place and leg sources, duration range, known cost subtotal, unknown cost lines, quality counts, season flags, safety evidence, volunteer matches and an explanation. If any required cost is unknown, all-in minimum/maximum remain null and budget status remains unknown. Target and cap are distinct. The lack of a warning is not a safety guarantee; conservative preferences can exclude routes with high-severity warnings in the supplied evidence. The path search is bounded; if its search limit is reached, the response and each candidate carry a warning that ranking is not guaranteed to be globally optimal.
 
 Volunteering is not assumed to be free. Only a source-backed host marked confirmed, matching work hours and stay length, with lodging included and a source-backed lodging cost component, can reduce estimated accommodation cost. Food, platform fees, work conditions, availability and operator legitimacy need independent confirmation.
 

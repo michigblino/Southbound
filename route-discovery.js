@@ -101,10 +101,12 @@ function discover({brief:raw,graph,now=Date.now()}={}){
   if(path.length>=b.maxStops)return;for(const e of (adj.get(path[path.length-1])||[])){if(path.includes(e.to)||truncated)continue;visit(path.concat(e.to),edges.concat(e));}
  }
  visit([origin.id],[]);
- const feasible=candidates.filter(c=>c.duration.min<=b.maxDays&&c.duration.max>=b.minDays);if(!feasible.length)return {status:'no-feasible-routes',errors:[],warnings:gv.warnings,diagnostics:{nodes:graph.nodes.length,edges:graph.edges.length,origin:origin.id,pathsVisited,truncated,reason:'Keine Route erfüllt Zielgeografie, Pflichtziele, Dauer, Saison-Hard-Constraints und Sicherheitsfilter im gelieferten Graph.'},candidates:[]};
+ const searchWarnings=truncated?['Routensuche hat das Suchlimit erreicht; die gefundenen Kandidaten sind nicht als global optimal bestätigt.']:[];
+ const feasible=candidates.filter(c=>c.duration.min<=b.maxDays&&c.duration.max>=b.minDays);if(!feasible.length)return {status:'no-feasible-routes',errors:[],warnings:v.warnings.concat(gv.warnings,searchWarnings),diagnostics:{nodes:graph.nodes.length,edges:graph.edges.length,origin:origin.id,pathsVisited,truncated,reason:'Keine Route erfüllt Zielgeografie, Pflichtziele, Dauer, Saison-Hard-Constraints und Sicherheitsfilter im gelieferten Graph.'},candidates:[]};
  const profiles=[{id:'budget',label:'Budgetfokus'},{id:'balanced',label:'Ausgewogen'},{id:'adventure',label:'Abenteuer'}],chosen=[],used=new Set();
  for(const p of profiles){const ranked=feasible.map(c=>({c,score:score(c,b,p.id)})).sort((a,z)=>z.score-a.score||a.c.duration.typical-z.c.duration.typical||a.c.id.localeCompare(z.c.id));const pick=ranked.find(x=>!used.has(x.c.id))||ranked[0];if(!pick)continue;used.add(pick.c.id);const c=JSON.parse(JSON.stringify(pick.c));c.profile=p.id;c.label=p.label;c.score=round(pick.score);
   c.explanation.why.push(p.id==='budget'?'Priorisiert bekannte Kosten und vermeidet preislich unbekannte Verbindungen.':p.id==='adventure'?'Priorisiert als Abenteuer markierte Orte und Boot-/Überlandverbindungen, ohne bekannte hohe Warnungen zu ignorieren.':'Balanciert Kosten, Dauer, Saison und Stand der Sicherheitsquellen.');
+  if(truncated)c.explanation.why.push('Die Routensuche erreichte ihr Suchlimit; diese Rangfolge ist nicht als global optimal bestätigt.');
   if(!c.cost.complete)c.explanation.why.push('All-in-Budget unvollständig: '+c.cost.unknownComponents.length+' Kostenposition(en) ohne verwendbaren Preis. Kein Budgetnachweis.');
   if(c.safety.status==='unknown')c.explanation.why.push('Sicherheitslage aus gelieferten Quellen nicht ausreichend belegt; unbekannt bedeutet nicht sicher.');
   if(c.season.status==='review-needed')c.explanation.why.push('Saisonhinweise vor Buchung anhand aktueller Betreiber-/Behördeninformationen prüfen.');
@@ -112,7 +114,7 @@ function discover({brief:raw,graph,now=Date.now()}={}){
   if(c.cost.complete&&c.cost.capStatus==='target-met')c.explanation.why.push('Obere Kostenbandbreite liegt im Budgetziel; Quellen und Aktualität bleiben maßgeblich.');
   chosen.push(c);
  }
- return {status:'ok',brief:{origin:b.origin,startDate:b.startDate,geography:b.geography,minDays:b.minDays,maxDays:b.maxDays,budgetTarget:b.budgetTarget,budgetCap:b.budgetCap,budgetCurrency:b.budgetCurrency},warnings:v.warnings.concat(gv.warnings),diagnostics:{nodes:graph.nodes.length,edges:graph.edges.length,feasibleRoutes:feasible.length,pathsVisited,truncated,sourceGraphOnly:true,liveProviderConnected:false,pricesAreLiveOnlyWhenExplicitlyMarked:true},candidates:chosen};
+ return {status:'ok',brief:{origin:b.origin,startDate:b.startDate,geography:b.geography,minDays:b.minDays,maxDays:b.maxDays,budgetTarget:b.budgetTarget,budgetCap:b.budgetCap,budgetCurrency:b.budgetCurrency},warnings:v.warnings.concat(gv.warnings,searchWarnings),diagnostics:{nodes:graph.nodes.length,edges:graph.edges.length,feasibleRoutes:feasible.length,pathsVisited,truncated,sourceGraphOnly:true,liveProviderConnected:false,pricesAreLiveOnlyWhenExplicitlyMarked:true},candidates:chosen};
 }
 const api={validateBrief,validateGraph,validBand,discover};root.TheWornRoadRouteDiscovery=api;if(typeof module!=='undefined'&&module.exports)module.exports=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
