@@ -74,7 +74,7 @@ function buildCandidate(path,edges,g,b,now){
   }
  }
  cost.knownMin=round(cost.knownMin);cost.knownMax=round(cost.knownMax);cost.complete=!cost.unknownComponents.length;cost.totalMin=cost.complete?round(cost.knownMin+b.reserve):null;cost.totalMax=cost.complete?round(cost.knownMax+b.reserve):null;cost.reserve=b.reserve;cost.currency=b.budgetCurrency;
- cost.capStatus=!cost.complete?'unknown':cost.totalMin>b.budgetCap?'over-cap':cost.totalMax<=b.budgetTarget?'target-met':cost.totalMax<=b.budgetCap?'within-cap':'over-cap';
+ cost.capStatus=!cost.complete?'unknown':cost.totalMin>b.budgetCap?'over-cap':cost.totalMax<=b.budgetTarget?'target-met':cost.totalMax<=b.budgetCap?'within-cap':'uncertain-against-cap';
  cost.confidence=cost.complete?(cost.qualityCounts['provider-live']?'mixed-with-live-offer':cost.qualityCounts['official-tariff']?'source-backed-mixed':'estimated-only'):'incomplete';
  const severe=safety.some(s=>s.severity==='high'),unknown=safety.some(s=>s.severity==='unknown');if(severe&&b.safetyTolerance==='conservative')return null;
  if(severe&&b.safetyTolerance==='standard')seasonFlags.push({type:'safety-review',message:'Route enthält eine hoch eingestufte Warnung; aktuelle Behördenhinweise prüfen.'});
