@@ -110,7 +110,7 @@ test('name change preserves traveler records and offline asset revision',()=>{
  assert.match(html,/SouthboundBookingLedger/);
  assert.match(html,/The Worn Road/);
  assert.match(html,/the-worn-road-backup\.json/);
- assert.ok(sw.includes('southbound-v84'));
+ assert.ok(sw.includes('southbound-v85'));
 });
 
 
@@ -139,13 +139,25 @@ test('sourced manual offer shortlist is bundled and never asserts live bookabili
 });
 
 
+test('route discovery source modules are packaged and cached without background network activity',()=>{
+  assert.ok(html.includes('route-discovery.js'));
+  assert.ok(html.includes('route-discovery-sources.js'));
+  assert.ok(sw.includes('route-discovery.js'));
+  assert.ok(sw.includes('route-discovery-sources.js'));
+  const sources=fs.readFileSync(path.join(root,'route-discovery-sources.js'),'utf8');
+  assert.ok(sources.includes('createOpenStreetMapPlaceAdapter'));
+  assert.ok(!sources.includes('searchPlaces({bbox'));
+  assert.ok(sw.includes('southbound-v85'));
+ });
+
+
 test('provider discovery files are packaged and never imply live data on static hosting',()=>{
  const discovery=fs.readFileSync(path.join(root,'offer-discovery.js'),'utf8');
  for(const name of ['offer-discovery.js?v=84','offer-discovery.css']){
   assert.ok(html.includes(name));assert.ok(sw.includes(name));
  }
  assert.ok(html.includes('offer-shortlist.js?v=84'));
- assert.ok(sw.includes('southbound-v84'));
+ assert.ok(sw.includes('southbound-v85'));
  assert.ok(discovery.includes('/api/offers/v1/search'));
  assert.ok(discovery.includes('availabilityConfirmed:true'));
  assert.ok(!discovery.includes('API_KEY='));
@@ -159,5 +171,5 @@ test('only one transfer purchase path uses the reconciled leg price, with preser
  assert.equal((light.match(/<path /g)||[]).length,(dark.match(/<path /g)||[]).length);
  for(const key of ['data-transfer-book','sb-transfer-card','data-transfer-price','formatPrice:E','id="sb-booking-records"'])assert.ok(html.includes(key),key);
  assert.ok(!html.includes('data-ticket-save="'));
- assert.ok(sw.includes('southbound-v84'));
+ assert.ok(sw.includes('southbound-v85'));
 });

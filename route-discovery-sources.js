@@ -77,21 +77,20 @@ function createOpenStreetMapPlaceAdapter(options){
   if(!fetchImpl)return {status:'unavailable',places:[],graph:{nodes:[],edges:[]},warnings:['Fetch wird in dieser Umgebung nicht unterstützt.'],diagnostics:{provider:'openstreetmap-overpass',reason:'fetch-unavailable',retryable:false}};
   const task=(async()=>{
    const query=buildQuery(bbox,categories,limit,timeoutSeconds);
-   let response;
+   let response,payload;
    const controller=typeof AbortController==='function'?new AbortController():null;
    const timer=controller?setTimeout(()=>controller.abort(),timeoutMs):null;
    try{
     response=await fetchImpl(endpoint,{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded;charset=UTF-8','accept':'application/json'},body:new URLSearchParams({data:query}).toString(),signal:controller?controller.signal:undefined,cache:'no-store'});
+    if(!response||response.ok!==true){
+     const status=Number(response&&response.status)||0;
+     return {status:'unavailable',places:[],graph:{nodes:[],edges:[]},warnings:[status===429?'Datenquelle drosselt Anfragen; bitte später erneut versuchen.':'OpenStreetMap-Datenquelle antwortete mit einem Fehler.'],diagnostics:{provider:'openstreetmap-overpass',reason:status===429?'rate-limited':'provider-http-error',httpStatus:status||null,retryable:status===429||status>=500}};
+    }
+    try{payload=await response.json();}catch(_){return {status:'unavailable',places:[],graph:{nodes:[],edges:[]},warnings:['Datenquelle lieferte kein gültiges JSON.'],diagnostics:{provider:'openstreetmap-overpass',reason:'invalid-json',retryable:true}};}
    }catch(error){
     const timedOut=error&&error.name==='AbortError';
     return {status:'unavailable',places:[],graph:{nodes:[],edges:[]},warnings:[timedOut?'Overpass-Zeitlimit erreicht. Bitte später erneut versuchen.':'OpenStreetMap-Datenquelle ist gerade nicht erreichbar.'],diagnostics:{provider:'openstreetmap-overpass',reason:timedOut?'timeout':'network-error',retryable:true}};
    }finally{if(timer)clearTimeout(timer);}
-   if(!response||response.ok!==true){
-    const status=Number(response&&response.status)||0;
-    return {status:'unavailable',places:[],graph:{nodes:[],edges:[]},warnings:[status===429?'Datenquelle drosselt Anfragen; bitte später erneut versuchen.':'OpenStreetMap-Datenquelle antwortete mit einem Fehler.'],diagnostics:{provider:'openstreetmap-overpass',reason:status===429?'rate-limited':'provider-http-error',httpStatus:status||null,retryable:status===429||status>=500}};
-   }
-   let payload;
-   try{payload=await response.json();}catch(_){return {status:'unavailable',places:[],graph:{nodes:[],edges:[]},warnings:['Datenquelle lieferte kein gültiges JSON.'],diagnostics:{provider:'openstreetmap-overpass',reason:'invalid-json',retryable:true}};}
    if(!isObject(payload)||!Array.isArray(payload.elements)||payload.remark){
     return {status:'unavailable',places:[],graph:{nodes:[],edges:[]},warnings:['Datenquelle lieferte eine unvollständige oder fehlerhafte Antwort.'],diagnostics:{provider:'openstreetmap-overpass',reason:'invalid-response',retryable:true}};
    }
