@@ -15,7 +15,9 @@ jobs:
       - name: Check JavaScript syntax
         run: |
           node --check route-discovery.js
+          node --check route-discovery-sources.js
           node --check tests/route-discovery.test.cjs
+          node --check tests/route-discovery-sources.test.cjs
           node --check budget-engine.js
           node --check route-budget.js
           node --check trip-calendar.js
