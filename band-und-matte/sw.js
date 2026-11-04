@@ -1,5 +1,5 @@
 // Band & Matte – Offline-Cache. Bei Änderungen an der App die Versionsnummer erhöhen.
-const CACHE = "band-und-matte-v2";
+const CACHE = "band-und-matte-v3";
 const CORE = ["./", "./index.html", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/apple-touch-icon.png"];
 
 self.addEventListener("install", e => {
