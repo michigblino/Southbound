@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Band &amp; Matte</title>
+<meta name="theme-color" content="#2f6f63">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Band &amp; Matte">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: eine Spalte, Tag-Umschalter oben, Übungskarten, feste Timer-Leiste unten */
+:root{
+  --bg:#eef1f0; --surface:#ffffff; --ink:#18201e; --muted:#5b6865; --line:#d5dcda;
+  --mat:#2f6f63; --band:#e0532f; --band-soft:#fbe3db; --figure:#18201e; --floor:#b9c4c1;
+  --f-display:"Bricolage Grotesque", "Arial Black", system-ui, sans-serif;
+  --f-body:"Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121816; --surface:#1b2321; --ink:#e7eeec; --muted:#9aa8a4; --line:#2c3735;
+  --mat:#5fb3a2; --band:#ff7a55; --band-soft:#3a2219; --figure:#e7eeec; --floor:#3b4845; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121816; --surface:#1b2321; --ink:#e7eeec; --muted:#9aa8a4; --line:#2c3735;
+  --mat:#5fb3a2; --band:#ff7a55; --band-soft:#3a2219; --figure:#e7eeec; --floor:#3b4845; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5}
+.wrap{max-width:720px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 120px;display:flex;flex-direction:column;gap:20px}
+header h1{font-family:var(--f-display);font-weight:800;font-size:clamp(2rem,8vw,2.8rem);line-height:1;margin:0;letter-spacing:-.02em;text-wrap:balance}
+header h1 span{color:var(--band)}
+header p{margin:8px 0 0;color:var(--muted)}
+.days{display:grid;grid-template-columns:1fr 1fr;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:6px}
+.days button{font:inherit;border:0;border-radius:10px;padding:10px 8px;background:transparent;color:var(--ink);cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:2px}
+.days button b{font-family:var(--f-display);font-size:1.15rem}
+.days button small{color:var(--muted);font-size:.8rem}
+.days button[aria-pressed="true"]{background:var(--mat);color:#fff}
+.days button[aria-pressed="true"] small{color:#ffffffcc}
+.days button:focus-visible,.btn:focus-visible,.sets button:focus-visible,details summary:focus-visible{outline:3px solid var(--band);outline-offset:2px}
+.warm{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding-block:12px}
+.warm summary{cursor:pointer;font-weight:600}
+.warm ul{margin:8px 0 0;padding-left:20px;color:var(--muted)}
+.wgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:12px}
+.wcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;min-width:0}
+.wcard canvas{display:block;width:100%;height:auto;aspect-ratio:2/1.15;background:var(--bg);border-bottom:1px solid var(--line)}
+.wcard div{padding:8px 10px;display:flex;flex-direction:column;gap:2px}
+.wcard b{font-size:.92rem;line-height:1.25}
+.wcard span{font-family:var(--f-mono);font-size:.75rem;color:var(--mat);font-variant-numeric:tabular-nums}
+.stage.mini{border:1px solid var(--line);border-radius:10px;overflow:hidden;max-width:320px;width:100%}
+.lateral{margin-top:14px;padding:14px;background:var(--surface);border:1px solid var(--line);border-radius:14px;display:flex;flex-direction:column;gap:8px}
+.lateral h2{font-family:var(--f-display);font-weight:800;font-size:1.2rem;margin:0}
+.lateral p{margin:0;font-size:.95rem}
+.list{display:flex;flex-direction:column;gap:20px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.stage{background:var(--bg);border-bottom:1px solid var(--line);position:relative}
+.stage canvas{display:block;width:100%;height:auto;aspect-ratio:2/1.15;max-width:100%}
+.stage .tag{position:absolute;top:10px;left:12px;font-family:var(--f-mono);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.body{padding:16px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.title{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.title h2{font-family:var(--f-display);font-weight:800;font-size:1.45rem;margin:0;line-height:1.1;text-wrap:balance}
+.dose{font-family:var(--f-mono);font-weight:700;font-size:.85rem;color:var(--mat);font-variant-numeric:tabular-nums}
+.muscles{display:flex;flex-wrap:wrap;gap:6px}
+.muscles span{font-size:.8rem;padding:2px 9px;border-radius:99px;border:1px solid var(--line);color:var(--muted)}
+.band{display:flex;align-items:center;gap:8px;font-size:.88rem;color:var(--muted)}
+.band i{width:26px;height:10px;border-radius:99px;border:3px solid var(--band);display:inline-block}
+h3{font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 6px;font-weight:600}
+ol,ul.tips{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
+ul.tips li::marker{color:var(--band)}
+.prog{background:var(--band-soft);border-radius:10px;padding:10px 12px;font-size:.92rem}
+.prog b{color:var(--band)}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.sets{display:flex;gap:8px;align-items:center}
+.sets button{width:38px;height:38px;border-radius:50%;border:2px solid var(--line);background:transparent;color:var(--ink);font-family:var(--f-mono);font-weight:700;cursor:pointer}
+.sets button.done{background:var(--mat);border-color:var(--mat);color:#fff}
+.btn{font:inherit;font-weight:600;border-radius:10px;padding:9px 14px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink);text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.btn.video{border-color:var(--band);color:var(--band)}
+.timerbar{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-top:10px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:5}
+.timerbar .in{max-width:720px;margin:0 auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.clock{font-family:var(--f-mono);font-weight:700;font-size:1.6rem;font-variant-numeric:tabular-nums;min-width:4.2ch}
+.clock.run{color:var(--band)}
+.timerbar .lbl{color:var(--muted);font-size:.85rem;flex:1;min-width:120px}
+.timerbar .grp{display:flex;gap:6px}
+.rounds{background:var(--surface);border:2px solid var(--mat);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.rounds h3{color:var(--mat);font-size:.85rem}
+.rounds p{margin:0;font-size:.95rem}
+.done-note{font-size:.9rem;color:var(--muted);text-align:center}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>Band <span>&amp;</span> Matte</h1>
+    <p>Dein 2er-Split für jeden Tag: abwechselnd Tag A und Tag B, je 3 Übungen als Zirkel, 25–35 Minuten.</p>
+  </header>
+
+  <nav class="days" aria-label="Trainingstag wählen">
+    <button id="dayA" type="button" data-day="A"><b>Tag A</b><small>Drücken + Beine vorne</small></button>
+    <button id="dayB" type="button" data-day="B"><b>Tag B</b><small>Ziehen + hintere Kette</small></button>
+  </nav>
+
+  <details class="warm" open>
+    <summary>Aufwärmen, 5–7 Minuten</summary>
+    <div class="wgrid" id="wgrid"></div>
+    <div class="lateral">
+      <div class="stage mini"><canvas id="latCanvas" width="400" height="230" role="img" aria-label="Animation: Seitheben mit Band"></canvas></div>
+      <div class="title"><h2>Seitheben mit Band</h2><span class="dose">2 × 12–15</span></div>
+      <p>Für die seitliche Schulter, jeden Tag. Leichtes Band mittig unter beide Füße, Enden in den Händen. Arme mit leicht gebeugten Ellbogen seitlich bis auf Schulterhöhe heben, oben kurz halten, langsam ablassen. Schultern bleiben unten, nicht mit dem Oberkörper schwingen.</p>
+      <div class="sets"><a class="btn video" href="https://www.youtube.com/results?search_query=Seitheben%20mit%20Widerstandsband" target="_blank" rel="noopener">▶ Videos</a><a class="btn" href="https://www.youtube.com/results?search_query=band%20lateral%20raise%20form" target="_blank" rel="noopener">EN</a></div>
+    </div>
+  </details>
+
+  <section class="rounds" aria-label="Zirkel-Runden">
+    <div>
+      <h3>Zirkel: 3–4 Runden</h3>
+      <p>Alle 3 Übungen direkt hintereinander, dazwischen nur 15–20 Sekunden zum Umbauen. Nach jeder Runde 1,5–2 Minuten Pause.</p>
+    </div>
+    <div class="sets" id="roundBtns"></div>
+  </section>
+
+  <div class="list" id="list"></div>
+  <p class="done-note">Tippe nach jeder Runde auf die Zahl. Die Pause startet dann automatisch. Morgen ist der andere Tag dran.</p>
+</div>
+
+<div class="timerbar" role="region" aria-label="Pausen-Timer">
+  <div class="in">
+    <div class="clock" id="clock">2:00</div>
+    <div class="lbl" id="tlabel">Pause bereit</div>
+    <div class="grp">
+      <button class="btn" id="t60" type="button">20 s</button>
+      <button class="btn" id="t90" type="button">2 min</button>
+      <button class="btn" id="tstop" type="button">Stopp</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const yt = q => "https://www.youtube.com/results?search_query=" + encodeURIComponent(q);
+
+/* Posen: Seitenansicht in einem 200×115-Feld, Boden bei y=110.
+   Joints: hd, sh, hp, kn, ft, el, ha  (+ optional el2, ha2, kn2, ft2 als hinteres Glied) */
+const EX = {
+ A:[
+  {id:"pushup", name:"Liegestütze", dose:"8–15 Wdh.", muscles:["Brust","Schultern","Trizeps","Core"],
+   band:"Mittel bis schwer, über den oberen Rücken", tag:"Seitenansicht",
+   steps:["Hände etwas weiter als schulterbreit, Finger nach vorne.","Körper bildet eine Linie von Kopf bis Ferse, Po und Bauch fest.","Kontrolliert absenken, bis die Brust knapp über dem Boden ist.","Ellbogen zeigen schräg nach hinten, etwa 45° zum Körper.","Kräftig hochdrücken, oben die Schulterblätter auseinanderschieben."],
+   tips:["Hüfte hängt durch oder ragt nach oben","Ellbogen stehen seitlich im 90°-Winkel ab","Kopf nickt zum Boden statt in Verlängerung der Wirbelsäule"],
+   prog:"Zu schwer? Knie auf die Matte. Zu leicht? Band über den Rücken legen und die Enden unter den Händen fixieren, oder Füße erhöht aufs Sofa.",
+   video:yt("Liegestütze richtig ausführen"), video2:yt("banded push up"),
+   poses:[
+    {hd:[178,62],sh:[165,70],hp:[110,86],kn:[80,96],ft:[30,108],el:[166,89],ha:[166,108]},
+    {hd:[180,90],sh:[166,96],hp:[110,100],kn:[78,104],ft:[30,108],el:[146,101],ha:[166,108]}],
+   bandPath:["ha","sh","hp"]},
+  {id:"squat", name:"Kniebeugen mit Band", dose:"12–15 Wdh.", muscles:["Oberschenkel","Po","Adduktoren"],
+   band:"Schwer, unter den Füßen und über den Schultern", tag:"Seitenansicht",
+   steps:["Füße schulterbreit auf das Band, Zehen leicht nach außen.","Band mit beiden Händen vor den Schultern halten.","Hüfte nach hinten schieben und tief gehen, Brust bleibt aufrecht.","Knie zeigen in Richtung der Zehen.","Über die ganze Fußsohle hochdrücken, oben Po anspannen."],
+   tips:["Knie fallen nach innen","Fersen heben ab","Runder Rücken im tiefsten Punkt"],
+   prog:"Alternative: Loop knapp über den Knien und die Knie aktiv nach außen drücken. Steigerung: 3 Sekunden absenken, unten 1 Sekunde halten.",
+   video:yt("Kniebeuge mit Widerstandsband"), video2:yt("resistance band squat form"),
+   poses:[
+    {hd:[103,14],sh:[100,26],hp:[100,62],kn:[103,86],ft:[100,110],el:[113,38],ha:[111,24]},
+    {hd:[110,40],sh:[103,50],hp:[78,80],kn:[120,84],ft:[100,110],el:[118,62],ha:[115,49]}],
+   bandPath:["ft","ha"]},
+  {id:"plank", name:"Plank mit Schulter-Tippen", dose:"30–45 s", muscles:["Gerader Bauch","Schräge Bauchmuskeln","Schultern"],
+   band:"Ohne Band, optional leichter Loop um die Handgelenke", tag:"Seitenansicht",
+   steps:["Hoher Stütz, Hände unter den Schultern.","Füße etwas breiter als hüftbreit für mehr Stabilität.","Eine Hand tippt die gegenüberliegende Schulter, dann wechseln.","Becken bleibt ruhig, kein Schaukeln.","Gleichmäßig weiteratmen."],
+   tips:["Hüfte kippt bei jedem Tippen zur Seite","Po zu hoch","Luft anhalten"],
+   prog:"Steigerung: Füße enger zusammen, langsamer tippen oder Loop um die Handgelenke legen.",
+   video:yt("Plank Shoulder Taps richtig"), video2:yt("plank shoulder tap form"),
+   poses:[
+    {hd:[178,62],sh:[165,70],hp:[110,84],kn:[80,95],ft:[30,108],el:[166,89],ha:[166,108],el2:[166,89],ha2:[166,108]},
+    {hd:[178,62],sh:[165,70],hp:[110,84],kn:[80,95],ft:[30,108],el:[150,84],ha:[162,72],el2:[166,89],ha2:[166,108]}],
+   bandPath:null}
+ ],
+ B:[
+  {id:"row", name:"Rudern sitzend mit Band", dose:"12–15 Wdh.", muscles:["Oberer Rücken","Latissimus","Bizeps","Hintere Schulter"],
+   band:"Mittel bis schwer, um die Fußsohlen", tag:"Seitenansicht",
+   steps:["Aufrecht auf die Matte setzen, Beine gestreckt oder leicht gebeugt.","Band um die Fußsohlen legen, Enden greifen.","Ellbogen eng am Körper nach hinten ziehen.","Am Ende Schulterblätter zusammendrücken, kurz halten.","Langsam nach vorne zurückgeben, ohne einzusacken."],
+   tips:["Mit dem Oberkörper nach hinten schwingen","Schultern ziehen Richtung Ohren","Rundrücken"],
+   prog:"Steigerung: Band doppelt nehmen oder enger greifen. 2 Sekunden Halten am Ende jeder Wiederholung.",
+   video:yt("Rudern sitzend Widerstandsband"), video2:yt("seated band row form"),
+   poses:[
+    {hd:[70,47],sh:[66,60],hp:[66,104],kn:[110,102],ft:[152,103],el:[96,74],ha:[124,82]},
+    {hd:[66,47],sh:[63,60],hp:[66,104],kn:[110,102],ft:[152,103],el:[42,80],ha:[72,78]}],
+   bandPath:["ha","ft"]},
+  {id:"bridge", name:"Glute Bridge mit Band", dose:"15–20 Wdh.", muscles:["Po","Beinbeuger","Unterer Rücken"],
+   band:"Mittel, als Loop knapp über den Knien", tag:"Seitenansicht",
+   steps:["Rückenlage, Füße hüftbreit aufgestellt, nah am Po.","Loop knapp über den Knien, Knie leicht nach außen drücken.","Über die Fersen die Hüfte hochschieben.","Oben bilden Knie, Hüfte und Schultern eine Linie. Po 2 Sekunden fest anspannen.","Langsam absenken, Po berührt kaum den Boden."],
+   tips:["Hohlkreuz statt Po-Spannung","Knie fallen nach innen","Zu weit entfernte Füße"],
+   prog:"Steigerung: einbeinig ausführen oder Schultern auf der Sofakante ablegen (Hip Thrust).",
+   video:yt("Glute Bridge mit Band richtig"), video2:yt("banded glute bridge form"),
+   poses:[
+    {hd:[30,103],sh:[50,104],hp:[106,104],kn:[134,76],ft:[150,108],el:[74,107],ha:[96,107]},
+    {hd:[30,103],sh:[50,104],hp:[106,76],kn:[140,68],ft:[150,108],el:[74,107],ha:[96,107]}],
+   bandPath:"ring"},
+  {id:"deadbug", name:"Dead Bug", dose:"8–12 pro Seite", muscles:["Tiefe Bauchmuskeln","Hüftbeuger","Koordination"],
+   band:"Optional leichtes Band zwischen Händen und Füßen", tag:"Seitenansicht",
+   steps:["Rückenlage, Arme senkrecht nach oben, Hüfte und Knie im 90°-Winkel.","Unteren Rücken aktiv in die Matte drücken.","Einen Arm nach hinten und das gegenüberliegende Bein nach vorne strecken.","Nur so weit, wie der Rücken am Boden bleibt.","Zurück in die Ausgangsposition, dann Seite wechseln."],
+   tips:["Unterer Rücken hebt sich ab","Zu schnell und schwungvoll","Kopf und Nacken angespannt"],
+   prog:"Steigerung: langsamer (3 Sekunden strecken) oder ein leichtes Band zwischen Händen und Füßen, das dem Strecken Widerstand gibt.",
+   video:yt("Dead Bug Übung richtig"), video2:yt("dead bug exercise form"),
+   poses:[
+    {hd:[40,101],sh:[58,104],hp:[114,104],kn:[114,76],ft:[140,76],el:[60,86],ha:[60,68],el2:[60,86],ha2:[60,68],kn2:[114,76],ft2:[140,76]},
+    {hd:[40,101],sh:[58,104],hp:[114,104],kn:[146,98],ft:[180,101],el:[42,94],ha:[22,98],el2:[60,86],ha2:[60,68],kn2:[114,76],ft2:[140,76]}],
+   bandPath:null}
+ ]
+};
+
+const STAND = {hd:[100,22],sh:[100,34],hp:[100,68],kn:[97,89],ft:[96,110],kn2:[103,89],ft2:[104,110]};
+const WARM = [
+ {name:"Hampelmänner", dose:"30 s", front:true, dur:900,
+  poses:[{...STAND,el:[93,52],ha:[91,68],el2:[107,52],ha2:[109,68]},
+         {...STAND,el:[86,24],ha:[78,10],el2:[114,24],ha2:[122,10],kn:[89,89],ft:[80,110],kn2:[111,89],ft2:[120,110]}]},
+ {name:"Armkreise", dose:"10 × je Richtung", circle:true, dur:1600,
+  poses:[{hd:[103,22],sh:[100,34],hp:[100,68],kn:[100,89],ft:[100,110],el:[100,50],ha:[100,64]}]},
+ {name:"Kniebeugen ohne Band", dose:"10 Wdh.", dur:2200,
+  poses:[{hd:[103,14],sh:[100,26],hp:[100,62],kn:[103,86],ft:[100,110],el:[114,27],ha:[128,28]},
+         {hd:[110,40],sh:[103,50],hp:[78,80],kn:[120,84],ft:[100,110],el:[118,50],ha:[133,50]}]},
+ {name:"Band Pull-Aparts", dose:"10 Wdh., leichtes Band", front:true, dur:2000,
+  poses:[{...STAND,el:[90,37],ha:[93,38],el2:[110,37],ha2:[107,38]},
+         {...STAND,el:[82,35],ha:[66,36],el2:[118,35],ha2:[134,36]}], bandPath:["ha","ha2"]},
+ {name:"Katze-Kuh", dose:"5 langsame Wdh.", dur:3600,
+  poses:[{hd:[152,86],sh:[140,72],mid:[105,54],hp:[70,72],kn:[70,108],ft:[30,108],el:[140,90],ha:[140,108]},
+         {hd:[157,56],sh:[140,68],mid:[105,84],hp:[70,68],kn:[70,108],ft:[30,108],el:[140,88],ha:[140,108]}]}
+];
+const LATERAL = {name:"Seitheben mit Band", front:true, dur:2400,
+  poses:[{...STAND,el:[94,52],ha:[93,68],el2:[106,52],ha2:[107,68]},
+         {...STAND,el:[82,36],ha:[66,36],el2:[118,36],ha2:[134,36]}], bandPath:[["ft","ha"],["ft2","ha2"]]};
+
+/* ---------- Speicher ---------- */
+const store = {
+  get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+};
+const today = new Date().toISOString().slice(0,10);
+let day = store.get("bm-day","A");
+let log = store.get("bm-log",{});           // {date:{exId:setsDone}}
+if(!log[today]) log[today] = {};
+
+/* ---------- Rendering ---------- */
+const list = document.getElementById("list");
+function setCount(dose){const m=dose.match(/^(\d)(?:–(\d))?/);return m?+(m[2]||m[1]):3}
+function render(){
+  document.querySelectorAll(".days button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.day===day));
+  renderRounds();
+  list.innerHTML = "";
+  EX[day].forEach((ex,i)=>{
+    const card = document.createElement("article");
+    card.className = "card";
+    card.innerHTML = `
+      <div class="stage"><span class="tag">Station ${i+1} von 3 · ${ex.tag}</span><canvas width="400" height="230" aria-label="Animation: ${ex.name}" role="img"></canvas></div>
+      <div class="body">
+        <div class="title"><h2>${ex.name}</h2><span class="dose">pro Runde: ${ex.dose}</span></div>
+        <div class="muscles">${ex.muscles.map(m=>`<span>${m}</span>`).join("")}</div>
+        <div class="band"><i aria-hidden="true"></i>${ex.band}</div>
+        <div><h3>So geht's</h3><ol>${ex.steps.map(s=>`<li>${s}</li>`).join("")}</ol></div>
+        <div><h3>Typische Fehler</h3><ul class="tips">${ex.tips.map(s=>`<li>${s}</li>`).join("")}</ul></div>
+        <div class="prog"><b>Leichter oder schwerer:</b> ${ex.prog}</div>
+        <div class="actions">
+          <div class="sets">
+            <a class="btn video" href="${ex.video}" target="_blank" rel="noopener">▶ Videos</a>
+            <a class="btn" href="${ex.video2}" target="_blank" rel="noopener">EN</a>
+          </div>
+        </div>
+      </div>`;
+    list.appendChild(card);
+    animate(card.querySelector("canvas"), ex);
+  });
+}
+
+document.querySelectorAll(".days button").forEach(b=>b.addEventListener("click",()=>{day=b.dataset.day;store.set("bm-day",day);render()}));
+const roundBtns = document.getElementById("roundBtns");
+function renderRounds(){
+  const done = log[today]["rounds-"+day]||0;
+  roundBtns.innerHTML = [1,2,3,4].map(k=>`<button id="r-${k}" type="button" class="${k<=done?'done':''}" data-k="${k}" aria-label="Runde ${k} erledigt">${k}</button>`).join("");
+}
+roundBtns.addEventListener("click",e=>{
+  const b = e.target.closest("button"); if(!b) return;
+  const k=+b.dataset.k, key="rounds-"+day, cur=log[today][key]||0;
+  const next = (k===cur) ? k-1 : k;
+  log[today][key]=next; store.set("bm-log",log); renderRounds();
+  if(next>cur && next<4) startTimer(120, "Pause nach Runde "+next);
+  else if(next===4) tlabel.textContent="Geschafft. Morgen ist der andere Tag dran.";
+});
+
+/* ---------- Strichfiguren-Animation ---------- */
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const anims = [];
+function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()}
+function animate(cv, ex){
+  const ctx = cv.getContext("2d");
+  const dpr = Math.min(window.devicePixelRatio||1, 2);
+  cv.width = 400*dpr; cv.height = 230*dpr;
+  const a = {cv,ctx,ex,dpr}; anims.push(a);
+  if(reduce) draw(a,0);
+}
+function lerp(a,b,t){return [a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t]}
+function draw(a, t, ph=0){
+  const {ctx,ex,dpr} = a, p0 = ex.poses[0], p1 = ex.poses[1]||p0;
+  const P = {}; for(const k in p0) P[k] = lerp(p0[k], p1[k]||p0[k], t);
+  if(ex.circle){ const g = ph*2*Math.PI;
+    P.ha=[P.sh[0]+30*Math.sin(g), P.sh[1]-30*Math.cos(g)]; P.el=[P.sh[0]+15*Math.sin(g), P.sh[1]-15*Math.cos(g)]; }
+  const s = 2*dpr, X = p => p[0]*s, Y = p => p[1]*s;
+  ctx.clearRect(0,0,a.cv.width,a.cv.height);
+  ctx.fillStyle = css("--mat"); ctx.globalAlpha=.25;
+  ctx.fillRect(14*s,110*s,172*s,3*s); ctx.globalAlpha=1;
+  ctx.strokeStyle = css("--floor"); ctx.lineWidth = 1*s;
+  ctx.beginPath(); ctx.moveTo(4*s,113*s); ctx.lineTo(196*s,113*s); ctx.stroke();
+  const band = css("--band");
+  const paths = (!ex.bandPath || ex.bandPath==="ring") ? [] : (Array.isArray(ex.bandPath[0]) ? ex.bandPath : [ex.bandPath]);
+  ctx.strokeStyle = band; ctx.lineWidth = 2.2*s;
+  paths.forEach(path=>{ ctx.beginPath(); path.forEach((k,i)=>{const p=P[k]; i?ctx.lineTo(X(p),Y(p)):ctx.moveTo(X(p),Y(p))}); ctx.stroke(); });
+  const fig = css("--figure"), back = ex.front ? 1 : .35;
+  const limb = (pts, alpha, w) => {ctx.globalAlpha=alpha; ctx.strokeStyle=fig; ctx.lineWidth=w*s; ctx.lineCap="round"; ctx.lineJoin="round";
+    ctx.beginPath(); pts.forEach((p,i)=> i?ctx.lineTo(X(p),Y(p)):ctx.moveTo(X(p),Y(p))); ctx.stroke(); ctx.globalAlpha=1;};
+  if(P.ha2) limb([P.sh,P.el2,P.ha2], back, 5);
+  if(P.ft2) limb([P.hp,P.kn2,P.ft2], back, 5.5);
+  limb([P.hp,P.kn,P.ft], 1, 5.5);
+  if(P.mid){ const c=[2*P.mid[0]-(P.sh[0]+P.hp[0])/2, 2*P.mid[1]-(P.sh[1]+P.hp[1])/2];
+    ctx.strokeStyle=fig; ctx.lineWidth=6.5*s; ctx.lineCap="round"; ctx.beginPath(); ctx.moveTo(X(P.sh),Y(P.sh)); ctx.quadraticCurveTo(X(c),Y(c),X(P.hp),Y(P.hp)); ctx.stroke(); }
+  else limb([P.sh,P.hp], 1, 6.5);
+  limb([P.sh,P.el,P.ha], 1, 5);
+  if(ex.bandPath==="ring"){ ctx.strokeStyle=band; ctx.lineWidth=2.2*s;
+    ctx.beginPath(); ctx.ellipse(X(lerp(P.hp,P.kn,.82)),Y(lerp(P.hp,P.kn,.82)),4*s,7*s,0,0,Math.PI*2); ctx.stroke(); }
+  ctx.fillStyle = fig; ctx.beginPath(); ctx.arc(X(P.hd),Y(P.hd),7*s,0,Math.PI*2); ctx.fill();
+}
+let t0 = performance.now();
+function loop(now){
+  for(let i=anims.length-1;i>=0;i--) if(!anims[i].cv.isConnected) anims.splice(i,1);
+  anims.forEach(a=>{
+    const ph = ((now - t0)/(a.ex.dur||2600)) % 1;
+    draw(a, (1 - Math.cos(ph*2*Math.PI))/2, ph);
+  });
+  if(!reduce) requestAnimationFrame(loop);
+}
+
+/* ---------- Pausen-Timer ---------- */
+const clock = document.getElementById("clock"), tlabel = document.getElementById("tlabel");
+let end = 0, iv = null, actx = null;
+function fmt(sec){return Math.floor(sec/60)+":"+String(sec%60).padStart(2,"0")}
+function beep(){try{actx = actx || new (window.AudioContext||window.webkitAudioContext)();
+  [0,.25,.5].forEach(d=>{const o=actx.createOscillator(),g=actx.createGain();o.frequency.value=880;o.connect(g);g.connect(actx.destination);
+  g.gain.setValueAtTime(.2,actx.currentTime+d);g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+d+.2);o.start(actx.currentTime+d);o.stop(actx.currentTime+d+.2)})}catch(e){}}
+function startTimer(sec,label){
+  try{actx = actx || new (window.AudioContext||window.webkitAudioContext)(); actx.resume&&actx.resume()}catch(e){}
+  end = Date.now()+sec*1000; tlabel.textContent = label||"Pause läuft"; clock.classList.add("run");
+  clearInterval(iv); tick(); iv = setInterval(tick,250);
+}
+function tick(){const left=Math.max(0,Math.ceil((end-Date.now())/1000)); clock.textContent=fmt(left);
+  if(left===0){clearInterval(iv);iv=null;clock.classList.remove("run");tlabel.textContent="Weiter geht's";beep();clock.textContent="2:00"}}
+document.getElementById("t60").onclick=()=>startTimer(20,"Wechsel zur nächsten Station");
+document.getElementById("t90").onclick=()=>startTimer(120);
+document.getElementById("tstop").onclick=()=>{clearInterval(iv);iv=null;clock.classList.remove("run");clock.textContent="2:00";tlabel.textContent="Pause bereit"};
+
+const wgrid = document.getElementById("wgrid");
+WARM.forEach(w=>{
+  const el = document.createElement("div"); el.className="wcard";
+  el.innerHTML = `<canvas width="400" height="230" role="img" aria-label="Animation: ${w.name}"></canvas><div><b>${w.name}</b><span>${w.dose}</span></div>`;
+  wgrid.appendChild(el); animate(el.querySelector("canvas"), w);
+});
+animate(document.getElementById("latCanvas"), LATERAL);
+render();
+if(!reduce) requestAnimationFrame(loop);
+
+if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}
+</script>
+
+</body>
+</html>
