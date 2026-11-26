@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#006C4C">
+<meta name="description" content="Konzeptskizze einer Begehungs-App für BauKalk (nicht umgesetzt, Beispielwerte).">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Begehung">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>BauKalk Begehung</title>
+<style>
+[hidden] { display: none !important; }
+/* Layout: ein Telefonbildschirm (390 px), App-Leiste oben, scrollbarer Inhalt, Navigation unten; auf breiten Bildschirmen als gerahmtes Telefon zentriert */
+:root {
+  --bg: #E6ECE9;
+  --surface: #F6F8F7;
+  --card: #FFFFFF;
+  --ink: #16201C;
+  --muted: #566560;
+  --line: #D3DCD7;
+  --accent: #006C4C;
+  --accent-ink: #FFFFFF;
+  --accent-soft: #DCEFE6;
+  --warn-soft: #FFF3D1;
+  --warn-ink: #6A4C00;
+  --sketch: #2B3B34;
+  --photo-a: #C9D8D0;
+  --photo-b: #A9C0B4;
+  --photo-c: #E3ECE7;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --r: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0B110E; --surface: #111916; --card: #18221E; --ink: #E3ECE7; --muted: #9AABA3;
+    --line: #2A3832; --accent: #5ED2A3; --accent-ink: #00382A; --accent-soft: #15392B;
+    --warn-soft: #382E12; --warn-ink: #F1D17A; --sketch: #CFE0D7;
+    --photo-a: #27382F; --photo-b: #34493E; --photo-c: #1E2B25;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0B110E; --surface: #111916; --card: #18221E; --ink: #E3ECE7; --muted: #9AABA3;
+  --line: #2A3832; --accent: #5ED2A3; --accent-ink: #00382A; --accent-soft: #15392B;
+  --warn-soft: #382E12; --warn-ink: #F1D17A; --sketch: #CFE0D7;
+  --photo-a: #27382F; --photo-b: #34493E; --photo-c: #1E2B25;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.4; -webkit-font-smoothing: antialiased; }
+* { box-sizing: border-box; }
+button, input, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+svg { display: block; }
+
+.stage { height: 100%; display: flex; align-items: center; justify-content: center; }
+.phone { position: relative; width: 100%; height: 100%; background: var(--surface); display: flex; flex-direction: column; overflow: hidden; }
+@media (min-width: 480px) and (min-height: 700px) {
+  .stage { padding: 16px; }
+  .phone { width: 390px; height: min(844px, 100%); border-radius: 40px; border: 10px solid var(--ink); box-shadow: 0 20px 60px rgba(0,0,0,.18); }
+}
+
+/* App-Leiste */
+.appbar { padding: 12px max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px)); display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 8px; background: var(--surface); }
+.appbar .step { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.appbar h1 { margin: 2px 0 0; font-size: 22px; line-height: 1.15; font-weight: 700; letter-spacing: -.01em; text-wrap: balance; }
+.next { display: inline-flex; align-items: center; gap: 2px; border: 0; background: none; color: var(--accent); font-weight: 650; font-size: 15px; padding: 6px 0 4px 8px; text-decoration: none; }
+.next svg { width: 18px; height: 18px; }
+.strip { margin: 0 max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px)); padding: 6px 10px; border-radius: 8px; background: var(--warn-soft); color: var(--warn-ink); font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.strip svg { width: 14px; height: 14px; flex: none; }
+
+main { flex: 1; overflow-y: auto; padding-block: 12px 14px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.screen { display: flex; flex-direction: column; gap: 14px; }
+.lbl { font-size: 12px; font-weight: 650; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; }
+.field { display: flex; flex-direction: column; min-width: 0; }
+.input { width: 100%; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 15px; min-width: 0; }
+.row2 { display: grid; grid-template-columns: 1fr 1.2fr; gap: 10px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); }
+
+/* Umschalter */
+.seg { display: grid; grid-template-columns: 1fr 1fr; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 3px; gap: 3px; }
+.seg button { border: 0; background: none; border-radius: 8px; padding: 8px; font-weight: 600; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+
+/* Fotos */
+.photos { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.ph { aspect-ratio: 1; max-width: 100%; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); background: var(--photo-c); padding: 0; position: relative; }
+.ph svg { width: 100%; height: 100%; }
+.ph span { position: absolute; left: 4px; bottom: 4px; font-size: 10px; font-weight: 600; background: var(--card); color: var(--ink); padding: 1px 5px; border-radius: 5px; }
+.ph.add { border: 1.5px dashed var(--accent); background: var(--accent-soft); color: var(--accent); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 11px; font-weight: 650; }
+.ph.add svg { width: 26px; height: 26px; }
+
+/* Notiz */
+.note { position: relative; }
+.note textarea { width: 100%; min-height: 92px; resize: none; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 56px 10px 12px; font-size: 14px; line-height: 1.4; }
+.mic { position: absolute; right: 8px; top: 8px; width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; }
+.mic svg { width: 20px; height: 20px; }
+.voice { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 13px; color: var(--muted); }
+.voice .play { width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; flex: none; }
+.voice .play svg { width: 12px; height: 12px; }
+.wave { flex: 1; height: 18px; }
+
+/* Skizze */
+.sketch { padding: 6px; }
+.sketch svg { width: 100%; height: 138px; }
+.sk-wall { fill: none; stroke: var(--sketch); stroke-width: 4; }
+.sk-win { stroke: var(--accent); stroke-width: 6; }
+.sk-dim { stroke: var(--muted); stroke-width: 1; fill: none; }
+.sk-txt { fill: var(--ink); font: 600 12px var(--font); }
+.sk-sub { fill: var(--muted); font: 500 11px var(--font); }
+.sk-fill { fill: var(--accent-soft); }
+
+.setting { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 7px 12px; min-height: 48px; }
+.setting + .setting { border-top: 1px solid var(--line); }
+.setting .t { font-weight: 600; }
+.setting .s { font-size: 12px; color: var(--muted); }
+.stepper { display: flex; align-items: center; gap: 6px; }
+.stepper button { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); font-size: 18px; line-height: 1; display: grid; place-items: center; }
+.stepper .chip { width: auto; height: 32px; border-radius: 999px; font-size: 13px; padding: 0 10px; margin-left: 4px; }
+.stepper output { min-width: 18px; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
+.chip { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 5px 10px; font-size: 13px; font-weight: 600; white-space: nowrap; }
+.chip[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+
+.walls { list-style: none; margin: 0; padding: 0; }
+.walls li { display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 10px; padding: 5px 12px; }
+.walls li + li { border-top: 1px solid var(--line); }
+.dir { width: 34px; height: 34px; border-radius: 9px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-weight: 750; font-size: 14px; }
+.walls .t { font-weight: 600; }
+.walls .s { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.wcount { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.wcount svg { width: 16px; height: 16px; color: var(--accent); }
+
+.btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; border-radius: 12px; padding: 11px 14px; font-weight: 650; font-size: 15px; }
+.btn svg { width: 18px; height: 18px; }
+.btn.outline { border: 1.5px solid var(--accent); background: none; color: var(--accent); }
+.btn.primary { border: 0; background: var(--accent); color: var(--accent-ink); padding: 16px; font-size: 17px; }
+.btn.primary svg { width: 22px; height: 22px; }
+.idea { display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 10px; padding: 9px 12px; width: 100%; text-align: left; border: 1px dashed var(--line); background: none; border-radius: var(--r); }
+.idea .ic { width: 34px; height: 34px; border-radius: 9px; background: var(--surface); border: 1px solid var(--line); display: grid; place-items: center; color: var(--accent); }
+.idea .ic svg { width: 18px; height: 18px; }
+.idea .t { font-weight: 600; font-size: 14px; }
+.idea .s { font-size: 12px; color: var(--muted); }
+.tag { font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); border-radius: 6px; padding: 2px 6px; }
+
+/* Einschätzung */
+.banner { display: flex; gap: 10px; align-items: flex-start; background: var(--warn-soft); color: var(--warn-ink); border-radius: var(--r); padding: 11px 12px; }
+.banner svg { width: 20px; height: 20px; flex: none; margin-top: 1px; }
+.banner b { display: block; font-size: 15px; }
+.banner span { font-size: 13px; }
+.lead { margin: 0; font-size: 14px; color: var(--muted); }
+.est { padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+.est .head { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 650; color: var(--muted); }
+.est .head svg { width: 18px; height: 18px; color: var(--accent); flex: none; }
+.est .val { font-size: 22px; font-weight: 750; letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
+.est .val small { font-size: 13px; font-weight: 600; color: var(--muted); }
+.est .why { display: flex; gap: 7px; align-items: flex-start; font-size: 12.5px; color: var(--muted); }
+.q { flex: none; width: 17px; height: 17px; border-radius: 50%; border: 1.5px solid var(--muted); display: grid; place-items: center; font-size: 11px; font-weight: 750; line-height: 1; margin-top: 1px; }
+.foot { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--muted); padding: 2px 2px 0; }
+.foot svg { width: 18px; height: 18px; flex: none; color: var(--accent); }
+
+/* Senden */
+.check { list-style: none; margin: 0; padding: 4px 0; }
+.check li { display: grid; grid-template-columns: 24px 1fr auto; align-items: center; gap: 10px; padding: 7px 14px; }
+.check .ok { width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; }
+.check .ok svg { width: 14px; height: 14px; }
+.check .t { font-weight: 600; }
+.check .v { font-size: 13px; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+.status { display: flex; gap: 10px; align-items: center; padding: 11px 12px; border-radius: var(--r); background: var(--accent-soft); color: var(--ink); font-size: 14px; }
+.status .ok { width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; flex: none; }
+.status .ok svg { width: 16px; height: 16px; }
+.status b { display: block; color: var(--accent); }
+.status.wait { background: var(--card); border: 1px solid var(--line); }
+.spin { width: 22px; height: 22px; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--accent); animation: spin .8s linear infinite; flex: none; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.hints { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; }
+.hints li { display: grid; grid-template-columns: 20px 1fr; gap: 9px; font-size: 13.5px; align-items: start; }
+.hints svg { width: 18px; height: 18px; color: var(--accent); margin-top: 1px; }
+
+/* Navigation */
+nav.tabs { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--line); background: var(--card); padding: 6px max(4px, env(safe-area-inset-right, 0px)) calc(8px + env(safe-area-inset-bottom, 0px)) max(4px, env(safe-area-inset-left, 0px)); }
+nav.tabs a { display: flex; flex-direction: column; align-items: center; gap: 3px; text-decoration: none; color: var(--muted); font-size: 11px; font-weight: 600; padding: 4px 0; border-radius: 10px; }
+nav.tabs a .pill { width: 52px; height: 28px; border-radius: 14px; display: grid; place-items: center; }
+nav.tabs a svg { width: 20px; height: 20px; }
+nav.tabs a[aria-current="page"] { color: var(--accent); }
+nav.tabs a[aria-current="page"] .pill { background: var(--accent-soft); }
+
+.toast { position: absolute; left: 16px; right: 16px; bottom: 84px; background: var(--ink); color: var(--surface); border-radius: 12px; padding: 10px 14px; font-size: 13.5px; box-shadow: 0 6px 20px rgba(0,0,0,.2); }
+@media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+</style>
+</head>
+<body>
+
+
+<div class="stage">
+<div class="phone" id="phone">
+  <header class="appbar">
+    <div>
+      <div class="step" id="step">Schritt 1 von 4</div>
+      <h1 id="title">Begehung anlegen</h1>
+    </div>
+    <a class="next" id="next" href="#s2">Weiter<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></a>
+  </header>
+  <div class="strip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.01"/></svg>Konzeptskizze, nicht umgesetzt · Beispielwerte</div>
+
+  <main id="main">
+    <!-- 1 Begehung anlegen -->
+    <section class="screen" id="s1" data-title="Begehung anlegen">
+      <div class="field">
+        <label class="lbl" for="proj">Projekt</label>
+        <input class="input" id="proj" value="Einfamilienhaus Musterstraße">
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label class="lbl" for="plz">PLZ</label>
+          <input class="input" id="plz" value="12345" inputmode="numeric">
+        </div>
+        <div class="field">
+          <label class="lbl" for="datum">Datum</label>
+          <input class="input" id="datum" value="26.11.2026">
+        </div>
+      </div>
+      <div class="field">
+        <div class="lbl">Vorhaben</div>
+        <div class="seg" role="group" aria-label="Vorhaben">
+          <button type="button" id="t-neu" aria-pressed="false">Neubau</button>
+          <button type="button" id="t-san" aria-pressed="true">Sanierung</button>
+        </div>
+      </div>
+      <div class="field">
+        <div class="lbl">Fotos aufnehmen</div>
+        <div class="photos">
+          <button type="button" class="ph" data-toast="Konzept: Foto öffnen und beschriften." aria-label="Foto Ansicht Süd">
+            <svg viewBox="0 0 80 80" preserveAspectRatio="xMidYMid slice"><rect width="80" height="80" fill="var(--photo-c)"/><rect y="58" width="80" height="22" fill="var(--photo-a)"/><path d="M14 58V36L40 16l26 20v22z" fill="var(--photo-b)"/><path d="M10 38L40 14l30 24" fill="none" stroke="var(--sketch)" stroke-width="3"/><rect x="22" y="40" width="10" height="10" fill="var(--card)"/><rect x="48" y="40" width="10" height="10" fill="var(--card)"/><rect x="36" y="44" width="8" height="14" fill="var(--sketch)"/></svg>
+            <span>Süd</span>
+          </button>
+          <button type="button" class="ph" data-toast="Konzept: Foto öffnen und beschriften." aria-label="Foto Fenster">
+            <svg viewBox="0 0 80 80" preserveAspectRatio="xMidYMid slice"><rect width="80" height="80" fill="var(--photo-a)"/><rect x="20" y="12" width="40" height="52" fill="var(--photo-c)" stroke="var(--sketch)" stroke-width="3"/><path d="M40 12v52M20 38h40" stroke="var(--sketch)" stroke-width="2.5"/><rect x="16" y="64" width="48" height="5" fill="var(--sketch)"/></svg>
+            <span>Fenster</span>
+          </button>
+          <button type="button" class="ph" data-toast="Konzept: Foto öffnen und beschriften." aria-label="Foto Dach">
+            <svg viewBox="0 0 80 80" preserveAspectRatio="xMidYMid slice"><rect width="80" height="80" fill="var(--photo-c)"/><path d="M0 70L44 18l36 30v32H0z" fill="var(--photo-b)"/><path d="M8 62l36-42M18 70l32-38M30 78l28-33" stroke="var(--photo-a)" stroke-width="3"/><path d="M0 70L44 18l36 30" fill="none" stroke="var(--sketch)" stroke-width="3"/><circle cx="62" cy="60" r="5" fill="none" stroke="var(--warn-ink)" stroke-width="2.5"/></svg>
+            <span>Dach</span>
+          </button>
+          <button type="button" class="ph add" data-toast="Konzept: hier öffnet sich die Kamera.">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+            Foto
+          </button>
+        </div>
+      </div>
+      <div class="field">
+        <label class="lbl" for="notiz">Notiz</label>
+        <div class="note">
+          <textarea id="notiz">Baujahr ca. 1965, Dach an der Nordseite undicht. Bauherr wünscht Holzfaserdämmung und neue Fenster.</textarea>
+          <button type="button" class="mic" aria-label="Sprachnotiz aufnehmen" data-toast="Konzept: Sprachnotiz wird aufgenommen.">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+          </button>
+        </div>
+        <div class="voice">
+          <span class="play"><svg viewBox="0 0 12 12"><path d="M3 1.5l7 4.5-7 4.5z" fill="currentColor"/></svg></span>
+          <svg class="wave" viewBox="0 0 160 18" preserveAspectRatio="none"><g fill="var(--accent)"><rect x="0" y="7" width="3" height="4"/><rect x="6" y="4" width="3" height="10"/><rect x="12" y="2" width="3" height="14"/><rect x="18" y="6" width="3" height="6"/><rect x="24" y="3" width="3" height="12"/><rect x="30" y="7" width="3" height="4"/><rect x="36" y="5" width="3" height="8"/><rect x="42" y="1" width="3" height="16"/><rect x="48" y="4" width="3" height="10"/><rect x="54" y="7" width="3" height="4"/><rect x="60" y="3" width="3" height="12"/><rect x="66" y="6" width="3" height="6"/></g><g fill="var(--line)"><rect x="72" y="4" width="3" height="10"/><rect x="78" y="7" width="3" height="4"/><rect x="84" y="2" width="3" height="14"/><rect x="90" y="5" width="3" height="8"/><rect x="96" y="7" width="3" height="4"/><rect x="102" y="3" width="3" height="12"/><rect x="108" y="6" width="3" height="6"/><rect x="114" y="4" width="3" height="10"/><rect x="120" y="7" width="3" height="4"/><rect x="126" y="5" width="3" height="8"/><rect x="132" y="2" width="3" height="14"/><rect x="138" y="6" width="3" height="6"/><rect x="144" y="7" width="3" height="4"/><rect x="150" y="5" width="3" height="8"/><rect x="156" y="7" width="3" height="4"/></g></svg>
+          <span>Sprachnotiz 0:42</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2 Maße und Bauteile -->
+    <section class="screen" id="s2" data-title="Maße und Bauteile" hidden>
+      <div class="card sketch">
+        <svg viewBox="0 0 340 196" role="img" aria-label="Grundrissskizze 10,00 mal 8,00 Meter">
+          <rect class="sk-fill" x="90" y="36" width="160" height="128"/>
+          <rect class="sk-wall" x="90" y="36" width="160" height="128"/>
+          <!-- Fenster: Nord 1, Ost 2, Süd 4, West 2 -->
+          <path class="sk-win" d="M158 36h24"/>
+          <path class="sk-win" d="M250 62v22M250 116v22"/>
+          <path class="sk-win" d="M104 164h20M136 164h20M184 164h20M216 164h20"/>
+          <path class="sk-win" d="M90 62v22M90 116v22"/>
+          <!-- Maßketten -->
+          <path class="sk-dim" d="M90 22h160M90 17v10M250 17v10"/>
+          <text class="sk-txt" x="170" y="15" text-anchor="middle">10,00 m</text>
+          <path class="sk-dim" d="M266 36v128M261 36h10M261 164h10"/>
+          <text class="sk-txt" x="276" y="104">8,00 m</text>
+          <text class="sk-sub" x="170" y="56" text-anchor="middle">Nord</text>
+          <text class="sk-sub" x="170" y="156" text-anchor="middle">Süd</text>
+          <text class="sk-sub" x="98" y="104">West</text>
+          <text class="sk-sub" x="242" y="104" text-anchor="end">Ost</text>
+          <text class="sk-txt" x="170" y="104" text-anchor="middle">Skizze EG</text>
+          <!-- Nordpfeil -->
+          <g transform="translate(40 60)"><circle r="16" fill="none" class="sk-dim"/><path d="M0-12l6 14-6-4-6 4z" fill="var(--sketch)"/><text class="sk-txt" y="-20" text-anchor="middle">N</text></g>
+          <text class="sk-sub" x="40" y="186" text-anchor="middle">Fenster</text>
+          <path class="sk-win" d="M28 172h24"/>
+        </svg>
+      </div>
+      <div class="card">
+        <div class="setting">
+          <div><div class="t">Vollgeschosse</div><div class="s">plus Dachgeschoss (DG)</div></div>
+          <div class="stepper">
+            <button type="button" id="g-minus" aria-label="weniger">−</button>
+            <output id="g-val">1</output>
+            <button type="button" id="g-plus" aria-label="mehr">+</button>
+            <button type="button" class="chip" id="dg" aria-pressed="true">+ DG</button>
+          </div>
+        </div>
+        <div class="setting">
+          <div class="t">Dach</div>
+          <div class="chips" id="roof">
+            <button type="button" class="chip" aria-pressed="true">Satteldach 35°</button>
+            <button type="button" class="chip" aria-pressed="false">Pultdach</button>
+            <button type="button" class="chip" aria-pressed="false">Flach</button>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="lbl">Wände</div>
+        <ul class="card walls">
+          <li><span class="dir">N</span><div><div class="t">Nord</div><div class="s">10,00 m</div></div><span class="wcount"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="3" width="14" height="18"/><path d="M12 3v18M5 12h14"/></svg>1 Fenster</span></li>
+          <li><span class="dir">O</span><div><div class="t">Ost</div><div class="s">8,00 m</div></div><span class="wcount"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="3" width="14" height="18"/><path d="M12 3v18M5 12h14"/></svg>2 Fenster</span></li>
+          <li><span class="dir">S</span><div><div class="t">Süd</div><div class="s">10,00 m</div></div><span class="wcount"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="3" width="14" height="18"/><path d="M12 3v18M5 12h14"/></svg>4 Fenster</span></li>
+          <li><span class="dir">W</span><div><div class="t">West</div><div class="s">8,00 m</div></div><span class="wcount"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="3" width="14" height="18"/><path d="M12 3v18M5 12h14"/></svg>2 Fenster</span></li>
+        </ul>
+      </div>
+      <button type="button" class="btn outline" data-toast="Konzept: Wand wählen, Breite und Höhe eingeben.">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Fenster hinzufügen
+      </button>
+      <button type="button" class="idea" data-toast="Idee: Maße per Bluetooth direkt in die Wand übernehmen.">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7l10 10-5 4V3l5 4L7 17"/></svg></span>
+        <span><span class="t">Laser-Messgerät verbinden</span><br><span class="s">Maße per Bluetooth übernehmen</span></span>
+        <span class="tag">Idee</span>
+      </button>
+    </section>
+
+    <!-- 3 Erste Einschätzung -->
+    <section class="screen" id="s3" data-title="Erste Einschätzung" hidden>
+      <div class="banner">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.01"/></svg>
+        <div><b>Beispielwerte – keine Berechnung</b><span>Gesprächsgrundlage für das erste Treffen mit dem Bauherrn</span></div>
+      </div>
+      <div class="card est">
+        <div class="head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9H3z"/><path d="M9 20v-6h6v6"/></svg>Kosten Holzbau-Hülle</div>
+        <div class="val">ca. 95.000 – 115.000 €</div>
+        <div class="why"><span class="q">?</span>Spanne aus Bauteilflächen und Bauweise, ohne Firmenpreise.</div>
+      </div>
+      <div class="card est">
+        <div class="head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3c3 4 5 6.5 5 10a5 5 0 0 1-10 0c0-3.5 2-6 5-10z"/></svg>Heizwärme</div>
+        <div class="val">ca. 60 <small>kWh/(m²·a)</small></div>
+        <div class="why"><span class="q">?</span>Grobe Lage nach Dämmstandard und Fensteranteil, kein Nachweis.</div>
+      </div>
+      <div class="card est">
+        <div class="head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20c0-9 6-15 15-15 0 9-6 15-15 15z"/><path d="M5 20l8-8"/></svg>CO₂ Herstellung Hülle</div>
+        <div class="val">ca. 28 <small>t CO₂-Äq.</small></div>
+        <div class="why"><span class="q">?</span>Herstellungsphase der Hülle nach ÖKOBAUDAT-Größenordnung.</div>
+      </div>
+      <div class="card est">
+        <div class="head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="12" cy="12" r="3.5"/><path d="M12 8.5v-1M12 16.5v-1M8.5 12h-1M16.5 12h-1"/></svg>Heizungsvorschlag</div>
+        <div class="val">Wärmepumpe</div>
+        <div class="why"><span class="q">?</span>Passt zu niedriger Heizlast und Flächenheizung.</div>
+      </div>
+      <div class="foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/></svg>Genaue Werte rechnet BauKalk am PC.</div>
+    </section>
+
+    <!-- 4 An BauKalk senden -->
+    <section class="screen" id="s4" data-title="An BauKalk senden" hidden>
+      <div class="field">
+        <div class="lbl">Zusammenfassung</div>
+        <ul class="card check">
+          <li><span class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span><span class="t">Ort</span><span class="v">PLZ 12345</span></li>
+          <li><span class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span><span class="t">Maße</span><span class="v">10,00 × 8,00 m</span></li>
+          <li><span class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span><span class="t">4 Wände</span><span class="v">N, O, S, W</span></li>
+          <li><span class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span><span class="t">9 Fenster</span><span class="v">1 · 2 · 4 · 2</span></li>
+          <li><span class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span><span class="t">3 Fotos</span><span class="v">Süd, Fenster, Dach</span></li>
+          <li><span class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span><span class="t">1 Sprachnotiz</span><span class="v">0:42</span></li>
+        </ul>
+      </div>
+      <button type="button" class="btn primary" id="send">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 3L10 14"/><path d="M21 3l-7 18-4-7-7-4z"/></svg>An BauKalk senden
+      </button>
+      <div class="status wait" id="st-wait" hidden><span class="spin"></span>Wird übertragen …</div>
+      <div class="status" id="st-done" hidden>
+        <span class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span>
+        <div><b>Übertragen</b>Im Programm unter „Begehung übernehmen“</div>
+      </div>
+      <ul class="hints">
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a4.5 4.5 0 0 1-.5-9 6 6 0 0 1 11.5 1.5A3.75 3.75 0 0 1 17.5 18z"/><path d="M3 3l18 18"/></svg>Offline speicherbar, Senden später möglich</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Daten werden verschlüsselt übertragen</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l8-8h8v8l-8 8z"/><circle cx="15.5" cy="8.5" r="1.5"/></svg>Keine Firmenpreise auf dem Handy</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v10M17 10v10M4 7l3-3 3 3M14 17l3 3 3-3"/></svg>Konflikte werden angezeigt statt überschrieben</li>
+      </ul>
+    </section>
+  </main>
+
+  <nav class="tabs" aria-label="Schritte">
+    <a href="#s1" data-s="s1"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M9 10h6M9 14h6M9 18h3"/></svg></span>Begehung</a>
+    <a href="#s2" data-s="s2"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17L17 3l4 4L7 21z"/><path d="M7 13l2 2M10 10l2 2M13 7l2 2"/></svg></span>Maße</a>
+    <a href="#s3" data-s="s3"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span>Einschätzung</a>
+    <a href="#s4" data-s="s4"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 3L10 14"/><path d="M21 3l-7 18-4-7-7-4z"/></svg></span>Senden</a>
+  </nav>
+
+  <div class="toast" id="toast" role="status" hidden></div>
+</div>
+</div>
+
+<script>
+(function () {
+  var order = ['s1', 's2', 's3', 's4'];
+  var main = document.getElementById('main');
+  function show() {
+    var id = (location.hash || '').slice(1);
+    if (order.indexOf(id) < 0) id = 's1';
+    var i = order.indexOf(id);
+    order.forEach(function (s) { document.getElementById(s).hidden = s !== id; });
+    document.getElementById('title').textContent = document.getElementById(id).dataset.title;
+    document.getElementById('step').textContent = 'Schritt ' + (i + 1) + ' von 4';
+    var next = document.getElementById('next');
+    if (i < 3) { next.hidden = false; next.href = '#' + order[i + 1]; } else { next.hidden = true; }
+    document.querySelectorAll('nav.tabs a').forEach(function (a) {
+      if (a.dataset.s === id) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+    });
+    main.scrollTop = 0;
+  }
+  window.addEventListener('hashchange', show);
+  show();
+
+  var toast = document.getElementById('toast'), tt;
+  function say(msg) { toast.textContent = msg; toast.hidden = false; clearTimeout(tt); tt = setTimeout(function () { toast.hidden = true; }, 2200); }
+  document.querySelectorAll('[data-toast]').forEach(function (b) { b.addEventListener('click', function () { say(b.dataset.toast); }); });
+
+  var neu = document.getElementById('t-neu'), san = document.getElementById('t-san');
+  [neu, san].forEach(function (b) { b.addEventListener('click', function () {
+    neu.setAttribute('aria-pressed', String(b === neu)); san.setAttribute('aria-pressed', String(b === san));
+  }); });
+
+  var gv = document.getElementById('g-val');
+  document.getElementById('g-minus').addEventListener('click', function () { gv.textContent = Math.max(1, +gv.textContent - 1); });
+  document.getElementById('g-plus').addEventListener('click', function () { gv.textContent = Math.min(4, +gv.textContent + 1); });
+  var dg = document.getElementById('dg');
+  dg.addEventListener('click', function () { dg.setAttribute('aria-pressed', String(dg.getAttribute('aria-pressed') !== 'true')); });
+  var roof = document.querySelectorAll('#roof .chip');
+  roof.forEach(function (c) { c.addEventListener('click', function () {
+    roof.forEach(function (o) { o.setAttribute('aria-pressed', String(o === c)); });
+  }); });
+
+  var send = document.getElementById('send'), w = document.getElementById('st-wait'), d = document.getElementById('st-done');
+  send.addEventListener('click', function () {
+    d.hidden = true; w.hidden = false;
+    setTimeout(function () { w.hidden = true; d.hidden = false; }, 900);
+  });
+})();
+</script>
+
+<script>if("serviceWorker" in navigator){addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}</script>
+</body>
+</html>
