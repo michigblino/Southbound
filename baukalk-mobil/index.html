@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>BauKalk mobil</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="BauKalk mobil">
+<meta name="theme-color" content="#0b5a3c">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+
+<style>html{-webkit-text-size-adjust:100%}body{margin:0}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}[hidden]{display:none!important}</style>
+<style>
+/* Layout: Handy-Erfassung in einer Spalte, grüner BauKalk-Kopf, Schritte als Fortschrittsleiste, große Tippflächen */
+:root{--bg:#eef2ef;--card:#ffffff;--fg:#17211c;--muted:#5d6b64;--line:#d5ddd8;--brand:#0b5a3c;--brand-fg:#ffffff;--soft:#e2efe7;--warn:#8a5a00;--warn-bg:#fbefd6;
+--f-head:"Space Grotesk",system-ui,sans-serif;--f-body:"Inter",system-ui,sans-serif;--r:12px}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111714;--card:#1a221e;--fg:#e3ebe6;--muted:#9aa9a1;--line:#2d3a33;--brand:#2f9466;--brand-fg:#ffffff;--soft:#1f3329;--warn:#f0c46a;--warn-bg:#33290f;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#111714;--card:#1a221e;--fg:#e3ebe6;--muted:#9aa9a1;--line:#2d3a33;--brand:#2f9466;--brand-fg:#ffffff;--soft:#1f3329;--warn:#f0c46a;--warn-bg:#33290f;color-scheme:dark}
+html,body{background:var(--bg)}
+body{color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--brand)}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--brand);color:var(--brand-fg)}
+.hin{max-width:520px;margin:0 auto;padding-block:12px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;align-items:center;gap:12px}
+.logo{font-family:var(--f-head);font-weight:600;font-size:20px;letter-spacing:.01em}
+.logo small{font-family:var(--f-body);font-weight:500;font-size:12px;opacity:.85;display:block;letter-spacing:.06em;text-transform:uppercase}
+.hin .sp{flex:1}
+.hbtn{background:transparent;color:var(--brand-fg);border:1px solid rgba(255,255,255,.5);border-radius:999px;padding:6px 12px;font:inherit;font-size:14px}
+main{max-width:520px;margin:0 auto;padding-block:16px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:14px}
+h1,h2{font-family:var(--f-head);margin:0;text-wrap:balance}
+h1{font-size:24px}h2{font-size:19px}
+.note{background:var(--warn-bg);color:var(--warn);border-radius:var(--r);padding:10px 12px;font-size:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:grid;gap:12px;min-width:0}
+.muted{color:var(--muted);font-size:14px;margin:0}
+.list{display:grid;gap:10px}
+.item{display:flex;gap:12px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px;text-align:left;font:inherit;color:inherit;width:100%}
+.item .t{font-weight:600}.item .s{color:var(--muted);font-size:14px}
+.item .grow{flex:1;min-width:0}
+.chip{font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--soft);color:var(--brand);white-space:nowrap}
+.chip.bsp{background:var(--warn-bg);color:var(--warn)}
+.primary{background:var(--brand);color:var(--brand-fg);border:0;border-radius:var(--r);padding:14px 16px;font:inherit;font-weight:600;width:100%}
+.ghost{background:transparent;color:var(--brand);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;font:inherit;font-weight:500}
+.row{display:flex;gap:10px}.row>*{flex:1;min-width:0}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.steps div{height:5px;border-radius:3px;background:var(--line)}.steps div.on{background:var(--brand)}
+.stepname{font-size:13px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase}
+label{display:grid;gap:4px;font-size:14px;color:var(--muted)}
+input,select,textarea{font:inherit;font-size:16px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 12px;width:100%;box-sizing:border-box}
+textarea{min-height:70px;resize:vertical}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.seg button{font:inherit;font-size:14px;padding:10px 6px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
+.seg button.on{background:var(--brand);color:var(--brand-fg);border-color:var(--brand)}
+.kv{display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-variant-numeric:tabular-nums}
+.kv span:nth-child(even){text-align:right;font-weight:600}
+svg text{fill:var(--muted);font-size:11px;font-family:var(--f-body)}
+.plan rect{fill:var(--soft);stroke:var(--brand);stroke-width:2}
+.photos{display:flex;gap:8px;flex-wrap:wrap}.photos img{width:88px;height:88px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+pre{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;font-size:12px;overflow-x:auto;max-height:260px;margin:0}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:14px;z-index:20}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.foot{font-size:12px;color:var(--muted);text-align:center}
+</style>
+</head>
+<body>
+
+
+<header><div class="hin"><div class="logo">BauKalk mobil<small>Erfassung vor Ort</small></div><span class="sp"></span><button class="hbtn" id="homeBtn" type="button">Übersicht</button></div></header>
+<main id="app"></main>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const KEY='baukalk-mobil-v1';
+const STEPS=['Projekt','Gebäude','Wünsche','Übersicht'];
+const HEIZ=['Noch offen','Luft-Wärmepumpe','Erdwärmepumpe mit Sonde','Gas-Brennwertkessel','Fernwärme','Pelletkessel mit Lager','Öl-Brennwertkessel (Bestand)'];
+const BEISPIEL={id:'bsp',beispiel:true,status:'Beispiel',projekt:{name:'Einfamilienhaus Muster',bauherr:'Familie Muster (Beispiel)',adresse:'Musterweg 1, 86150 Augsburg',datum:'2026-11-26'},
+ gebaeude:{art:'Neubau',laenge:11,breite:9,geschosse:2,hoehe:2.75,dach:'Satteldach',neigung:35,notiz:'Hanglage nach Süden, Zufahrt für Kran möglich'},
+ wuensche:{heizung:'Luft-Wärmepumpe',fenster:'3-fach, Holz-Alu',daemmung:'Effizienzhaus-Niveau',budget:'bis 450.000 €',notiz:'PV auf dem Süddach gewünscht'},fotos:[]};
+let state={list:[],cur:null,step:0};
+function load(){try{const s=JSON.parse(localStorage.getItem(KEY)||'null');if(s&&Array.isArray(s.list))state.list=s.list;}catch(e){}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify({list:state.list}));}catch(e){toast('Speichern auf diesem Gerät nicht möglich');}}
+function toast(t){const el=document.getElementById('toast');el.textContent=t;el.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>el.hidden=true,2200);}
+function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function num(v,d){const n=parseFloat(String(v).replace(',','.'));return isFinite(n)?n:d;}
+function fmt(n,d=1){return n.toLocaleString('de-DE',{minimumFractionDigits:d,maximumFractionDigits:d});}
+function neu(){return{id:String(Date.now()),status:'Entwurf',projekt:{name:'',bauherr:'',adresse:'',datum:new Date().toISOString().slice(0,10)},gebaeude:{art:'Neubau',laenge:10,breite:8,geschosse:2,hoehe:2.75,dach:'Satteldach',neigung:35,notiz:''},wuensche:{heizung:'Noch offen',fenster:'3-fach, Kunststoff',daemmung:'Gesetzlicher Standard',budget:'',notiz:''},fotos:[]};}
+function geo(g){const L=num(g.laenge,0),B=num(g.breite,0),n=Math.max(1,Math.round(num(g.geschosse,1))),h=num(g.hoehe,2.75);
+ const gf=L*B,bgf=gf*n,wand=2*(L+B)*h*n;let dach=gf;if(g.dach==='Satteldach'||g.dach==='Walmdach'){dach=gf/Math.cos(num(g.neigung,30)*Math.PI/180);}if(g.dach==='Flachdach')dach=gf;
+ return{gf,bgf,wand,dach,n};}
+function home(){state.cur=null;const app=document.getElementById('app');
+ const items=[BEISPIEL,...state.list].map(b=>{const g=geo(b.gebaeude);return `<button class="item" type="button" data-id="${esc(b.id)}"><div class="grow"><div class="t">${esc(b.projekt.name||'Ohne Namen')}</div><div class="s">${esc(b.gebaeude.art)} · ${fmt(num(b.gebaeude.laenge,0))} × ${fmt(num(b.gebaeude.breite,0))} m · ${g.n} Geschosse · ${esc(b.projekt.datum)}</div></div><span class="chip ${b.beispiel?'bsp':''}">${esc(b.status)}</span></button>`}).join('');
+ app.innerHTML=`<div class="note">Entwurf zur Masterarbeit (Ausblick): Diese Seite erfasst nur Angaben vor Ort und rechnet keine Preise. Gerechnet wird später am PC in BauKalk.</div>
+ <h1>Begehungen</h1><p class="muted">Beim Bauherrengespräch oder bei der Begehung das Wichtigste aufnehmen. Die Angaben bleiben nur auf diesem Handy.</p>
+ <button class="primary" id="newBtn" type="button">+ Neue Begehung</button><div class="list">${items}</div>
+ <p class="foot">Zum Home-Bildschirm: im Browser-Menü „Zum Startbildschirm hinzufügen“ wählen.</p>`;
+ document.getElementById('newBtn').onclick=()=>{state.cur=neu();state.step=0;render();};
+ app.querySelectorAll('.item').forEach(b=>b.onclick=()=>{const id=b.dataset.id;const f=id==='bsp'?JSON.parse(JSON.stringify(BEISPIEL)):state.list.find(x=>x.id===id);state.cur=f;state.step=3;render();});
+ window.scrollTo(0,0);}
+function bind(el,obj,key){el.value=obj[key]??'';el.oninput=()=>{obj[key]=el.value;if(el.dataset.live)live();};}
+function seg(id,obj,key,opts){const w=document.getElementById(id);w.innerHTML=opts.map(o=>`<button type="button" class="${obj[key]===o?'on':''}">${esc(o)}</button>`).join('');
+ w.querySelectorAll('button').forEach((b,i)=>b.onclick=()=>{obj[key]=opts[i];seg(id,obj,key,opts);live();});}
+function live(){const g=state.cur.gebaeude;const r=geo(g);const el=document.getElementById('geo');if(!el)return;
+ el.innerHTML=`<span>Grundfläche</span><span>${fmt(r.gf)} m²</span><span>Bruttogeschossfläche (${r.n} Geschosse)</span><span>${fmt(r.bgf)} m²</span><span>Außenwand brutto</span><span>${fmt(r.wand)} m²</span><span>Dachfläche (${esc(g.dach)})</span><span>${fmt(r.dach)} m²</span>`;
+ const L=num(g.laenge,1),B=num(g.breite,1),s=Math.min(240/L,120/B);const w=L*s,h=B*s;
+ document.getElementById('plan').innerHTML=`<rect x="${(300-w)/2}" y="${(170-h)/2+6}" width="${w}" height="${h}" rx="2"></rect><text x="150" y="${(170-h)/2}" text-anchor="middle">Nord · ${fmt(L)} m</text><text x="${(300+w)/2+6}" y="${95}" >${fmt(B)} m</text>`;}
+function render(){const app=document.getElementById('app');const c=state.cur;const st=state.step;
+ const head=`<div class="steps">${STEPS.map((s,i)=>`<div class="${i<=st?'on':''}"></div>`).join('')}</div><div class="stepname">Schritt ${st+1} von 4 · ${STEPS[st]}</div>`;
+ const nav=`<div class="row">${st>0?'<button class="ghost" id="back" type="button">Zurück</button>':'<button class="ghost" id="cancel" type="button">Abbrechen</button>'}${st<3?'<button class="primary" id="next" type="button">Weiter</button>':''}</div>`;
+ if(st===0){app.innerHTML=`${head}<h1>Projekt</h1><div class="card">
+  <label>Projektname<input id="p_name" placeholder="z. B. Einfamilienhaus Huber"></label>
+  <label>Bauherr<input id="p_bauherr" placeholder="Name"></label>
+  <label>Adresse der Baustelle<input id="p_adresse" placeholder="Straße, PLZ Ort"></label>
+  <label>Datum der Begehung<input id="p_datum" type="date"></label>
+  <p class="muted">Die Postleitzahl nutzt BauKalk später für Klima und regionale Preise.</p></div>${nav}`;
+  ['name','bauherr','adresse','datum'].forEach(k=>bind(document.getElementById('p_'+k),c.projekt,k));}
+ if(st===1){app.innerHTML=`${head}<h1>Gebäude</h1><div class="card"><div class="seg" id="g_art"></div>
+  <div class="row"><label>Länge Nord- und Südwand (m)<input id="g_laenge" inputmode="decimal" data-live="1"></label><label>Breite Ost- und Westwand (m)<input id="g_breite" inputmode="decimal" data-live="1"></label></div>
+  <div class="row"><label>Geschosse<input id="g_geschosse" inputmode="numeric" data-live="1"></label><label>Geschosshöhe (m)<input id="g_hoehe" inputmode="decimal" data-live="1"></label></div>
+  <div class="seg" id="g_dach"></div><label>Dachneigung (°)<input id="g_neigung" inputmode="numeric" data-live="1"></label>
+  <svg class="plan" id="plan" viewBox="0 0 300 180" role="img" aria-label="Grundriss-Skizze"></svg>
+  <div class="kv" id="geo"></div><p class="muted">Nur Geometrie, noch keine Kosten.</p></div>
+  <div class="card"><label>Fotos (Bestand, Baugrund, Zufahrt)<input id="g_foto" type="file" accept="image/*" capture="environment"></label><div class="photos" id="photos"></div>
+  <label>Notiz<textarea id="g_notiz" placeholder="z. B. Hanglage, Nachbarhaus an der Ostseite"></textarea></label></div>${nav}`;
+  ['laenge','breite','geschosse','hoehe','neigung','notiz'].forEach(k=>bind(document.getElementById('g_'+k),c.gebaeude,k));
+  seg('g_art',c.gebaeude,'art',['Neubau','Aufstockung','Sanierung']);seg('g_dach',c.gebaeude,'dach',['Satteldach','Walmdach','Flachdach']);
+  const ph=()=>{document.getElementById('photos').innerHTML=c.fotos.map(f=>`<img src="${f}" alt="Foto der Begehung">`).join('');};ph();
+  document.getElementById('g_foto').onchange=e=>{const file=e.target.files[0];if(!file)return;const rd=new FileReader();rd.onload=()=>{const im=new Image();im.onload=()=>{const k=Math.min(1,640/Math.max(im.width,im.height));const cv=document.createElement('canvas');cv.width=im.width*k;cv.height=im.height*k;cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);c.fotos.push(cv.toDataURL('image/jpeg',.7));if(c.fotos.length>4)c.fotos.shift();ph();};im.src=rd.result;};rd.readAsDataURL(file);e.target.value='';};
+  live();}
+ if(st===2){app.innerHTML=`${head}<h1>Wünsche</h1><div class="card">
+  <label>Heizung<select id="w_heizung">${HEIZ.map(h=>`<option>${esc(h)}</option>`).join('')}</select></label>
+  <label>Fenster<select id="w_fenster"><option>3-fach, Kunststoff</option><option>3-fach, Holz</option><option>3-fach, Holz-Alu</option><option>2-fach (Bestand)</option></select></label>
+  <label>Dämmstandard<select id="w_daemmung"><option>Gesetzlicher Standard</option><option>Effizienzhaus-Niveau</option><option>So gut wie möglich</option></select></label>
+  <label>Budgetrahmen (optional)<input id="w_budget" placeholder="z. B. bis 450.000 €"></label>
+  <label>Weitere Wünsche<textarea id="w_notiz" placeholder="z. B. PV-Anlage, Holzfassade, barrierearm"></textarea></label>
+  <p class="muted">Heizung offen lassen ist in Ordnung: BauKalk schlägt am PC eine Heizung nach dem Heizungsvergleich vor.</p></div>${nav}`;
+  ['heizung','fenster','daemmung','budget','notiz'].forEach(k=>bind(document.getElementById('w_'+k),c.wuensche,k));}
+ if(st===3){const g=geo(c.gebaeude);const out={format:'BauKalk-Begehung (Entwurf)',version:1,projekt:c.projekt,gebaeude:{...c.gebaeude,grundflaeche_m2:+g.gf.toFixed(2),bgf_m2:+g.bgf.toFixed(2),aussenwand_brutto_m2:+g.wand.toFixed(2),dachflaeche_m2:+g.dach.toFixed(2)},wuensche:c.wuensche,fotos:c.fotos.length};
+  app.innerHTML=`${head}<h1>${esc(c.projekt.name||'Ohne Namen')}</h1>${c.beispiel?'<div class="note">Beispiel mit erfundenen Angaben, nur zum Ansehen.</div>':''}
+  <div class="card"><h2>Projekt</h2><div class="kv"><span>Bauherr</span><span>${esc(c.projekt.bauherr||'–')}</span><span>Baustelle</span><span>${esc(c.projekt.adresse||'–')}</span><span>Begehung</span><span>${esc(c.projekt.datum)}</span></div></div>
+  <div class="card"><h2>Gebäude</h2><div class="kv"><span>Art</span><span>${esc(c.gebaeude.art)}</span><span>Außenmaß</span><span>${fmt(num(c.gebaeude.laenge,0))} × ${fmt(num(c.gebaeude.breite,0))} m</span><span>Geschosse</span><span>${g.n} × ${fmt(num(c.gebaeude.hoehe,0),2)} m</span><span>Dach</span><span>${esc(c.gebaeude.dach)} ${esc(c.gebaeude.dach==='Flachdach'?'':c.gebaeude.neigung+'°')}</span><span>Bruttogeschossfläche</span><span>${fmt(g.bgf)} m²</span><span>Außenwand brutto</span><span>${fmt(g.wand)} m²</span><span>Dachfläche</span><span>${fmt(g.dach)} m²</span><span>Fotos</span><span>${c.fotos.length}</span></div>${c.gebaeude.notiz?`<p class="muted">${esc(c.gebaeude.notiz)}</p>`:''}</div>
+  <div class="card"><h2>Wünsche</h2><div class="kv"><span>Heizung</span><span>${esc(c.wuensche.heizung)}</span><span>Fenster</span><span>${esc(c.wuensche.fenster)}</span><span>Dämmung</span><span>${esc(c.wuensche.daemmung)}</span><span>Budget</span><span>${esc(c.wuensche.budget||'–')}</span></div>${c.wuensche.notiz?`<p class="muted">${esc(c.wuensche.notiz)}</p>`:''}</div>
+  <div class="card"><h2>An BauKalk übergeben</h2><p class="muted">Im Entwurf gibt es noch keine Verbindung zum PC. Die Übergabedatei unten zeigt, was BauKalk später übernehmen würde: Außenmaß, Geschosse, Dach und Heizung füllen dort den Gebäude-Assistenten vor.</p>
+  <pre id="json">${esc(JSON.stringify(out,null,2))}</pre><button class="ghost" id="copy" type="button">Übergabedatei kopieren</button></div>
+  <div class="row"><button class="ghost" id="edit" type="button">Bearbeiten</button>${c.beispiel?'':'<button class="primary" id="done" type="button">Speichern</button>'}</div>`;
+  document.getElementById('copy').onclick=()=>{const t=document.getElementById('json').textContent;navigator.clipboard.writeText(t).then(()=>toast('Übergabedatei kopiert')).catch(()=>{const r=document.createRange();r.selectNodeContents(document.getElementById('json'));const s=getSelection();s.removeAllRanges();s.addRange(r);toast('Text markiert, bitte kopieren');});};
+  document.getElementById('edit').onclick=()=>{state.step=0;render();};
+  const d=document.getElementById('done');if(d)d.onclick=()=>{c.status='Bereit für BauKalk';const i=state.list.findIndex(x=>x.id===c.id);if(i>=0)state.list[i]=c;else state.list.unshift(c);save();toast('Begehung gespeichert');home();};}
+ const b=document.getElementById('back'),n=document.getElementById('next'),x=document.getElementById('cancel');
+ if(b)b.onclick=()=>{state.step--;render();};if(n)n.onclick=()=>{state.step++;render();};if(x)x.onclick=home;window.scrollTo(0,0);}
+document.getElementById('homeBtn').onclick=home;
+load();home();
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}
+</script>
+
+</body>
+</html>
